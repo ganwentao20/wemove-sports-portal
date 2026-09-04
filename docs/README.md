@@ -8,8 +8,9 @@
 |---|---|---|
 | `adr/` | 架构决策记录（Architecture Decision Records） | 组长（成员可提议） |
 | `templates/` | 会议纪要等统一模板 | 组员 A 维护 |
+| `development-conventions.md` | 开发/安全/合规注意事项与 Git 协作规范（根 README 只放项目信息，注意事项统一收于此） | 组长维护 |
 | `api/` | API 相关规范（见 `apps/api/README.md`，数据字典由组员 C 认领后亦可放此） | 组员 C |
-| 根目录 `README.md` | 全仓总览：架构/分工/快速开始 | 组长 |
+| 根目录 `README.md` | 全仓总览（仅项目信息）：简介/架构/分工/快速开始 | 组长 |
 
 ## 交付物清单与红线（《软件开发实践2》考核要求）
 
