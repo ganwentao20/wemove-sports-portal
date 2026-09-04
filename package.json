@@ -1,0 +1,36 @@
+{
+  "name": "wemove-sports-portal",
+  "version": "0.1.0",
+  "private": true,
+  "description": "WEMOVE SPORTS 官网与业务门户重构项目 —— Portal / Customer / Dealer / Admin 一体化 monorepo",
+  "license": "UNLICENSED",
+  "engines": {
+    "node": ">=22",
+    "npm": ">=10"
+  },
+  "workspaces": [
+    "apps/*"
+  ],
+  "scripts": {
+    "dev": "concurrently -k -n WEB,API -c cyan,green \"npm:dev:web\" \"npm:dev:api\"",
+    "dev:web": "npm run dev -w web",
+    "dev:api": "npm run start:dev -w api",
+    "build:web": "npm run build -w web",
+    "build:api": "npm run build -w api",
+    "build": "npm run build:web && npm run build:api",
+    "lint": "npm run lint -ws --if-present",
+    "typecheck:api": "npm run typecheck -w api",
+    "test": "npm run test -ws --if-present",
+    "db:up": "docker compose -f infra/docker-compose.yml up -d",
+    "db:down": "docker compose -f infra/docker-compose.yml down",
+    "db:logs": "docker compose -f infra/docker-compose.yml logs -f",
+    "db:migrate": "npm run prisma:migrate -w api",
+    "db:deploy": "npm run prisma:deploy -w api",
+    "db:seed": "npm run prisma:seed -w api",
+    "db:studio": "npm run prisma:studio -w api",
+    "prisma:generate": "npm run prisma:generate -w api"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2"
+  }
+}

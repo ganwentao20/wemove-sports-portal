@@ -1,0 +1,47 @@
+# WEMOVE SPORTS · 基础 CI（骨架版，组员 E 负责完善：数据库服务、集成/压测段）
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [22]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: npm
+
+      - name: Install dependencies (npm workspaces)
+        run: npm ci
+
+      - name: Prisma generate
+        run: npm run prisma:generate
+
+      - name: Lint (workspaces, if present)
+        run: npm run lint
+
+      - name: Unit tests (workspaces, if present)
+        run: npm test
+
+      - name: Build api
+        run: npm run build:api
+
+      - name: Build web
+        run: npm run build:web
+        env:
+          NEXT_PUBLIC_API_BASE_URL: http://localhost:8080/api/v1
