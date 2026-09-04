@@ -1,0 +1,460 @@
+// ============================================================================
+// WEMOVE SPORTS · 数据库核心结构（Prisma 6 / PostgreSQL 16）
+//
+// 约定（数据字典正式版由组员 C 输出，本文件是「单一事实源」）：
+// 1. 金额一律用整数“分”存储（priceCents），避免浮点误差；展示层负责格式化。
+// 2. 所有表必须带 createdAt/updatedAt（除纯枚举外），多租户隔离字段为 dealerCompanyId。
+// 3. 安全底线：经销商价只能经 pricing 引擎 + 服务层鉴权后返回，严禁直接 SELECT 暴露。
+// 4. 模块归属注释：M1 组长基座 / MA 组员A用户中心 / MB 组员B B2B / MC 组员C 商品订单 / MD 组员D CMS 媒体 / ME 测试工程。
+// 5. 状态机字段注释处仅标注“状态机见 xx 规范”，由对应组员以 .md 输出后链接到 docs/。
+//
+// 迁移流程（apps/api 目录下执行，或仓库根 npm run db:migrate）：
+//   npx prisma migrate dev --name <描述>
+// 注意：任何成员新增业务表前先同步本文件 → 跑迁移 → 提交 migration SQL 一并入库。
+// ============================================================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ---------------------------------------------------------------------------
+// 枚举字典
+// ---------------------------------------------------------------------------
+
+/// 账号状态（C 端用户 / 经销商成员共用；状态机见需求文档 3.x）
+enum AccountStatus {
+  PENDING // 待邮箱验证
+  ACTIVE
+  SUSPENDED
+}
+
+/// 后台员工状态
+enum StaffStatus {
+  ACTIVE
+  DISABLED
+}
+
+/// 经销商企业状态（MB：申请审批流状态机见 docs/b2b 状态机规范）
+enum CompanyStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  SUSPENDED
+}
+
+/// 经销商资质申请状态（MB）
+enum ApplicationStatus {
+  SUBMITTED
+  UNDER_REVIEW
+  MORE_INFO_REQUIRED
+  APPROVED
+  REJECTED
+}
+
+/// 商品状态（MC）
+enum ProductStatus {
+  DRAFT
+  ACTIVE
+  ARCHIVED
+}
+
+/// 价格规则作用域 —— 引擎优先级由低到高按 scope 顺序：B2B_DEFAULT < TIER_LEVEL < PRICE_TABLE < COMPANY_SPECIFIC
+enum PricingScope {
+  COMPANY_SPECIFIC // 企业专属价（最高）
+  PRICE_TABLE // 价格表（经销商被授权价格表）
+  TIER_LEVEL // 经销商等级价
+  B2B_DEFAULT // 默认 B2B 批发价（最低）
+}
+
+/// 媒体可见性（MD）：PUBLIC 公开 / DEALER_ONLY 仅审核通过经销商 / INTERNAL 仅内部
+enum MediaVisibility {
+  PUBLIC
+  DEALER_ONLY
+  INTERNAL
+}
+
+/// 联系表单/工单状态（MD）
+enum ContactStatus {
+  NEW
+  IN_PROGRESS
+  RESOLVED
+  CLOSED
+}
+
+/// 一次性令牌类型（MA：邮箱验证/找回密码；M1：后台敏感操作二次认证）
+enum TokenType {
+  EMAIL_VERIFY
+  PASSWORD_RESET
+  STAFF_2FA
+}
+
+/// 审计日志操作者类型（M1）
+enum AuditActorKind {
+  ANON
+  CUSTOMER
+  STAFF
+}
+
+/// CMS 页面状态（MD）
+enum CmsPageStatus {
+  DRAFT
+  PUBLISHED
+}
+
+/// 企业内成员角色（MB）
+enum DealerMemberRole {
+  OWNER
+  BUYER
+  VIEWER
+}
+
+// ---------------------------------------------------------------------------
+// M1 · 身份与 RBAC 基座
+// ---------------------------------------------------------------------------
+
+/// C 端/经销商个人账号（交易面向成年人：注册必须满 18 周岁声明字段 ageConfirmed）
+model User {
+  id            String        @id @default(cuid())
+  email         String        @unique
+  passwordHash  String
+  name          String
+  ageConfirmed  Boolean       @default(false) // 合规：成年人声明（详见合规红线）
+  status        AccountStatus @default(PENDING)
+  dealerMembers DealerMember[]
+  tokens        UserToken[]
+  auditLogs     AuditLog[] @relation("ActorCustomer")
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  @@index([status])
+}
+
+/// 后台员工（与 C 端 User 物理隔离，后台数据不混入用户库）
+model Staff {
+  id           String     @id @default(cuid())
+  email        String     @unique
+  passwordHash String
+  name         String
+  status       StaffStatus @default(ACTIVE)
+  roles        StaffRole[]
+  mediaAssets  MediaAsset[] @relation("Uploader")
+  auditLogs    AuditLog[]  @relation("ActorStaff")
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+}
+
+/// 权限点（细粒度权限编码，如 catalog:product:write）
+model Permission {
+  id        String   @id @default(cuid())
+  code      String   @unique
+  name      String
+  group     String   // 权限分组（如 catalog/order/b2b/cms/system）
+  roles     RolePermission[]
+  createdAt DateTime @default(now())
+}
+
+/// 角色（RBAC：角色-权限多对多；组员/后台角色在此建模）
+model Role {
+  id          String           @id @default(cuid())
+  code        String           @unique
+  name        String
+  description String?
+  permissions RolePermission[]
+  staff       StaffRole[]
+  createdAt   DateTime         @default(now())
+}
+
+model RolePermission {
+  roleId       String
+  permissionId String
+  role         Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@id([roleId, permissionId])
+}
+
+model StaffRole {
+  staffId String
+  roleId  String
+  staff   Staff @relation(fields: [staffId], references: [id], onDelete: Cascade)
+  role    Role  @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  @@id([staffId, roleId])
+}
+
+/// 一次性令牌（邮箱验证 / 找回密码 / 后台二次认证），只存哈希
+model UserToken {
+  id        String    @id @default(cuid())
+  type      TokenType
+  tokenHash String    @unique
+  email     String // 目标邮箱/账号（匿名可找回）
+  expiresAt DateTime
+  consumedAt DateTime?
+  user      User?     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String?
+  createdAt DateTime  @default(now())
+
+  @@index([email, type])
+}
+
+/// 操作审计日志（M1）：后台敏感操作与关键业务事件全量留痕
+model AuditLog {
+  id             String         @id @default(cuid())
+  actorKind      AuditActorKind
+  actorCustomerId String? // C 端/经销商成员
+  actorStaffId   String? // 后台员工
+  action         String // 如 staff.login、order.refund.apply
+  entityType     String?
+  entityId       String?
+  before         Json?
+  after          Json?
+  ip             String?
+  userAgent      String?
+  customer       User?  @relation("ActorCustomer", fields: [actorCustomerId], references: [id], onDelete: SetNull)
+  staff          Staff? @relation("ActorStaff", fields: [actorStaffId], references: [id], onDelete: SetNull)
+  createdAt      DateTime @default(now())
+
+  @@index([actorKind, actorCustomerId, createdAt])
+  @@index([actorKind, actorStaffId, createdAt])
+  @@index([entityType, entityId])
+}
+
+// ---------------------------------------------------------------------------
+// MB · 经销商企业与申请
+// ---------------------------------------------------------------------------
+
+/// 经销商等级（价格链 TIER_LEVEL 依据）
+model DealerTier {
+  id        String   @id @default(cuid())
+  code      String   @unique // silver/gold/platinum
+  name      String
+  sortOrder Int      @default(0)
+  companies DealerCompany[]
+  priceRules PricingRule[] @relation("RuleTier")
+  createdAt DateTime @default(now())
+}
+
+/// 经销商企业（数据隔离边界：所有 dealer 业务数据都挂 companyId）
+model DealerCompany {
+  id             String        @id @default(cuid())
+  companyName    String
+  legalRegNo     String
+  country        String
+  status         CompanyStatus @default(PENDING)
+  tierId         String?
+  tier           DealerTier?   @relation(fields: [tierId], references: [id], onDelete: SetNull)
+  members        DealerMember[]
+  applications   DealerApplication[]
+  priceRules     PricingRule[] @relation("RuleCompany")
+  approvedAt     DateTime?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  @@unique([legalRegNo, country])
+  @@index([status])
+}
+
+/// 企业-成员关系（MB）：企业为边界的成员与角色
+model DealerMember {
+  companyId String
+  userId    String
+  role      DealerMemberRole @default(VIEWER)
+  company   DealerCompany @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  user      User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime       @default(now())
+
+  @@id([companyId, userId])
+  @@index([userId])
+}
+
+/// 经销商资质申请（MB：分步表单、防刷、补件流转由 B2B 模块实现）
+model DealerApplication {
+  id          String            @id @default(cuid())
+  companyId   String?
+  company     DealerCompany?    @relation(fields: [companyId], references: [id], onDelete: SetNull)
+  contactName String
+  contactEmail String
+  phone       String
+  country     String
+  businessType String // 零售商/批发商/电商/商超…
+  attachments Json              @default("[]") // [{fileName,key,url,visibility:PRIVATE}]
+  status      ApplicationStatus @default(SUBMITTED)
+  remark      String? // 审核意见/补件要求
+  reviewedBy  String?
+  reviewedAt  DateTime?
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+
+  @@index([status, createdAt])
+}
+
+// ---------------------------------------------------------------------------
+// MC · 商品 / 变体 / 库存 / 价格
+// ---------------------------------------------------------------------------
+
+model ProductCategory {
+  id       String             @id @default(cuid())
+  code     String             @unique
+  slug     String             @unique
+  name     String
+  parentId String?
+  parent   ProductCategory?   @relation("CategoryTree", fields: [parentId], references: [id], onDelete: SetNull)
+  children ProductCategory[]  @relation("CategoryTree")
+  products Product[]
+  active   Boolean            @default(true)
+  sortOrder Int               @default(0)
+  createdAt DateTime          @default(now())
+  updatedAt DateTime          @updatedAt
+}
+
+/// 商品主数据（PIM 概念：Product → Variant(SKU)）
+model Product {
+  id          String        @id @default(cuid())
+  name        String
+  slug        String        @unique // SEO 路由 /products/[slug]
+  summary     String?
+  description String? // 富文本 HTML（CMS 编辑器输出）
+  categoryId  String?
+  category    ProductCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  status      ProductStatus @default(DRAFT)
+  variants    ProductVariant[]
+  gallery     Json          @default("[]") // [{mediaId,url,alt,sort}]（媒体中心 MD）
+  seo         Json? // {title,description,keywords,ogImage}
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  @@index([categoryId, status])
+  @@index([status])
+}
+
+/// 变体 = SKU（可售粒度：库存/价格/下单均落到 variant）
+model ProductVariant {
+  id        String  @id @default(cuid())
+  productId String
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  sku       String  @unique
+  name      String? // 变体展示名（颜色/尺寸组合）
+  attrs     Json    @default("{}") // {color:'red',size:'S'}
+  msrpCents        Int? // 零售建议价（B2C）
+  salePriceCents   Int? // 零售促销价（B2C：sale 优先于 msrp）
+  b2bDefaultPriceCents Int? // 默认 B2B 批发价（链尾兜底）
+  weightGrams      Int?
+  status     Boolean @default(true)
+  stock      Stock?
+  priceRules PricingRule[]
+  sortOrder  Int     @default(0)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([productId, status])
+}
+
+/// 库存可用量（MC：扣减必须在事务内做，见库存状态机/扣减规范）
+model Stock {
+  variantId String         @id
+  variant   ProductVariant @relation(fields: [variantId], references: [id], onDelete: Cascade)
+  available Int            @default(0) // 可售
+  reserved  Int            @default(0) // 锁定（下单未支付）
+  updatedAt DateTime       @updatedAt
+}
+
+/// 价格表（PRICE_TABLE 规则载体，授权给经销商公司）
+model PriceBook {
+  id        String   @id @default(cuid())
+  code      String   @unique
+  label     String
+  rules     PricingRule[] @relation("RuleBook")
+  createdAt DateTime @default(now())
+}
+
+/// 价格规则（MC + M1 引擎联调）：
+/// 引擎取价顺序（同一 variant）：
+///   COMPANY_SPECIFIC(0) → PRICE_TABLE(1) → TIER_LEVEL(2) → B2B_DEFAULT(3)
+///   零售用户只取 variant.msrp/sale，永远不读本表（防越权由服务层保证）。
+/// 阶梯价：minQty 阶梯记录多条同 scope 规则，取满足数量最大档（后续由 MC 细化）。
+model PricingRule {
+  id          String       @id @default(cuid())
+  variantId   String
+  variant     ProductVariant @relation(fields: [variantId], references: [id], onDelete: Cascade)
+  scope       PricingScope
+  priority    Int          @default(0) // 同 scope 内更大优先
+  companyId   String?
+  company     DealerCompany? @relation("RuleCompany", fields: [companyId], references: [id], onDelete: Cascade)
+  bookId      String?
+  book        PriceBook?     @relation("RuleBook", fields: [bookId], references: [id], onDelete: Cascade)
+  tierId      String?
+  tier        DealerTier?    @relation("RuleTier", fields: [tierId], references: [id], onDelete: Cascade)
+  priceCents  Int
+  minQty      Int          @default(1)
+  active      Boolean      @default(true)
+  note        String?
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  @@index([variantId, scope, active])
+  @@index([companyId, bookId, tierId])
+}
+
+// ---------------------------------------------------------------------------
+// MD · CMS / 媒体 / 联系表单 / SEO
+// ---------------------------------------------------------------------------
+
+/// CMS 页面（首页模块化配置 = sections Json：{type,props}[]，拖拽排序由后台实现）
+model CmsPage {
+  id        String        @id @default(cuid())
+  slug      String        @unique // home/about/privacy/…
+  title     String
+  sections  Json          @default("[]")
+  status    CmsPageStatus @default(DRAFT)
+  seo       Json?
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+}
+
+/// 媒体资源（图片/PDF 说明书/证书；私有文件经签名 URL 下载，直链永不公开）
+model MediaAsset {
+  id           String          @id @default(cuid())
+  key          String          @unique // 对象存储 key（本地磁盘路径或云存储）
+  fileName     String
+  mimeType     String
+  sizeBytes    Int
+  visibility   MediaVisibility @default(PUBLIC)
+  uploader     Staff?          @relation("Uploader", fields: [uploadedById], references: [id], onDelete: SetNull)
+  uploadedById String?
+  createdAt    DateTime        @default(now())
+
+  @@index([visibility, createdAt])
+}
+
+/// 联系表单/咨询线索（MD：工单状态流转见 docs/cms 规范）
+model ContactMessage {
+  id        String        @id @default(cuid())
+  name      String
+  email     String
+  country   String?
+  subject   String
+  content   String
+  status    ContactStatus @default(NEW)
+  handledBy String? // Staff id
+  handledAt DateTime?
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+
+  @@index([status, createdAt])
+}
+
+/// 全站 301/302 重定向（MD+组长 SEO 基础）
+model RedirectRule {
+  id         String  @id @default(cuid())
+  sourcePath String  @unique // /old-path（不含域名）
+  targetUrl  String
+  statusCode Int     @default(301)
+  active     Boolean @default(true)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
