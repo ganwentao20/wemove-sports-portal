@@ -90,4 +90,14 @@ Schema 单一事实源：`prisma/schema.prisma`（归属注释 M1/MA/MB/MC/MD/ME
   生产部署必须常驻 Redis。
 - **邮件服务**：`SMTP_HOST` 未配置时走"开发日志模式"（验证/重置链接打印到终端），
   配置后真发信（Mailpit 联调见组员 E 的 E1 任务）；发送失败只记日志不阻断注册主流程。
-- 后台敏感操作二次认证（TOTP）与审计查询 API 为组长后续任务。
+- **全局加固层（已在 setupApp 生效）**：helmet 安全响应头（nosniff/X-Frame-Options 等）、
+  gzip 压缩（threshold=0，首屏性能支撑）、请求体上限 256kb、全局限流
+  （单 IP/分钟，env `GLOBAL_RATE_LIMIT_PER_MIN` 默认 12000，兼容 100 并发压测；/health 豁免）、
+  请求访问日志（method/status/耗时/traceId/ip）。
+
+## 测试
+
+- 单元：`npm test`（纯逻辑，离线可跑）。
+- e2e 离线冒烟：`npm run test:e2e`（响应体/校验/门禁约定）。
+- **DB 集成闭环（需 docker 的 PG+Redis）**：设置 `E2E_DB=1` 后运行 test:e2e，
+  覆盖 注册→邮箱验证→登录→登出黑名单 与 登录失败限流 429（CI 编排由组员 E 接入）。
