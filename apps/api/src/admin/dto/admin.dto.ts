@@ -187,3 +187,19 @@ export class AuditQueryDto {
   @MaxLength(64)
   entityId?: string;
 }
+
+// ---------------------------------------------------------------------------
+// MFA（TOTP）
+// ---------------------------------------------------------------------------
+
+export class MfaSetupDto {
+  @IsString()
+  @MinLength(1)
+  password!: string;
+}
+
+export class MfaCodeDto {
+  @IsString()
+  @Matches(/^\d{6}$/, { message: 'code must be exactly 6 digits' })
+  code!: string;
+}

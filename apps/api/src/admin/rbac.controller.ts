@@ -1,16 +1,17 @@
 import { Body, Controller, Get, Param, Post, Put, UseGuards } from '@nestjs/common';
 import { AdminService } from './admin.service.js';
-import { Roles } from '../rbac/roles.guard.js';
-import { RolesGuard } from '../rbac/roles.guard.js';
+import { Roles, RolesGuard } from '../rbac/roles.guard.js';
+import { RequireMfa, RequireMfaGuard } from '../mfa/require-mfa.guard.js';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard.js';
 import { CurrentUser } from '../auth/current-user.decorator.js';
 import type { JwtPayload } from '../auth/auth.service.js';
 import { RoleCreateDto, RolePermissionsDto } from './dto/admin.dto.js';
 
-/** 角色与权限管理（仅 SUPER_ADMIN；供后台角色配置页） */
+/** 角色与权限管理：SUPER_ADMIN + MFA 二次认证（供后台角色配置页） */
 @Controller('admin')
-@UseGuards(JwtAuthGuard, RolesGuard)
+@UseGuards(JwtAuthGuard, RolesGuard, RequireMfaGuard)
 @Roles('SUPER_ADMIN')
+@RequireMfa()
 export class RbacAdminController {
   constructor(private readonly admin: AdminService) {}
 

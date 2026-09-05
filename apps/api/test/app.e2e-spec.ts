@@ -96,4 +96,20 @@ describe('WEMOVE API (e2e)', () => {
     const res = await request(app.getHttpServer()).get('/api/v1/admin/audit').expect(401);
     expect(res.body.code).toBe(40100);
   });
+
+  it('MFA setup 无令牌 → 401', async () => {
+    const res = await request(app.getHttpServer())
+      .post('/api/v1/admin/me/mfa/setup')
+      .send({ password: 'Admin@12345' })
+      .expect(401);
+    expect(res.body.code).toBe(40100);
+  });
+
+  it('MFA 动态码格式校验（无令牌前置拦截，含非法码则不触达 DB 之外的校验顺序）', async () => {
+    const res = await request(app.getHttpServer())
+      .post('/api/v1/admin/me/mfa/confirm')
+      .send({ code: 'abc' })
+      .expect(401);
+    expect(res.body.code).toBe(40100);
+  });
 });

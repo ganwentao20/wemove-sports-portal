@@ -9,8 +9,8 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { AdminService } from './admin.service.js';
-import { Roles } from '../rbac/roles.guard.js';
-import { RolesGuard } from '../rbac/roles.guard.js';
+import { Roles, RolesGuard } from '../rbac/roles.guard.js';
+import { RequireMfa, RequireMfaGuard } from '../mfa/require-mfa.guard.js';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard.js';
 import { CurrentUser } from '../auth/current-user.decorator.js';
 import type { JwtPayload } from '../auth/auth.service.js';
@@ -21,10 +21,15 @@ import {
   UpdateStaffDto,
 } from './dto/admin.dto.js';
 
-/** 员工管理（仅 SUPER_ADMIN；角色权限见 Seed/后台） */
+/**
+ * 员工管理：SUPER_ADMIN + MFA 二次认证（敏感写操作安全红线）
+ * 启用 MFA 流程：POST /admin/me/mfa/setup（当前密码）→ confirm（6 位动态码）
+ * 之后所有本控制器接口需带请求头 x-mfa-code。
+ */
 @Controller('admin/staff')
-@UseGuards(JwtAuthGuard, RolesGuard)
+@UseGuards(JwtAuthGuard, RolesGuard, RequireMfaGuard)
 @Roles('SUPER_ADMIN')
+@RequireMfa()
 export class StaffController {
   constructor(private readonly admin: AdminService) {}
 

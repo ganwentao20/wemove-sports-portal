@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { AuditService } from '../audit/audit.service.js';
+import { MfaService } from '../mfa/mfa.service.js';
 import { BizException, ERROR_CODES } from '../common/errors.js';
 import { toPaged } from '../common/pagination.dto.js';
 import { hashPassword, normalizeEmail, verifyPassword } from '../auth/passwords.util.js';
@@ -54,6 +55,7 @@ export class AdminService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly audit: AuditService,
+    private readonly mfa: MfaService,
   ) {}
 
   // ============================================================ Staff
@@ -339,6 +341,88 @@ export class AdminService {
       createdAt: r.createdAt,
     }));
     return toPaged(items, total, query);
+  }
+
+  // ============================================================ MFA（TOTP）
+  /** 生成新密钥（启用状态下须先 disable；需要当前密码防越权启用） */
+  async setupMfa(payload: JwtPayload, password: string) {
+    const staff = await this.prisma.staff.findUnique({
+      where: { id: payload.sub },
+      select: { id: true, email: true, passwordHash: true, mfaEnabled: true },
+    });
+    if (!staff) throw new BizException(ERROR_CODES.UNAUTHORIZED, 'staff account not found', 401);
+    if (staff.mfaEnabled) {
+      throw new BizException(ERROR_CODES.VALIDATION, 'MFA is enabled: disable it first', 400);
+    }
+    if (!(await verifyPassword(password, staff.passwordHash))) {
+      throw new BizException(ERROR_CODES.VALIDATION, 'password incorrect', 400);
+    }
+
+    const setup = this.mfa.createSetup(staff.email);
+    await this.prisma.staff.update({
+      where: { id: staff.id },
+      data: { mfaSecret: setup.secret, mfaEnabled: false, mfaConfirmedAt: null },
+    });
+    await this.audit.record({
+      actorKind: 'STAFF',
+      actorStaffId: staff.id,
+      action: 'staff.mfa.setup',
+      entityType: 'staff',
+      entityId: staff.id,
+    });
+    return setup; // { secret, otpauthUrl }
+  }
+
+  /** 用动态码确认启用 */
+  async confirmMfa(payload: JwtPayload, code: string) {
+    const staff = await this.prisma.staff.findUnique({
+      where: { id: payload.sub },
+      select: { id: true, mfaEnabled: true, mfaSecret: true },
+    });
+    if (!staff) throw new BizException(ERROR_CODES.UNAUTHORIZED, 'staff account not found', 401);
+    if (!staff.mfaSecret) {
+      throw new BizException(ERROR_CODES.VALIDATION, 'run MFA setup first', 400);
+    }
+    await this.mfa.verifyWithLimit(staff.id, code, staff.mfaSecret);
+
+    await this.prisma.staff.update({
+      where: { id: staff.id },
+      data: { mfaEnabled: true, mfaConfirmedAt: new Date() },
+    });
+    await this.audit.record({
+      actorKind: 'STAFF',
+      actorStaffId: staff.id,
+      action: 'staff.mfa.enabled',
+      entityType: 'staff',
+      entityId: staff.id,
+    });
+    return { ok: true };
+  }
+
+  /** 停用并清除密钥 */
+  async disableMfa(payload: JwtPayload, code: string) {
+    const staff = await this.prisma.staff.findUnique({
+      where: { id: payload.sub },
+      select: { id: true, mfaEnabled: true, mfaSecret: true },
+    });
+    if (!staff) throw new BizException(ERROR_CODES.UNAUTHORIZED, 'staff account not found', 401);
+    if (!staff.mfaEnabled || !staff.mfaSecret) {
+      throw new BizException(ERROR_CODES.VALIDATION, 'MFA not enabled', 400);
+    }
+    await this.mfa.verifyWithLimit(staff.id, code, staff.mfaSecret);
+
+    await this.prisma.staff.update({
+      where: { id: staff.id },
+      data: { mfaSecret: null, mfaEnabled: false, mfaConfirmedAt: null },
+    });
+    await this.audit.record({
+      actorKind: 'STAFF',
+      actorStaffId: staff.id,
+      action: 'staff.mfa.disabled',
+      entityType: 'staff',
+      entityId: staff.id,
+    });
+    return { ok: true };
   }
 
   // ============================================================ 内部工具
