@@ -4,7 +4,7 @@
 > 成员各自领卡开工。验收标准已写入卡片 —— 例会#1 逐条过一遍即可认领。
 > Issue 模板见 `.github/ISSUE_TEMPLATE/feature.md`。
 
-## 组员 A — 前台
+## 组员 A（陈婧琳）— 前台
 
 **任务 A1（首个 PR）**：前台响应式框架细化
 - 范围：`apps/web/components/site-header.tsx`、`(storefront)/layout.tsx` 等
@@ -14,7 +14,7 @@
 
 **任务 A2**：PLP 接真实 API（替换 mock → `/products`，含筛选分类/搜索状态管理）
 
-## 组员 B — B2B
+## 组员 B（朱容杰）— B2B
 
 **任务 B1（首个 PR）**：`dealer` 后端模块骨架 + 资质申请接口
 - 范围：`apps/api/src/dealer/**`（新建）、schema 复用 `DealerApplication`
@@ -25,7 +25,7 @@
 
 **任务 B2**：`dealer/apply` 前端页接真 API + 提交成功页
 
-## 组员 C — 商品与价格
+## 组员 C（周慧莹）— 商品与价格
 
 **任务 C1（首个 PR）**：价格规则 CRUD（后台用，接价格引擎）
 - 范围：`apps/api/src/pricing/` 扩展 + Admin 侧接口
@@ -36,7 +36,7 @@
 
 **任务 C2**：购物车模块（B2C：加购/改量/清空，变体维度）
 
-## 组员 D — 后台 CMS/媒体
+## 组员 D（倪依玲）— 后台 CMS/媒体
 
 **任务 D1（首个 PR）**：`cms` + `media` 模块骨架 + Admin 媒体上传
 - 范围：`apps/api/src/cms/**`、`apps/api/src/media/**`（新建）
@@ -48,7 +48,7 @@
 
 **任务 D2**：CmsPage CRUD + 首页 sections JSON 编辑（拖拽后续）
 
-## 组员 E — 工程与质量
+## 组员 E（龙祖怡）— 工程与质量
 
 **任务 E1（首个 PR）**：开发信箱容器 + CI 补强
 - 范围：`infra/docker-compose.yml`、`.github/workflows/ci.yml`
@@ -59,7 +59,7 @@
 
 **任务 E2**：接口冒烟脚本集（supertest：auth/catalog 主链路）+ 首版压测准备
 
-## 组长（本人）任务队列
+## 组长（甘文韬）任务队列
 
 | 优先级 | 任务 | 对应 |
 |---|---|---|
