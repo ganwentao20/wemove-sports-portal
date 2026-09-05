@@ -141,6 +141,10 @@ model Staff {
   passwordHash String
   name         String
   status       StaffStatus @default(ACTIVE)
+  // MFA（TOTP）：敏感写操作二次认证；mfaSecret 为 base32，启用后仅经 TOTP 校验使用
+  mfaSecret      String?
+  mfaEnabled     Boolean    @default(false)
+  mfaConfirmedAt DateTime?
   roles        StaffRole[]
   mediaAssets  MediaAsset[] @relation("Uploader")
   auditLogs    AuditLog[]  @relation("ActorStaff")

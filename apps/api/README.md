@@ -63,6 +63,26 @@ Schema 单一事实源：`prisma/schema.prisma`（归属注释 M1/MA/MB/MC/MD/ME
 | GET | `/auth/me` | 当前登录者（Bearer） |
 | POST | `/auth/logout` | 登出：jti 入 Redis 黑名单，失效即刻生效（Bearer） |
 | GET | `/products` `/products/:slug` `/categories` | 公开目录（游客） |
+| GET/POST | `/admin/staff` | 员工列表（搜索/状态/分页）/ 新增（均仅 SUPER_ADMIN） |
+| GET/PATCH | `/admin/staff/:id` | 员工详情 / 更新（含全量角色替换） |
+| PATCH | `/admin/staff/:id/password` | 管理员重置员工密码（SUPER_ADMIN） |
+| PATCH | `/admin/me/password` | 员工改自己的密码（登录即可） |
+| GET/POST | `/admin/roles` · PUT `/admin/roles/:id/permissions` | 角色列表（含权限/staff 数）/ 新建 / 分配权限 |
+| GET | `/admin/permissions` | 权限点按域分组输出 |
+| GET | `/admin/audit` | 审计日志（actorKind/action/entity 过滤 + 分页，含操作人姓名邮箱与 before/after 变更值） |
+| POST | `/admin/me/mfa/setup` | MFA 启用第一步：验证当前密码，返回 base32 secret + otpauthUrl（供扫码） |
+| POST | `/admin/me/mfa/confirm` | 用 6 位动态码确认启用（连续错 5 次锁 15 分钟） |
+| POST | `/admin/me/mfa/disable` | 用动态码停用并清除密钥 |
+
+## MFA 二次认证（安全红线）
+
+- 敏感管理接口（`/admin/staff*`、`/admin/roles*`）**已挂 MFA 门禁**：`@RequireMfa()` + `RequireMfaGuard`，
+  需携带请求头 `x-mfa-code: <6位动态码>`，且账号已启用 MFA；缺失 → `40302`，错误 → `40301`（5 次/15min 锁定）。
+- 启用流程：`setup`（当前密码）→ 用认证器 App 扫码或手工录入 secret → `confirm`（动态码）→ 后续敏感操作带码。
+- 开发者快速取码：`node -e "require('otplib').generate({secret:'<SECRET>'}).then(c=>console.log(c))"`（仓库根执行）。
+- 其他成员扩展敏感写接口时复用：`import { RequireMfa, RequireMfaGuard } from '../mfa/require-mfa.guard.js'`，
+  `@UseGuards(JwtAuthGuard, RolesGuard, RequireMfaGuard) + @RequireMfa()`，并在模块 imports 加 `MfaModule`。
+- 表结构：`Staff.mfaSecret/mfaEnabled/mfaConfirmedAt`（迁移 `20260905060818_staff_mfa`）。
 
 ## 安全与密钥（组长红线）
 
