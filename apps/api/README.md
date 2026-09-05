@@ -15,7 +15,8 @@
 | `src/health/` | `/health/live` `/health/ready`（探活） | 组长/E |
 | `src/pricing/` | **价格引擎（纯函数 + 单测）**：企业专属价 > 价格表 > 等级价 > B2B 默认价；零售只走 MSRP/Sale | 组员 C（引擎与组长联调） |
 | `src/catalog/` | 商品公开只读切片（PLP/PDP 数据源，白名单出参防底价泄漏） | 组员 C（演示切片） |
-| 待建：`dealer/` `order/` `cart/` `cms/` `media/` `contact/` `seo/` | B2B 审批流/RFQ/PO（B）、购物车订单（C）、CMS/媒体（D） | B/C/D |
+| `src/dealer/` | 经销商申请提交、本人/企业边界查询、防刷限流 | 组员 B |
+| 待建：`order/` `cart/` `cms/` `media/` `contact/` `seo/` | B2B RFQ/PO（B）、购物车订单（C）、CMS/媒体（D） | B/C/D |
 
 ## 工程约定
 
@@ -54,6 +55,8 @@ Schema 单一事实源：`prisma/schema.prisma`（归属注释 M1/MA/MB/MC/MD/ME
 | POST | `/auth/verify-email` | 邮箱验证（一次性令牌，24h 有效） |
 | POST | `/auth/resend-verification` | 重发验证邮件（防枚举：统一返回 ok） |
 | POST | `/auth/login` | C 端/经销商成员登录（Redis 失败限流：单邮箱 5 次/15min、单 IP 30 次/min） |
+| POST | `/dealer/applications` | 提交经销商资质申请（公开，单 IP 5 次/min；Redis 不可用时降级） |
+| GET | `/dealer/applications/:id` | 查询本人或所属企业申请（Bearer JWT，跨账号返回 403） |
 | POST | `/auth/staff/login` | 后台员工登录（角色入 token；独立限流） |
 | POST | `/auth/forgot-password` | 忘记密码（发重置邮件，1h 有效；防枚举） |
 | POST | `/auth/reset-password` | 重置密码（一次性令牌；同邮箱旧重置令牌一并作废） |
