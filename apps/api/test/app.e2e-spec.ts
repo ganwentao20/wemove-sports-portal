@@ -81,4 +81,19 @@ describe('WEMOVE API (e2e)', () => {
       .expect(400);
     expect(res.body.code).toBe(42200);
   });
+
+  it('后台员工管理无令牌 → 401 统一错误体（不触达 DB）', async () => {
+    const res = await request(app.getHttpServer()).get('/api/v1/admin/staff').expect(401);
+    expect(res.body.code).toBe(40100);
+  });
+
+  it('后台角色列表无令牌 → 401', async () => {
+    const res = await request(app.getHttpServer()).get('/api/v1/admin/roles').expect(401);
+    expect(res.body.code).toBe(40100);
+  });
+
+  it('审计日志无令牌 → 401', async () => {
+    const res = await request(app.getHttpServer()).get('/api/v1/admin/audit').expect(401);
+    expect(res.body.code).toBe(40100);
+  });
 });

@@ -60,6 +60,13 @@ Schema 单一事实源：`prisma/schema.prisma`（归属注释 M1/MA/MB/MC/MD/ME
 | GET | `/auth/me` | 当前登录者（Bearer） |
 | POST | `/auth/logout` | 登出：jti 入 Redis 黑名单，失效即刻生效（Bearer） |
 | GET | `/products` `/products/:slug` `/categories` | 公开目录（游客） |
+| GET/POST | `/admin/staff` | 员工列表（搜索/状态/分页）/ 新增（均仅 SUPER_ADMIN） |
+| GET/PATCH | `/admin/staff/:id` | 员工详情 / 更新（含全量角色替换） |
+| PATCH | `/admin/staff/:id/password` | 管理员重置员工密码（SUPER_ADMIN） |
+| PATCH | `/admin/me/password` | 员工改自己的密码（登录即可） |
+| GET/POST | `/admin/roles` · PUT `/admin/roles/:id/permissions` | 角色列表（含权限/staff 数）/ 新建 / 分配权限 |
+| GET | `/admin/permissions` | 权限点按域分组输出 |
+| GET | `/admin/audit` | 审计日志（actorKind/action/entity 过滤 + 分页，含操作人姓名邮箱与 before/after 变更值） |
 
 ## 安全与密钥（组长红线）
 
