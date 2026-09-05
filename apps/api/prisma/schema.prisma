@@ -126,6 +126,7 @@ model User {
   ageConfirmed  Boolean       @default(false) // 合规：成年人声明（详见合规红线）
   status        AccountStatus @default(PENDING)
   dealerMembers DealerMember[]
+  dealerApplications DealerApplication[] // 本人提交的资质申请（归属判定依据）
   tokens        UserToken[]
   auditLogs     AuditLog[] @relation("ActorCustomer")
   createdAt     DateTime      @default(now())
@@ -277,10 +278,14 @@ model DealerMember {
 }
 
 /// 经销商资质申请（MB：分步表单、防刷、补件流转由 B2B 模块实现）
+/// 归属边界：applicantId（登录提交时绑定，唯一强依据）+ companyId（审核通过后回填）；
+/// 禁止用 contactEmail 字符串做归属判定（邮箱可被未验证账号伪造 → 水平越权）。
 model DealerApplication {
   id          String            @id @default(cuid())
   companyId   String?
   company     DealerCompany?    @relation(fields: [companyId], references: [id], onDelete: SetNull)
+  applicantId String? // 提交人（登录提交时绑定；游客提交为 null，跟进需凭企业/后续绑定）
+  applicant   User?            @relation(fields: [applicantId], references: [id], onDelete: SetNull)
   contactName String
   contactEmail String
   phone       String
@@ -295,6 +300,7 @@ model DealerApplication {
   updatedAt   DateTime          @updatedAt
 
   @@index([status, createdAt])
+  @@index([applicantId, status])
 }
 
 // ---------------------------------------------------------------------------
