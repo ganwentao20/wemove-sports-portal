@@ -1,25 +1,22 @@
 import type { Metadata } from 'next';
+import Link from 'next/link';
+import { CustomerForm } from '../../../components/customer-form';
 
-export const metadata: Metadata = { title: 'Sign in' };
+export const metadata: Metadata = { title: '登录' };
 
-/** B2C 登录（POST /api/v1/auth/login，JWT 存 httpOnly cookie 方案待组长接入） */
 export default function LoginPage() {
   return (
     <div className="mx-auto flex min-h-[60vh] max-w-md flex-col justify-center px-4">
-      <h1 className="text-3xl font-bold">Welcome back</h1>
-      <p className="mt-1 text-sm text-neutral-500">Sign in to track orders and manage your list.</p>
-      <form className="mt-8 space-y-4">
-        <input type="email" required placeholder="Email" className="w-full rounded-xl border border-neutral-300 px-4 py-3 text-sm outline-none focus:border-[var(--wm-primary)]" />
-        <input type="password" required placeholder="Password" className="w-full rounded-xl border border-neutral-300 px-4 py-3 text-sm outline-none focus:border-[var(--wm-primary)]" />
-        <button className="w-full rounded-full bg-[var(--wm-dark)] py-3 text-sm font-semibold text-white hover:opacity-90">
-          Sign in
-        </button>
-      </form>
+      <h1 className="text-3xl font-bold">欢迎回来</h1>
+      <p className="mt-1 text-sm text-neutral-500">登录后可管理个人资料、地址簿、收藏和订单。</p>
+      <CustomerForm />
       <p className="mt-4 text-center text-sm text-neutral-500">
-        New here?{' '}
-        <a href="/customer/register" className="text-[var(--wm-primary)]">Create account</a>
+        还没有账号？{' '}
+        <Link href="/customer/register" className="text-[var(--wm-primary)]">去注册</Link>
       </p>
-      {/* 邮箱验证/找回密码（MA）；成年人才可注册（合规红线） */}
+      <p className="mt-2 text-center text-sm text-neutral-500">
+        忘记密码？接口接入前请通过“联系我们”提交重置申请。
+      </p>
     </div>
   );
 }

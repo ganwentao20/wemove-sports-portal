@@ -1,9 +1,5 @@
 import Link from 'next/link';
 
-/**
- * 全站 Footer（骨架版）：含面向消费者的合规免责（成人购买提示）占位，
- * 正式文案上线前由组长与业务核对（产品面向儿童、交易面向成年人）。
- */
 export function SiteFooter() {
   return (
     <footer className="mt-16 border-t border-neutral-200 bg-[var(--wm-dark)] text-neutral-300">
@@ -11,38 +7,38 @@ export function SiteFooter() {
         <div>
           <p className="mb-3 font-semibold text-white">WEMOVE SPORTS</p>
           <p className="text-neutral-400">
-            Active play toys for kids & families.
+            面向儿童与家庭的木质运动玩具。
             <br />
             www.wemovetoy.com
           </p>
         </div>
         <div>
-          <p className="mb-3 font-semibold text-white">Shop</p>
+          <p className="mb-3 font-semibold text-white">产品</p>
           <ul className="space-y-2 text-neutral-400">
-            <li><Link href="/products" className="hover:text-white">All Products</Link></li>
-            <li><Link href="/compare" className="hover:text-white">Compare</Link></li>
-            <li><Link href="/search" className="hover:text-white">Search</Link></li>
+            <li><Link href="/products" className="hover:text-white">全部产品</Link></li>
+            <li><Link href="/compare" className="hover:text-white">产品比较</Link></li>
+            <li><Link href="/search" className="hover:text-white">搜索</Link></li>
           </ul>
         </div>
         <div>
-          <p className="mb-3 font-semibold text-white">Company</p>
+          <p className="mb-3 font-semibold text-white">服务</p>
           <ul className="space-y-2 text-neutral-400">
-            <li><Link href="/play-learn" className="hover:text-white">Play &amp; Learn</Link></li>
-            <li><Link href="/support" className="hover:text-white">Support &amp; Downloads</Link></li>
-            <li><Link href="/contact" className="hover:text-white">Contact Us</Link></li>
+            <li><Link href="/play-learn" className="hover:text-white">玩法灵感</Link></li>
+            <li><Link href="/support" className="hover:text-white">支持与下载</Link></li>
+            <li><Link href="/contact" className="hover:text-white">联系我们</Link></li>
           </ul>
         </div>
         <div>
-          <p className="mb-3 font-semibold text-white">For Business</p>
+          <p className="mb-3 font-semibold text-white">账号</p>
           <ul className="space-y-2 text-neutral-400">
-            <li><Link href="/dealer/apply" className="hover:text-white">Become a Dealer</Link></li>
-            <li><Link href="/dealer/login" className="hover:text-white">Dealer Sign in</Link></li>
+            <li><Link href="/customer/login" className="hover:text-white">登录/注册</Link></li>
+            <li><Link href="/customer/account" className="hover:text-white">个人中心</Link></li>
+            <li><Link href="/customer/favorites" className="hover:text-white">我的收藏</Link></li>
           </ul>
         </div>
       </div>
       <div className="border-t border-white/10 py-4 text-center text-xs text-neutral-500">
-        © {new Date().getFullYear()} WEMOVE SPORTS. All prices in USD unless noted.
-        Adult-purchase only. {/* 合规位：交易对象为成年人 */}
+        © {new Date().getFullYear()} WEMOVE SPORTS. 页面价格为课程演示数据，真实交易需成年人确认。
       </div>
     </footer>
   );

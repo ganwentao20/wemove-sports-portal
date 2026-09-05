@@ -1,16 +1,17 @@
 import Link from 'next/link';
+import { SiteMobileMenu } from './site-mobile-menu';
 
 const NAV = [
-  { href: '/products', label: 'Products' },
-  { href: '/play-learn', label: 'Play & Learn' },
-  { href: '/support', label: 'Support' },
-  { href: '/contact', label: 'Contact' },
+  { href: '/products', label: '产品系列' },
+  { href: '/play-learn', label: '玩法灵感' },
+  { href: '/support', label: '支持中心' },
+  { href: '/contact', label: '联系我们' },
 ];
 
 const PORTAL_LINKS = [
-  { href: '/customer/login', label: 'Sign in' },
-  { href: '/dealer/login', label: 'Dealer' },
-  { href: '/admin/login', label: 'Admin' },
+  { href: '/customer/login', label: '登录/注册' },
+  { href: '/customer/favorites', label: '我的收藏' },
+  { href: '/dealer/login', label: '经销商' },
 ];
 
 /**
@@ -21,6 +22,7 @@ const PORTAL_LINKS = [
 export function SiteHeader() {
   return (
     <header className="sticky top-0 z-40 border-b border-neutral-200 bg-white/95 backdrop-blur">
+      <div className="announcement">满 299 元免运费 · 中文 / CNY · 课程演示站点</div>
       <div className="mx-auto flex h-14 max-w-6xl items-center justify-between gap-4 px-4">
         <Link href="/" className="flex items-center gap-2 text-lg font-bold tracking-tight">
           <span className="text-[var(--wm-primary)]">WEMOVE</span>
@@ -42,7 +44,7 @@ export function SiteHeader() {
               key={item.href}
               href={item.href}
               className={
-                item.label === 'Sign in'
+                item.label === '登录/注册'
                   ? 'text-[var(--wm-gray)] hover:text-[var(--wm-dark)]'
                   : 'rounded-full border border-neutral-300 px-3 py-1.5 hover:border-[var(--wm-primary)] hover:text-[var(--wm-primary)]'
               }
@@ -52,8 +54,7 @@ export function SiteHeader() {
           ))}
         </div>
 
-        {/* 移动端导航占位（组员 A）：汉堡按钮 + 抽屉 */}
-        <div className="md:hidden" aria-label="Mobile navigation placeholder" />
+        <SiteMobileMenu nav={NAV} portals={PORTAL_LINKS} />
       </div>
     </header>
   );

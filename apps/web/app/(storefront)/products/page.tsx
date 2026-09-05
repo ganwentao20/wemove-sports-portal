@@ -1,5 +1,6 @@
-import Link from 'next/link';
 import type { Metadata } from 'next';
+import { ProductCatalog } from '../../../components/product-catalog';
+import { products } from '../../../lib/products';
 
 /**
  * PLP 商品列表（骨架 · ISR 示例页）：
@@ -9,51 +10,18 @@ import type { Metadata } from 'next';
  * 筛选器（分类/价格/属性多维筛）由组员 A 实现。
  */
 export const metadata: Metadata = {
-  title: 'All Products',
-  description: 'Browse WEMOVE SPORTS active play toys — bowling sets, balance boards and more.',
+  title: '产品系列',
+  description: '浏览 WEMOVE SPORTS 木质轨道积木与亲子运动玩具。',
 };
 
 export const revalidate = 60;
 
-const MOCK_PRODUCTS = [
-  { slug: 'strike-kids-bowling-set-6-pin', name: 'Strike! Kids Bowling Set — 6 Pins', price: '$29.99' },
-  { slug: 'balance-board-wooden-arc', name: 'Wooden Balance Board — Arc', price: '$19.99' },
-  { slug: 'ring-toss-outdoor-game-set', name: 'Ring Toss Outdoor Game Set', price: '$14.99' },
-];
-
 export default async function ProductsPage() {
-  // 接线示例（API 就绪后启用）：
-  // const paged = await apiGet<{ items: { slug: string; name: string }[] }>('/products?page=1&pageSize=20');
-  const products = MOCK_PRODUCTS;
-
   return (
-    <div className="mx-auto max-w-6xl px-4 py-10">
-      <div className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <h1 className="text-3xl font-bold">All Products</h1>
-          <p className="mt-1 text-sm text-neutral-500">{products.length} items (mock data, ISR 60s)</p>
-        </div>
-        {/* 筛选器占位（组员 A）：分类 / 价格区间 / 属性 */}
-        <div className="rounded-full border border-neutral-300 px-4 py-2 text-sm text-neutral-500">
-          Filters coming soon
-        </div>
-      </div>
-
-      <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-        {products.map((p) => (
-          <Link
-            key={p.slug}
-            href={`/products/${p.slug}`}
-            className="group rounded-2xl border border-neutral-200 p-4 transition-shadow hover:shadow-md"
-          >
-            <div className="mb-3 flex aspect-square items-center justify-center rounded-xl bg-neutral-100 text-5xl group-hover:scale-105">
-              ⚽
-            </div>
-            <h2 className="font-semibold group-hover:text-[var(--wm-primary)]">{p.name}</h2>
-            <p className="mt-1 text-sm font-bold text-[var(--wm-primary)]">{p.price}</p>
-          </Link>
-        ))}
-      </div>
+    <div className="catalog">
+      <h1>产品系列</h1>
+      <p>按年龄、材质与使用场景选择适合的 WEMOVE 积木。接口接入前使用原网站素材和本地演示数据。</p>
+      <ProductCatalog products={products} />
     </div>
   );
 }
