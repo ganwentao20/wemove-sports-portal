@@ -45,19 +45,29 @@ Schema 单一事实源：`prisma/schema.prisma`（归属注释 M1/MA/MB/MC/MD/ME
 > 升级提示：Prisma 当前固定 v6（经典约定）；v7+ 需 prisma.config.ts 与新 client，
 > 由组员 C/E 评估后统一升级。
 
-## API 一览（骨架已可用）
+## API 一览
 
 | 方法 | 路径 | 说明 |
 |---|---|---|
 | GET | `/health/live` `/health/ready` | 探活（ready 需 DB） |
-| POST | `/auth/register` | C 端注册（18+ 声明必填，邮箱验证开关 EMAIL_VERIFY_REQUIRED） |
-| POST | `/auth/login` | C 端/经销商成员登录 |
-| POST | `/auth/staff/login` | 后台员工登录（角色入 token） |
+| POST | `/auth/register` | C 端注册（18+ 声明必填；EMAIL_VERIFY_REQUIRED=true 时注册为 PENDING） |
+| POST | `/auth/verify-email` | 邮箱验证（一次性令牌，24h 有效） |
+| POST | `/auth/resend-verification` | 重发验证邮件（防枚举：统一返回 ok） |
+| POST | `/auth/login` | C 端/经销商成员登录（Redis 失败限流：单邮箱 5 次/15min、单 IP 30 次/min） |
+| POST | `/auth/staff/login` | 后台员工登录（角色入 token；独立限流） |
+| POST | `/auth/forgot-password` | 忘记密码（发重置邮件，1h 有效；防枚举） |
+| POST | `/auth/reset-password` | 重置密码（一次性令牌；同邮箱旧重置令牌一并作废） |
 | GET | `/auth/me` | 当前登录者（Bearer） |
+| POST | `/auth/logout` | 登出：jti 入 Redis 黑名单，失效即刻生效（Bearer） |
 | GET | `/products` `/products/:slug` `/categories` | 公开目录（游客） |
 
 ## 安全与密钥（组长红线）
 
-- `JWT_ACCESS_SECRET` 生产必换强随机值；密码 bcrypt cost=12。
+- `JWT_ACCESS_SECRET` 生产必换强随机值；密码 bcrypt cost=12；JWT 携带 `jti` 支撑登出黑名单。
 - 注册仅限成年人（ageConfirmed 硬校验）；严禁设计儿童账号体系。
-- 后台敏感操作二次认证（TOTP）与 Redis 限流/黑名单为组长后续任务，接口已留位。
+- **登录限流与登出黑名单依赖 Redis**：`REDIS_URL` 未配置/连接失败时自动降级
+  （限流跳过、黑名单尽力而为），服务恢复后自愈（无需重启）——降级语义已在代码注释说明，
+  生产部署必须常驻 Redis。
+- **邮件服务**：`SMTP_HOST` 未配置时走"开发日志模式"（验证/重置链接打印到终端），
+  配置后真发信（Mailpit 联调见组员 E 的 E1 任务）；发送失败只记日志不阻断注册主流程。
+- 后台敏感操作二次认证（TOTP）与审计查询 API 为组长后续任务。

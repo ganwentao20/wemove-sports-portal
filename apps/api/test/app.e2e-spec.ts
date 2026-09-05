@@ -57,4 +57,28 @@ describe('WEMOVE API (e2e)', () => {
       .expect(400);
     expect(res.body.code).toBe(42200);
   });
+
+  it('verify-email 缺 token → 42200（不触达 DB）', async () => {
+    const res = await request(app.getHttpServer())
+      .post('/api/v1/auth/verify-email')
+      .send({})
+      .expect(400);
+    expect(res.body.code).toBe(42200);
+  });
+
+  it('forgot-password 非法邮箱 → 42200', async () => {
+    const res = await request(app.getHttpServer())
+      .post('/api/v1/auth/forgot-password')
+      .send({ email: 'x' })
+      .expect(400);
+    expect(res.body.code).toBe(42200);
+  });
+
+  it('reset-password 弱密码 → 42200（不触达 DB）', async () => {
+    const res = await request(app.getHttpServer())
+      .post('/api/v1/auth/reset-password')
+      .send({ token: 't', password: '123' })
+      .expect(400);
+    expect(res.body.code).toBe(42200);
+  });
 });
