@@ -8,7 +8,7 @@ type NavItem = {
   label: string;
 };
 
-export function SiteMobileMenu({ nav, portals }: { nav: NavItem[]; portals: NavItem[] }) {
+export function SiteMobileMenu({ nav, portals, locale }: { nav: NavItem[]; portals: NavItem[]; locale: string }) {
   const [open, setOpen] = useState(false);
   const close = () => setOpen(false);
 
@@ -32,7 +32,7 @@ export function SiteMobileMenu({ nav, portals }: { nav: NavItem[]; portals: NavI
               {item.label}
             </Link>
           ))}
-          <div className="mobile-meta">中文 / CNY</div>
+          <div className="mobile-meta">{locale}</div>
         </div>
       ) : null}
     </div>

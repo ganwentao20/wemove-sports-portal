@@ -15,7 +15,7 @@ export function readStoredList(key: string) {
 }
 
 export function writeStoredList(key: string, value: string[]) {
-  window.localStorage.setItem(key, JSON.stringify(Array.from(new Set(value))));
+  window.localStorage.setItem(key, JSON.stringify(value));
 }
 
 export function addStoredItem(key: string, slug: string, limit?: number) {
@@ -30,7 +30,7 @@ export function addStoredItem(key: string, slug: string, limit?: number) {
   }
 
   const next = [...current, slug];
-  writeStoredList(key, next);
+  writeStoredList(key, Array.from(new Set(next)));
   return { next, added: true, reason: 'added' as const };
 }
 

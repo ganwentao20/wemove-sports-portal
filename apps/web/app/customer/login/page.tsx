@@ -15,7 +15,7 @@ export default function LoginPage() {
         <Link href="/customer/register" className="text-[var(--wm-primary)]">去注册</Link>
       </p>
       <p className="mt-2 text-center text-sm text-neutral-500">
-        忘记密码？接口接入前请通过“联系我们”提交重置申请。
+        忘记密码？ <Link href="/customer/forgot-password" className="text-[var(--wm-primary)]">发送重置邮件</Link>
       </p>
     </div>
   );
