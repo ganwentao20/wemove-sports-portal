@@ -22,7 +22,7 @@ export default function HomePage() {
             <Link href="#showcase">体验动态选品</Link>
           </div>
         </div>
-        <Image src="/products/cugolino.png" alt="WEMOVE 轨道积木" width={1263} height={1894} priority />
+        <Image src="/products/hero-cover.png" alt="WEMOVE 轨道积木封面" width={1140} height={760} priority />
       </section>
 
       <section className="home-section">
