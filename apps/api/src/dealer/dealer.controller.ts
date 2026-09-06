@@ -5,6 +5,7 @@ import {
   Ip,
   Param,
   Post,
+  Query,
   UseGuards,
 } from '@nestjs/common';
 import { CurrentUser } from '../auth/current-user.decorator.js';
@@ -12,6 +13,7 @@ import { JwtAuthGuard, OptionalJwtAuthGuard } from '../auth/jwt-auth.guard.js';
 import type { JwtPayload } from '../auth/auth.service.js';
 import { DealerService } from './dealer.service.js';
 import { CreateDealerApplicationDto } from './dto/dealer-application.dto.js';
+import { DealerCatalogQueryDto } from './dto/dealer-catalog-query.dto.js';
 
 /**
  * MB：经销商申请入口。
@@ -36,5 +38,15 @@ export class DealerController {
   @Get('applications/:id')
   findApplication(@Param('id') id: string, @CurrentUser() user: JwtPayload) {
     return this.dealer.findApplication(id, user);
+  }
+
+  /** F-B04：仅已审批企业成员可见的目录与成交价。 */
+  @UseGuards(JwtAuthGuard)
+  @Get('catalog')
+  catalog(
+    @Query() query: DealerCatalogQueryDto,
+    @CurrentUser() user: JwtPayload,
+  ) {
+    return this.dealer.listDealerCatalog(query.quantity, user);
   }
 }

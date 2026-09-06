@@ -1,7 +1,11 @@
 import { Module } from '@nestjs/common';
 import { RedisModule } from '../redis/redis.module.js';
+import { AuditModule } from '../audit/audit.module.js';
+import { PricingModule } from '../pricing/pricing.module.js';
+import { RolesGuard } from '../rbac/roles.guard.js';
 import { OptionalJwtAuthGuard } from '../auth/jwt-auth.guard.js';
 import { DealerController } from './dealer.controller.js';
+import { DealerAdminController } from './dealer-admin.controller.js';
 import { DealerService } from './dealer.service.js';
 
 /**
@@ -9,9 +13,9 @@ import { DealerService } from './dealer.service.js';
  * OptionalJwtAuthGuard 在本模块 providers 注册（依赖 RedisModule 的 RedisService 与全局 JwtService）。
  */
 @Module({
-  imports: [RedisModule],
-  controllers: [DealerController],
-  providers: [DealerService, OptionalJwtAuthGuard],
+  imports: [RedisModule, AuditModule, PricingModule],
+  controllers: [DealerController, DealerAdminController],
+  providers: [DealerService, OptionalJwtAuthGuard, RolesGuard],
   exports: [DealerService],
 })
 export class DealerModule {}
