@@ -2,9 +2,16 @@ import { Injectable } from '@nestjs/common';
 import type { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { RedisService } from '../redis/redis.service.js';
+import { AuditService } from '../audit/audit.service.js';
+import { PricingEngine } from '../pricing/pricing.module.js';
+import type { PricingRuleCandidate } from '../pricing/pricing-engine.js';
 import type { JwtPayload } from '../auth/auth.service.js';
 import { BizException, ERROR_CODES } from '../common/errors.js';
 import type { CreateDealerApplicationDto } from './dto/dealer-application.dto.js';
+import type {
+  ReviewDealerApplicationDto,
+  ReviewStatus,
+} from './dto/review-dealer-application.dto.js';
 
 const APPLICATION_RATE_LIMIT = { max: 5, windowSec: 60 } as const;
 
@@ -18,6 +25,8 @@ export class DealerService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly redis: RedisService,
+    private readonly audit: AuditService,
+    private readonly pricing: PricingEngine,
   ) {}
 
   /**
@@ -61,13 +70,14 @@ export class DealerService {
 
     // 登录用户本人已有在途申请 → 409
     if (applicant?.kind === 'customer') {
-      const duplicateByApplicant = await this.prisma.dealerApplication.findFirst({
-        where: {
-          applicantId: applicant.sub,
-          status: { in: ['SUBMITTED', 'UNDER_REVIEW', 'MORE_INFO_REQUIRED'] },
-        },
-        select: { id: true },
-      });
+      const duplicateByApplicant =
+        await this.prisma.dealerApplication.findFirst({
+          where: {
+            applicantId: applicant.sub,
+            status: { in: ['SUBMITTED', 'UNDER_REVIEW', 'MORE_INFO_REQUIRED'] },
+          },
+          select: { id: true },
+        });
       if (duplicateByApplicant) {
         throw new BizException(
           ERROR_CODES.CONFLICT,
@@ -77,12 +87,14 @@ export class DealerService {
       }
     }
 
-    const attachments: Prisma.InputJsonValue = dto.attachments.map((attachment) => ({
-      fileName: attachment.fileName.trim(),
-      key: attachment.key.trim(),
-      ...(attachment.url ? { url: attachment.url } : {}),
-      visibility: 'PRIVATE',
-    }));
+    const attachments: Prisma.InputJsonValue = dto.attachments.map(
+      (attachment) => ({
+        fileName: attachment.fileName.trim(),
+        key: attachment.key.trim(),
+        ...(attachment.url ? { url: attachment.url } : {}),
+        visibility: 'PRIVATE',
+      }),
+    );
 
     const application = await this.prisma.dealerApplication.create({
       data: {
@@ -134,6 +146,203 @@ export class DealerService {
       );
     }
     return application;
+  }
+
+  /** 审核工作台列表：课程核心版按状态筛选，最新申请优先。 */
+  listApplications(status?: 'SUBMITTED' | ReviewStatus) {
+    return this.prisma.dealerApplication.findMany({
+      where: status ? { status } : undefined,
+      select: this.applicationSelect(),
+      orderBy: { createdAt: 'desc' },
+      take: 100,
+    });
+  }
+
+  /** 严格状态机：终态不可回退；补件后可重新进入审核。 */
+  async reviewApplication(
+    id: string,
+    dto: ReviewDealerApplicationDto,
+    actor: JwtPayload,
+    ip?: string,
+  ) {
+    const application = await this.prisma.dealerApplication.findUnique({
+      where: { id },
+      select: this.applicationSelect(),
+    });
+    if (!application) {
+      throw new BizException(
+        ERROR_CODES.NOT_FOUND,
+        'dealer application not found',
+        404,
+      );
+    }
+
+    const allowed: Record<string, ReviewStatus[]> = {
+      SUBMITTED: ['UNDER_REVIEW', 'MORE_INFO_REQUIRED', 'APPROVED', 'REJECTED'],
+      UNDER_REVIEW: ['MORE_INFO_REQUIRED', 'APPROVED', 'REJECTED'],
+      MORE_INFO_REQUIRED: ['UNDER_REVIEW', 'APPROVED', 'REJECTED'],
+      APPROVED: [],
+      REJECTED: [],
+    };
+    if (!allowed[application.status]?.includes(dto.status)) {
+      throw new BizException(
+        ERROR_CODES.CONFLICT,
+        `invalid application transition: ${application.status} -> ${dto.status}`,
+        409,
+      );
+    }
+    if (
+      (dto.status === 'MORE_INFO_REQUIRED' || dto.status === 'REJECTED') &&
+      !dto.remark?.trim()
+    ) {
+      throw new BizException(
+        ERROR_CODES.VALIDATION,
+        'remark is required for this review result',
+        400,
+      );
+    }
+
+    const reviewed = await this.prisma.dealerApplication.update({
+      where: { id },
+      data: {
+        status: dto.status,
+        remark: dto.remark?.trim() || null,
+        reviewedBy: actor.sub,
+        reviewedAt: new Date(),
+      },
+      select: this.applicationSelect(),
+    });
+    await this.audit.record({
+      actorKind: 'STAFF',
+      actorStaffId: actor.sub,
+      action: 'dealer.application.review',
+      entityType: 'dealerApplication',
+      entityId: id,
+      before: { status: application.status, remark: application.remark },
+      after: { status: reviewed.status, remark: reviewed.remark },
+      ip,
+    });
+    return reviewed;
+  }
+
+  /**
+   * F-B04 经销商授权目录：在服务层验证企业状态并装配价格候选，
+   * 返回值仅包含最终成交价，不暴露其他企业规则或内部优先级。
+   */
+  async listDealerCatalog(quantity: number, currentUser: JwtPayload) {
+    if (
+      !this.pricing.canViewDealerPrice(currentUser) ||
+      currentUser.kind !== 'customer' ||
+      !currentUser.companyId
+    ) {
+      throw new BizException(
+        ERROR_CODES.FORBIDDEN,
+        'approved dealer membership is required',
+        403,
+      );
+    }
+
+    const company = await this.prisma.dealerCompany.findFirst({
+      where: { id: currentUser.companyId, status: 'APPROVED' },
+      select: { id: true, tierId: true },
+    });
+    if (!company) {
+      throw new BizException(
+        ERROR_CODES.FORBIDDEN,
+        'dealer company is not approved',
+        403,
+      );
+    }
+
+    const products = await this.prisma.product.findMany({
+      where: { status: 'ACTIVE' },
+      select: {
+        id: true,
+        slug: true,
+        name: true,
+        summary: true,
+        gallery: true,
+        variants: {
+          where: { status: true },
+          select: {
+            id: true,
+            sku: true,
+            name: true,
+            attrs: true,
+            b2bDefaultPriceCents: true,
+          },
+          orderBy: { sortOrder: 'asc' },
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+      take: 100,
+    });
+    const variantIds = products.flatMap((product) =>
+      product.variants.map((variant) => variant.id),
+    );
+    const scopeFilters: Prisma.PricingRuleWhereInput[] = [
+      { scope: 'COMPANY_SPECIFIC', companyId: company.id },
+      { scope: 'B2B_DEFAULT' },
+    ];
+    if (company.tierId) {
+      scopeFilters.push({ scope: 'TIER_LEVEL', tierId: company.tierId });
+    }
+    const rules = variantIds.length
+      ? await this.prisma.pricingRule.findMany({
+          where: {
+            variantId: { in: variantIds },
+            active: true,
+            minQty: { lte: quantity },
+            OR: scopeFilters,
+          },
+          select: {
+            id: true,
+            variantId: true,
+            scope: true,
+            priority: true,
+            companyId: true,
+            bookId: true,
+            tierId: true,
+            priceCents: true,
+            minQty: true,
+          },
+        })
+      : [];
+    const rulesByVariant = new Map<string, PricingRuleCandidate[]>();
+    for (const { variantId, ...rule } of rules) {
+      const candidates = rulesByVariant.get(variantId) ?? [];
+      candidates.push(rule);
+      rulesByVariant.set(variantId, candidates);
+    }
+
+    return products
+      .map((product) => ({
+        ...product,
+        variants: product.variants
+          .map((variant) => {
+            const resolved = this.pricing.dealer(
+              rulesByVariant.get(variant.id) ?? [],
+              {
+                companyId: company.id,
+                tierId: company.tierId,
+                quantity,
+              },
+            );
+            const price =
+              resolved ??
+              (variant.b2bDefaultPriceCents == null
+                ? null
+                : {
+                    priceCents: variant.b2bDefaultPriceCents,
+                    source: 'B2B_DEFAULT' as const,
+                  });
+            if (!price) return null;
+            const { b2bDefaultPriceCents: _hidden, ...safeVariant } = variant;
+            return { ...safeVariant, quantity, price };
+          })
+          .filter((variant) => variant !== null),
+      }))
+      .filter((product) => product.variants.length > 0);
   }
 
   private applicationSelect() {
