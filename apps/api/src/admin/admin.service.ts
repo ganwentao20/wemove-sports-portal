@@ -104,7 +104,7 @@ export class AdminService {
         name: dto.name.trim(),
         passwordHash,
         status: 'ACTIVE',
-        roles: { create: roles.map((r) => ({ roleId: r.id })) },
+        roles: { create: roles.map((r: any) => ({ roleId: r.id })) },
       },
       select: staffSelect,
     });
@@ -115,7 +115,7 @@ export class AdminService {
       action: 'staff.created',
       entityType: 'staff',
       entityId: staff.id,
-      after: { email, name: dto.name, roles: roles.map((r) => r.code) },
+      after: { email, name: dto.name, roles: roles.map((r: any) => r.code) },
     });
     return toStaffView(staff);
   }
@@ -133,17 +133,17 @@ export class AdminService {
     const before = {
       name: current.name,
       status: current.status,
-      roles: current.roles.map((r) => r.role.code),
+      roles: current.roles.map((r: any) => r.role.code),
     };
 
-    let roles = current.roles.map((r) => r.role.code);
+    let roles = current.roles.map((r: any) => r.role.code);
     if (dto.roleCodes) {
       const assigned = await this.resolveRoles(dto.roleCodes);
-      roles = assigned.map((r) => r.code);
+      roles = assigned.map((r: any) => r.code);
       await this.prisma.$transaction([
         this.prisma.staffRole.deleteMany({ where: { staffId: id } }),
         this.prisma.staffRole.createMany({
-          data: assigned.map((r) => ({ staffId: id, roleId: r.id })),
+          data: assigned.map((r: any) => ({ staffId: id, roleId: r.id })),
         }),
       ]);
     }
@@ -223,12 +223,12 @@ export class AdminService {
         _count: { select: { staff: true } },
       },
     });
-    return rows.map((r) => ({
+    return rows.map((r: any) => ({
       id: r.id,
       code: r.code,
       name: r.name,
       description: r.description,
-      permissionCodes: r.permissions.map((p) => p.permission.code),
+      permissionCodes: r.permissions.map((p: any) => p.permission.code),
       staffCount: r._count.staff,
     }));
   }
@@ -243,7 +243,7 @@ export class AdminService {
         code: dto.code,
         name: dto.name,
         description: dto.description,
-        permissions: { create: perms.map((p) => ({ permissionId: p.id })) },
+        permissions: { create: perms.map((p: any) => ({ permissionId: p.id })) },
       },
     });
     await this.audit.record({
@@ -252,7 +252,7 @@ export class AdminService {
       action: 'role.created',
       entityType: 'role',
       entityId: role.id,
-      after: { code: dto.code, permissions: perms.map((p) => p.code) },
+      after: { code: dto.code, permissions: perms.map((p: any) => p.code) },
     });
     return { id: role.id, code: role.code, name: role.name };
   }
@@ -264,13 +264,13 @@ export class AdminService {
     });
     if (!role) throw new BizException(ERROR_CODES.NOT_FOUND, 'role not found', 404);
 
-    const before = role.permissions.map((p) => p.permission.code);
+    const before = role.permissions.map((p: any) => p.permission.code);
     const perms = await this.resolvePermissions(dto.permissionCodes);
 
     await this.prisma.$transaction([
       this.prisma.rolePermission.deleteMany({ where: { roleId } }),
       this.prisma.rolePermission.createMany({
-        data: perms.map((p) => ({ roleId, permissionId: p.id })),
+        data: perms.map((p: any) => ({ roleId, permissionId: p.id })),
       }),
     ]);
     await this.audit.record({
@@ -280,9 +280,9 @@ export class AdminService {
       entityType: 'role',
       entityId: roleId,
       before: { permissions: before },
-      after: { permissions: perms.map((p) => p.code) },
+      after: { permissions: perms.map((p: any) => p.code) },
     });
-    return { ok: true, permissionCodes: perms.map((p) => p.code) };
+    return { ok: true, permissionCodes: perms.map((p: any) => p.code) };
   }
 
   async listPermissions() {
@@ -321,7 +321,7 @@ export class AdminService {
       }),
       this.prisma.auditLog.count({ where }),
     ]);
-    const items = rows.map((r) => ({
+    const items = rows.map((r: any) => ({
       id: r.id,
       actorKind: r.actorKind,
       actor:
@@ -440,7 +440,7 @@ export class AdminService {
     const unique = Array.from(new Set(codes));
     const roles = await this.prisma.role.findMany({ where: { code: { in: unique } } });
     if (roles.length !== unique.length) {
-      const found = new Set(roles.map((r) => r.code));
+      const found = new Set(roles.map((r: any) => r.code));
       const missing = unique.filter((c) => !found.has(c));
       throw new BizException(
         ERROR_CODES.VALIDATION,
@@ -455,7 +455,7 @@ export class AdminService {
     const unique = Array.from(new Set(codes));
     const perms = await this.prisma.permission.findMany({ where: { code: { in: unique } } });
     if (perms.length !== unique.length) {
-      const found = new Set(perms.map((p) => p.code));
+      const found = new Set(perms.map((p: any) => p.code));
       const missing = unique.filter((c) => !found.has(c));
       throw new BizException(
         ERROR_CODES.VALIDATION,

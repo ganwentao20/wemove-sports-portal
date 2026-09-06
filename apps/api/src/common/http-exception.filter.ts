@@ -73,10 +73,12 @@ export class AllExceptionsFilter implements ExceptionFilter {
     }
 
     // 2) Prisma 已知错误 → 友好的业务码
-    if (exception instanceof Prisma.PrismaClientKnownRequestError) {
-      return this.resolvePrisma(exception);
+    const PrismaKnownError = (Prisma as any)?.PrismaClientKnownRequestError;
+    const PrismaValidationError = (Prisma as any)?.PrismaClientValidationError;
+    if (PrismaKnownError && exception instanceof PrismaKnownError) {
+      return this.resolvePrisma(exception as { code?: string });
     }
-    if (exception instanceof Prisma.PrismaClientValidationError) {
+    if (PrismaValidationError && exception instanceof PrismaValidationError) {
       return {
         status: HttpStatus.BAD_REQUEST,
         code: ERROR_CODES.VALIDATION,
@@ -105,7 +107,7 @@ export class AllExceptionsFilter implements ExceptionFilter {
     return map[status] ?? ERROR_CODES.INTERNAL;
   }
 
-  private resolvePrisma(err: Prisma.PrismaClientKnownRequestError): {
+  private resolvePrisma(err: { code?: string }): {
     status: number;
     code: number;
     message: string;

@@ -44,7 +44,7 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 
-const API = 'http://127.0.0.1:8000'
+const API = '/api/v1'
 const filter = ref({ actor: '', action: '' })
 const logs = ref([])
 const actors = ref(['admin', 'content_operator', 'customer_service'])

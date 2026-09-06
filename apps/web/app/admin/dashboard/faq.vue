@@ -35,7 +35,7 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 
-const API = 'http://127.0.0.1:8000'
+const API = '/api/v1'
 const faqs = ref([])
 const dialogVisible = ref(false)
 const editing = ref(false)
