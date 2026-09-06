@@ -156,7 +156,7 @@
 | 状态 | 内容 |
 |---|---|
 | 已在 main | monorepo、22 个 Prisma 模型、统一 API、认证/RBAC/MFA/审计、目录读取切片、价格纯函数、PG/Redis/Mailpit 与 CI |
-| 已进入本次集成 | B 的 PR #1/#3（申请、审核、企业绑定与授权目录）；E 的 PR #5（目录 DB 冒烟与压测记录） |
+| 已在 main | B 的 PR #1/#3（申请、审核、企业绑定与授权目录）；E 的 PR #5（目录 DB 冒烟与压测记录） |
 | 待修复后合并 | A 的 `feature/storefront-a`（会话安全与大图）；C 分支当前仅 lockfile 变化 |
 | 已在 main 但未接入构建 | D 的 FastAPI/Python 与 Vue SFC 实验源码，需迁移到当前 Nest/Next 架构 |
 | 本分支修复 | 生产配置校验、内部错误脱敏、trace-id 校验、登录/MFA 锁定语义、统一验证脚本与文档 |
