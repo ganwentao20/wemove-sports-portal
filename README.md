@@ -85,7 +85,8 @@ npm run dev                        # 4) 并行启动：前台 3000 / API 8080
 | `docs/README.md` | 交付物清单、**课程红线**（思政报告/会议纪要/邮件与压缩包命名规范） |
 | `docs/development-conventions.md` | 开发/安全/合规**注意事项**、Git 协作规范（详细约定不写在 README） |
 | `docs/onboarding.md` | 新成员上手指南（环境、跑通、首次 PR、FAQ） |
-| `docs/plans/` | 全员首个任务拆解卡、需求文档（④）大纲 |
+| `docs/plans/` | 全员首个任务拆解卡、需求文档（④）大纲、PR 评审与事件记录 |
+| `docs/drafts/` | 需求文档（④）v0.1 过程稿（协作评审用） |
 | `docs/adr/0001-architecture-and-stack.md` | 技术选型与架构决策记录 |
 | `docs/templates/` | 例会纪要③ / 进度计划表② / 工作量占比⑧ 模板 |
 | `apps/web/README.md` | 前台路由分组与页面负责人 |

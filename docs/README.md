@@ -24,6 +24,7 @@
 | `onboarding.md` | 新成员 30 分钟上手指南（环境/跑通/首 PR/FAQ/红线） | 组长维护 |
 | `plans/initial-tasks.md` | 全员首个任务拆解卡 + 组长任务队列 + 例会#1 议程 | 组长维护 |
 | `plans/requirements-outline.md` | 需求文档（④整合版）目录大纲与章节分工 | 组长牵头 |
+| `drafts/` | 需求文档 v0.1 初稿等过程稿（评审升版，终稿线下归档） | 组长统筹 |
 | `development-conventions.md` | 开发/安全/合规注意事项与 Git 协作规范（根 README 只放项目信息，注意事项统一收于此） | 组长维护 |
 | `api/` | API 相关规范（见 `apps/api/README.md`，数据字典由组员 C 认领后亦可放此） | 组员 C |
 | 根目录 `README.md` | 全仓总览（仅项目信息）：简介/架构/分工/快速开始 | 组长 |
