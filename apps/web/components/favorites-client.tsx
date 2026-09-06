@@ -4,16 +4,13 @@ import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
 import { ProductCard } from './product-card';
 import type { Product } from '../lib/products';
+import { FAVORITES_KEY, readStoredList } from '../lib/storefront-storage';
 
 export function FavoritesClient({ products }: { products: Product[] }) {
   const [favoriteSlugs, setFavoriteSlugs] = useState<string[]>([]);
 
   useEffect(() => {
-    try {
-      setFavoriteSlugs(JSON.parse(window.localStorage.getItem('wemove-favorites') || '[]'));
-    } catch {
-      setFavoriteSlugs([]);
-    }
+    setFavoriteSlugs(readStoredList(FAVORITES_KEY));
   }, []);
 
   const favorites = useMemo(

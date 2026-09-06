@@ -4,18 +4,13 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
 import type { Product } from '../lib/products';
-
-const storageKey = 'wemove-compare';
+import { COMPARE_KEY, readStoredList, writeStoredList } from '../lib/storefront-storage';
 
 export function CompareClient({ products }: { products: Product[] }) {
   const [selected, setSelected] = useState<string[]>([]);
 
   useEffect(() => {
-    try {
-      setSelected(JSON.parse(window.localStorage.getItem(storageKey) || '[]'));
-    } catch {
-      setSelected([]);
-    }
+    setSelected(readStoredList(COMPARE_KEY));
   }, []);
 
   const compared = useMemo(
@@ -25,7 +20,7 @@ export function CompareClient({ products }: { products: Product[] }) {
 
   const save = (next: string[]) => {
     setSelected(next);
-    window.localStorage.setItem(storageKey, JSON.stringify(next));
+    writeStoredList(COMPARE_KEY, next);
   };
 
   const add = (slug: string) => {
