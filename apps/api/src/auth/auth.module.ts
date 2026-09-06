@@ -2,7 +2,7 @@ import { Module } from '@nestjs/common';
 import { JwtModule } from '@nestjs/jwt';
 import { AuthService } from './auth.service.js';
 import { AuthController } from './auth.controller.js';
-import { JwtAuthGuard } from './jwt-auth.guard.js';
+import { JwtAuthGuard, OptionalJwtAuthGuard } from './jwt-auth.guard.js';
 import { AuditModule } from '../audit/audit.module.js';
 import { RedisModule } from '../redis/redis.module.js';
 import { EmailModule } from '../email/email.module.js';
@@ -15,7 +15,7 @@ import { EmailModule } from '../email/email.module.js';
 @Module({
   imports: [JwtModule.register({ global: true }), AuditModule, RedisModule, EmailModule],
   controllers: [AuthController],
-  providers: [AuthService, JwtAuthGuard],
-  exports: [AuthService, JwtAuthGuard],
+  providers: [AuthService, JwtAuthGuard, OptionalJwtAuthGuard],
+  exports: [AuthService, JwtAuthGuard, OptionalJwtAuthGuard],
 })
 export class AuthModule {}
