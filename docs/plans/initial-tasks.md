@@ -63,11 +63,11 @@
 
 | 优先级 | 任务 | 对应 |
 |---|---|---|
-| P0 | 邮箱验证真发信（SMTP/Mailpit，`UserToken` 已有） | 等 E1 的 mailpit |
-| P0 | Redis 接入：登录限流 + JWT 登出黑名单 | 安全/性能硬指标 |
-| P1 | Staff CRUD + 角色分配 API（供 D 的后台员工页） | RBAC 完整化 |
-| P1 | 后台敏感操作 TOTP 二次认证 + 审计埋点补全 | 安全红线 |
-| P2 | 审计查询 API + 后台日志页数据源 | D 页面依赖 |
+| ✅ 完成 | 邮箱验证/找回密码闭环（verify-email/resend/forgot/reset + EmailService SMTP 抽象） | 真发信待 E1 mailpit 落地后配置 SMTP_HOST 联调 |
+| ✅ 完成 | Redis 接入：登录限流 + JWT 登出黑名单（自愈降级） | 安全/性能硬指标 |
+| ✅ 完成 | Staff CRUD + 角色分配 API（/admin/staff、roles、permissions，SUPER_ADMIN 门禁 + 审计留痕） | 供 D 的后台员工页 |
+| ✅ 完成 | 审计查询 API（/admin/audit：操作人/动作/对象过滤、分页、before/after） | 供 D 的审计日志页 |
+| ✅ 完成 | 后台敏感操作 TOTP 二次认证（setup/confirm/disable + RequireMfa 门禁挂员工/角色接口） | 安全红线；扩展模式见 apps/api/README |
 | 持续 | ④需求文档整合、②进度表维护、⑧占比表、PPT 大纲 | 交付红线 |
 
 ## 例会#1 建议议程（40 分钟）

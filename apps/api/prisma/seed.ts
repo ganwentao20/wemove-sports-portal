@@ -77,7 +77,38 @@ async function seedRbac() {
       roles: { create: [{ roleId: role.id }] },
     },
   });
-  console.log(`[rbac] permissions=${allPerms.length} role=${role.code} admin=${staff.email}`);
+
+  // 演示角色：商品运营（非超管示例 —— 供员工角色分配/越权演示）
+  const operatorCodes = [
+    'catalog:product:read',
+    'catalog:product:write',
+    'catalog:price:write',
+  ];
+  const operatorPerms = await prisma.permission.findMany({
+    where: { code: { in: operatorCodes } },
+  });
+  const operatorRole = await prisma.role.upsert({
+    where: { code: 'CATALOG_OPERATOR' },
+    update: { name: '商品运营' },
+    create: {
+      code: 'CATALOG_OPERATOR',
+      name: '商品运营',
+      description: '商品/价格维护（演示角色）',
+      permissions: { create: operatorPerms.map((p) => ({ permissionId: p.id })) },
+    },
+    include: { permissions: true },
+  });
+  const opExisting = new Set(operatorRole.permissions.map((rp) => rp.permissionId));
+  const opMissing = operatorPerms.filter((p) => !opExisting.has(p.id));
+  if (opMissing.length > 0) {
+    await prisma.rolePermission.createMany({
+      data: opMissing.map((p) => ({ roleId: operatorRole.id, permissionId: p.id })),
+    });
+  }
+
+  console.log(
+    `[rbac] permissions=${allPerms.length} role=${role.code} operator=${operatorRole.code} admin=${staff.email}`,
+  );
 }
 
 async function seedDemoAccounts() {

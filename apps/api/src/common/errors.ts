@@ -9,6 +9,8 @@ export const ERROR_CODES = {
   UNAUTHORIZED: 40100, // 未登录/凭证无效
   TOKEN_EXPIRED: 40101, // 令牌过期（前端据此刷新/重登）
   FORBIDDEN: 40300, // 已登录但无权限（越权兜底）
+  MFA_INVALID: 40301, // MFA 校验码错误
+  MFA_REQUIRED: 40302, // 敏感操作需二次认证：未启用 MFA 或缺 x-mfa-code
   NOT_FOUND: 40400,
   CONFLICT: 40900, // 资源冲突（重复注册邮箱等）
   RATE_LIMIT: 42900,
