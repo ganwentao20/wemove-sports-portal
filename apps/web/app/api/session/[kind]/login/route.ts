@@ -25,6 +25,9 @@ export async function POST(
   if (!isSessionKind(kind)) return jsonError(404, 'unknown session type');
   if (!hasCsrfHeader(request)) return jsonError(403, 'CSRF check failed');
 
+  const cookieStore = await cookies();
+  cookieStore.delete(SESSION_COOKIE[kind]);
+
   const endpoint = kind === 'staff' ? 'auth/staff/login' : 'auth/login';
   const response = await fetch(`${API_ORIGIN}/api/v1/${endpoint}`, {
     method: 'POST',
@@ -48,7 +51,6 @@ export async function POST(
   }
 
   const token = body.data.accessToken;
-  const cookieStore = await cookies();
   cookieStore.set(SESSION_COOKIE[kind], token, {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',

@@ -1,17 +1,17 @@
 # 项目审计与当前状态
 
-快照日期：2026-09-07　集成分支：`main`（`4491702`）
+快照日期：2026-09-07　集成分支：`main`
 
 ## 结论
 
-组长共享基座、B 的经销商 PR #1/#3、C 的价格规则与购物车 PR #8、E 的测试 PR #5 已按依赖顺序合入 main。PR #8 在合并前补齐用户外键、规则引用边界与 11 个回归测试，并通过本地全仓验证和 GitHub CI。A 暂未达到合并门槛；D 的 Nest/Next 迁移切片已进入 main，实验原型继续隔离在 `experiments/`。
+组长共享基座、B 的经销商 PR #1/#3/#6、C 的价格规则与购物车 PR #8、E 的测试 PR #5 已按依赖顺序合入 main。PR #6 的审核和授权目录 UI 在整合时改为 HttpOnly 会话代理并补齐审核 MFA；PR #8 在合并前补齐用户外键、规则引用边界与 11 个回归测试。上述切片均通过本地全仓验证。A 暂未达到合并门槛；D 的 Nest/Next 迁移切片已进入 main，实验原型继续隔离在 `experiments/`。
 
 ## 分支与贡献保护
 
 | 责任 | 分支/PR | 审计状态 | 本次处理 |
 |---|---|---|---|
 | A 陈婧琳 | `origin/feature/storefront-a` | 无 PR；Bearer JWT 存在 localStorage，且含约 30MB 未优化原图 | 暂缓合并，保留分支并要求安全/资源修复 |
-| B 朱容杰 | PR #1 / `feature/dealer-app-b`；PR #3 / `feature/dealer-apply-b` | GitHub 均标记 merged；后端申请、前端分步申请及审核/授权目录已验证 | 已按 #1 → #3 合入 main；补齐批准后企业/OWNER 事务 |
+| B 朱容杰 | PR #1/#3/#6；`feature/dealer-app-b` / `feature/dealer-apply-b` | 后端申请、前端分步申请、审核工作台与授权目录已验证 | 已合入 main；补齐批准后企业/OWNER 事务，并在 #6 整合时移除 localStorage JWT、增加审核 MFA |
 | C 周慧莹 | PR #8 / `feature/pricing-crud-c` | 价格规则 CRUD/装配接口与 B2C 购物车已实现；审查发现的用户归属、scope 引用与测试缺口已修复 | 已合入 main；商品/SKU 管理、库存事务与订单仍待后续切片 |
 | D 倪依玲 | 已直接进入 main | FastAPI/Python 与 Vue SFC 与现 Nest/Next 架构并存，当前 npm 构建不加载 | 保留源码；移除 `__pycache__`，后续迁移适配 |
 | E 龙祖怡 | PR #2；PR #5 / `feature/smoke-e2e-e` | GitHub 均标记 merged；CI/Mailpit、目录 DB 冒烟和压测记录已验证 | 已合入 main |
@@ -24,8 +24,8 @@
 | `npm run prisma:generate` | 通过 | Prisma Client 6.19.3 生成成功 |
 | `npm run lint` | 通过 | API/Web 工作区无 lint 错误 |
 | `npm run typecheck` | 通过 | API/Web TypeScript 检查通过 |
-| `npm test` | 通过 | 54 个单元测试通过（新增购物车、价格规则服务与 DTO 回归测试） |
-| `npm run build` | 通过 | Next.js 23 个路由生成成功；NestJS 构建成功 |
+| `npm test` | 通过 | 55 个单元测试通过（含购物车、价格规则、DTO 与审核 MFA 元数据回归测试） |
+| `npm run build` | 通过 | Next.js 25 个路由生成成功；NestJS 构建成功 |
 | `npm run test:e2e -w api` | 通过（离线部分） | 12 个无数据库 e2e 通过；7 个 DB/Redis 用例按环境门控跳过 |
 | DB e2e | GitHub CI 通过 | 本机 Docker Desktop 未运行；PR #1/#3/#5 及合并后的 main 检查均为 success |
 
@@ -46,11 +46,14 @@
 13. 禁用 SKU 不再允许继续修改购物车数量，购物车行按创建时间稳定返回。
 14. 价格规则创建先验证 SKU，scope 只保留匹配的企业/价目表/等级引用，切换 scope 时清理旧引用。
 15. `active=false` 查询参数按布尔值正确解析，金额、起订量和优先级增加数据库整数上限校验。
+16. 经销商与后台登录改为同源 Route Handler：JWT 仅存 HttpOnly、SameSite=Strict Cookie，浏览器脚本不再接触令牌。
+17. 受保护请求由服务端注入 Bearer 令牌并校验自定义 CSRF 头；登出同时吊销 JWT 和清除 Cookie。
+18. 经销商批准、驳回及补件等审核写操作强制 6 位 MFA，前端工作台已接入动态码。
 
 ## 未替组员越界处理的待办
 
 - A：改用更安全的会话方案，压缩/替换大图并开 PR 后再评审合并。
-- B：继续实现价格表授权关系、Quick Order、RFQ/PO；本轮申请/审核链已合并。
+- B：申请、审核和授权目录前端已合入；继续实现价格表授权关系、Quick Order、RFQ/PO。
 - C：价格规则 CRUD 与购物车已合入；继续实现商品/SKU CRUD、库存事务、结算与订单纵向切片并补测试。
 - D：把现有 FastAPI/Vue 实验代码迁移为当前 Next/Nest 可执行切片，禁止继续提交缓存与运行时上传文件。
 - E：PR #5 已合并；继续补 Mailpit 邮件闭环、越权用例和可复核性能复测。

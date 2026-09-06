@@ -147,7 +147,7 @@
 
 ## 7. 技术架构与数据约定
 
-浏览器访问 Next.js Web；Web 通过 `/api/v1` 调用 NestJS API；API 使用 PostgreSQL 持久化、Redis 实现限流/黑名单，SMTP 在本地指向 Mailpit。API 正常响应形状为 `{ code, message, data, traceId }`，HTTP 状态码保留语义。
+浏览器访问 Next.js Web；公开数据通过 `/api/v1` 调用 NestJS API，经销商和后台受保护请求通过 Next.js 同源会话代理转发，JWT 仅保存在 HttpOnly、SameSite=Strict Cookie。API 使用 PostgreSQL 持久化、Redis 实现限流/黑名单，SMTP 在本地指向 Mailpit。API 正常响应形状为 `{ code, message, data, traceId }`，HTTP 状态码保留语义。
 
 核心实体包括 User、Staff、Role、Permission、DealerCompany、DealerMember、Product、Variant/SKU、PriceBook、Stock、Order、UserToken 与 AuditLog。所有金额存整数分；企业业务查询必须带当前登录者解析出的 `companyId`；删除策略由数据敏感性决定，审计记录不可由业务用户删除。
 
@@ -156,10 +156,10 @@
 | 状态 | 内容 |
 |---|---|
 | 已在 main | monorepo、24 个 Prisma 模型、统一 API、认证/RBAC/MFA/审计、目录读取切片、PG/Redis/Mailpit 与 CI |
-| 已在 main | B 的 PR #1/#3（申请、审核、企业绑定与授权目录）；C 的 PR #8（价格规则 CRUD、价格装配与 B2C 购物车）；E 的 PR #5（目录 DB 冒烟与压测记录） |
-| 待修复后合并 | A 的 `feature/storefront-a`（会话安全与大图）；B 的 PR #6（登录态存储与主线冲突） |
+| 已在 main | B 的 PR #1/#3/#6（申请、审核、企业绑定、安全登录与授权目录）；C 的 PR #8（价格规则 CRUD、价格装配与 B2C 购物车）；E 的 PR #5（目录 DB 冒烟与压测记录） |
+| 待修复后合并 | A 的 `feature/storefront-a`（独立 B2C 会话接线、业务范围与大图） |
 | 部分接入 main | D 的 NestJS CMS/媒体/联系模块已接入；Vue Admin UI 与 FastAPI 原型仍需迁移或继续隔离 |
-| 已完成加固 | 生产配置校验、内部错误脱敏、trace-id 校验、登录/MFA 锁定、购物车归属、价格规则引用边界、统一验证脚本与文档 |
+| 已完成加固 | 生产配置校验、内部错误脱敏、trace-id 校验、登录/MFA 锁定、HttpOnly 会话代理、经销商审核 MFA、购物车归属、价格规则引用边界、统一验证脚本与文档 |
 
 完成状态只以合并后的代码、CI、演示及测试证据共同判定，不以文档描述或分支存在替代。
 
