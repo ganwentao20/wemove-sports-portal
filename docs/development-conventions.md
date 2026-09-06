@@ -45,12 +45,13 @@
 2. `apps/api` 为 ESM：**相对导入必须带 `.js` 后缀**（`./x.js`），容易踩坑，新文件照抄现有写法。
 3. 不引入 `any`（确有需要先问组长）；函数/模块首注释标注负责人归属（M1/MA/MB/MC/MD/ME）。
 
-## 六、Git 协作规范（6 人拉入后生效）
+## 六、Git 协作规范（当前仓库政策）
 
-1. 分支：`main`（应在仓库设置中启用保护，团队禁止直推）→ `feature/<模块>-<英文名>` → PR 合并（≥1 人评审）。
+1. 所有已有 Write 权限的协作者可直接推送 `main`，不要求组长审核；`feature/<模块>-<英文名>` + PR 仍可用于较大改动和冲突协调，但不是强制门槛。
 2. 提交信息用 Conventional Commits：`feat:` `fix:` `docs:` `chore:` `test:` `refactor:`。
-3. 改 `apps/api/prisma/schema.prisma` 必须**同 PR 附迁移 SQL**（`npm run db:migrate` 生成）。
-4. 新增依赖须在 PR 描述说明用途；CI（lint/单测/构建）绿了才能合。
+3. 直推前必须先同步最新 `origin/main`，运行 `npm run verify`，保持单一目的提交；推送后由提交者跟进主线 CI，失败时立即修复。
+4. 改 `apps/api/prisma/schema.prisma` 必须**同一提交/PR 附迁移 SQL**（`npm run db:migrate` 生成），并先与正在改 Schema 的成员协调，避免迁移链并发冲突。
+5. 新增依赖须在提交或 PR 说明中写明用途；大范围删除、技术栈切换和共享基础设施改动必须使用独立分支保全并完整验证。
 
 ## 七、数据库与本地环境注意
 

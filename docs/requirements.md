@@ -151,15 +151,15 @@
 
 核心实体包括 User、Staff、Role、Permission、DealerCompany、DealerMember、Product、Variant/SKU、PriceBook、Stock、Order、UserToken 与 AuditLog。所有金额存整数分；企业业务查询必须带当前登录者解析出的 `companyId`；删除策略由数据敏感性决定，审计记录不可由业务用户删除。
 
-## 8. 当前实现基线（截至 2026-09-06）
+## 8. 当前实现基线（截至 2026-09-07）
 
 | 状态 | 内容 |
 |---|---|
-| 已在 main | monorepo、22 个 Prisma 模型、统一 API、认证/RBAC/MFA/审计、目录读取切片、价格纯函数、PG/Redis/Mailpit 与 CI |
-| 已在 main | B 的 PR #1/#3（申请、审核、企业绑定与授权目录）；E 的 PR #5（目录 DB 冒烟与压测记录） |
-| 待修复后合并 | A 的 `feature/storefront-a`（会话安全与大图）；C 分支当前仅 lockfile 变化 |
-| 已在 main 但未接入构建 | D 的 FastAPI/Python 与 Vue SFC 实验源码，需迁移到当前 Nest/Next 架构 |
-| 本分支修复 | 生产配置校验、内部错误脱敏、trace-id 校验、登录/MFA 锁定语义、统一验证脚本与文档 |
+| 已在 main | monorepo、24 个 Prisma 模型、统一 API、认证/RBAC/MFA/审计、目录读取切片、PG/Redis/Mailpit 与 CI |
+| 已在 main | B 的 PR #1/#3（申请、审核、企业绑定与授权目录）；C 的 PR #8（价格规则 CRUD、价格装配与 B2C 购物车）；E 的 PR #5（目录 DB 冒烟与压测记录） |
+| 待修复后合并 | A 的 `feature/storefront-a`（会话安全与大图）；B 的 PR #6（登录态存储与主线冲突） |
+| 部分接入 main | D 的 NestJS CMS/媒体/联系模块已接入；Vue Admin UI 与 FastAPI 原型仍需迁移或继续隔离 |
+| 已完成加固 | 生产配置校验、内部错误脱敏、trace-id 校验、登录/MFA 锁定、购物车归属、价格规则引用边界、统一验证脚本与文档 |
 
 完成状态只以合并后的代码、CI、演示及测试证据共同判定，不以文档描述或分支存在替代。
 

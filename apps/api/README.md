@@ -16,7 +16,8 @@
 | `src/pricing/`                                           | **价格引擎（纯函数 + 单测）**：企业专属价 > 价格表 > 等级价 > B2B 默认价；零售只走 MSRP/Sale | 组员 C（引擎与组长联调） |
 | `src/catalog/`                                           | 商品公开只读切片（PLP/PDP 数据源，白名单出参防底价泄漏）                                     | 组员 C（演示切片）       |
 | `src/dealer/`                                            | 经销商申请提交、本人/企业边界查询、防刷限流、后台审核状态机与审计                            | 组员 B                   |
-| 待建：`order/` `cart/` `cms/` `media/` `contact/` `seo/` | B2B RFQ/PO（B）、购物车订单（C）、CMS/媒体（D）                                              | B/C/D                    |
+| `src/cart/`；待建：`order/` `seo/`                      | B2C 购物车已接入；订单/结算（C）与 SEO 网关能力（D/组长）待后续切片                         | C/D/组长                 |
+| `src/cms/` `src/media/` `src/contact/`                  | CMS、媒体与联系工单 API                                                                      | D                        |
 
 ## 工程约定
 

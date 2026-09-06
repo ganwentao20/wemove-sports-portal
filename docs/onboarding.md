@@ -53,16 +53,16 @@ Mailpit 开发收件箱：http://localhost:8025。演示凭据仅可用于本地
 | `apps/api/src/auth|rbac|audit|common|prisma` | 基座（改前先与组长打招呼） | 组长 |
 | `apps/api/src/pricing` | 价格引擎 | C |
 | `apps/api/src/catalog` | 商品目录切片 | C |
-| `apps/api/src/dealer`（待建） | B2B | B |
-| `apps/api/src/cms|media|contact`（待建） | 内容/媒体/工单 | D |
-| `apps/api/src/order|cart`（待建） | 购物车/订单 | C |
+| `apps/api/src/dealer` | B2B 申请、审核与授权目录 | B |
+| `apps/api/src/cms|media|contact` | 内容/媒体/工单 API | D |
+| `apps/api/src/cart`；`apps/api/src/order`（待建） | 购物车 / 订单 | C |
 | `apps/api/prisma/schema.prisma` | 数据表（**改必开会**，迁移随 PR 提交） | 组长统筹 |
 | `infra/`、`.github/`、`docs/` | 工程与文档 | E / 组长 |
 | `prisma/seed.ts`、测试与压测 | 测试数据与质量 | E |
 
 **平行开发规则**：默认只在自己区域改；要动别人的目录先在该 Issue/PR 里 @ 对方；schema 改动走例会决议。
 
-## 四、第一次提交（走完整流程）
+## 四、第一次提交
 
 ```bash
 git switch -c feature/<模块>-<你的英文名>   # 例：feature/dealer-ming
@@ -70,8 +70,8 @@ git switch -c feature/<模块>-<你的英文名>   # 例：feature/dealer-ming
 git add -A && git commit -m "feat(dealer): 新增经销商申请 API"
 git push -u origin feature/dealer-ming
 ```
-1. 到 GitHub 仓库点 **Compare & pull request**（用 PR 模板填写）；
-2. 等 **CI 绿** + ≥1 人评审后合并；项目协作政策要求保护 `main`，**不要直推 main**。
+
+较大改动建议到 GitHub 点 **Compare & pull request** 并用模板记录范围；当前仓库不强制组长审核。若直接推送 `main`，必须先同步最新主线并执行 `npm run verify`，推送后确认主线 CI 通过。Schema、迁移、架构切换或大范围删除仍应使用独立分支，以便冲突协调和历史保全。
 
 ## 五、常见坑（FAQ）
 
