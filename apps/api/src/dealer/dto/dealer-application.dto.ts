@@ -38,6 +38,16 @@ export class DealerApplicationAttachmentDto {
 export class CreateDealerApplicationDto {
   @IsString()
   @MinLength(2)
+  @MaxLength(160)
+  companyName: string;
+
+  @IsString()
+  @MinLength(2)
+  @MaxLength(80)
+  legalRegNo: string;
+
+  @IsString()
+  @MinLength(2)
   @MaxLength(80)
   contactName: string;
 

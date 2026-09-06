@@ -60,7 +60,7 @@ Schema 单一事实源：`prisma/schema.prisma`（归属注释 M1/MA/MB/MC/MD/ME
 | GET       | `/dealer/applications/:id`                          | 查询本人或所属企业申请（Bearer JWT，跨账号返回 403）                                    |
 | GET       | `/dealer/catalog?quantity=5`                        | 已审批经销商目录与企业/等级/B2B 默认成交价（Bearer JWT）                                |
 | GET       | `/admin/dealer/applications`                        | 审核工作台列表，可按 status 筛选（仅 SUPER_ADMIN）                                      |
-| PATCH     | `/admin/dealer/applications/:id/review`             | 审核流转：审核中/补件/通过/驳回，终态不可回退并留审计                                   |
+| PATCH     | `/admin/dealer/applications/:id/review`             | 审核流转；批准时事务创建/批准企业并绑定申请人为 OWNER，终态不可回退并留审计              |
 | POST      | `/auth/staff/login`                                 | 后台员工登录（角色入 token；独立限流）                                                  |
 | POST      | `/auth/forgot-password`                             | 忘记密码（发重置邮件，1h 有效；防枚举）                                                 |
 | POST      | `/auth/reset-password`                              | 重置密码（一次性令牌；同邮箱旧重置令牌一并作废）                                        |

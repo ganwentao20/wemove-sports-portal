@@ -16,6 +16,8 @@ build/
 out/
 .turbo/
 *.tsbuildinfo
+__pycache__/
+*.py[cod]
 
 # ---------- 测试与质量 ----------
 coverage/
