@@ -6,7 +6,7 @@ import type { JwtPayload } from '../auth/auth.service.js';
 
 interface CartWithItems {
   id: string;
-  userId: string | null;
+  userId: string;
   items: Array<{
     id: string;
     variantId: string;
@@ -86,6 +86,9 @@ export class CartService {
       where: { id: variantId },
       include: { stock: true },
     });
+    if (!variant || !variant.status) {
+      throw new BizException(ERROR_CODES.NOT_FOUND, 'variant not available', 404);
+    }
     const available = variant?.stock?.available ?? 0;
     if (quantity > available) {
       throw new BizException(ERROR_CODES.CONFLICT, `insufficient stock: available ${available}`, 409);
@@ -124,10 +127,11 @@ export class CartService {
   private async ensureCart(userId: string): Promise<CartWithItems> {
     return this.prisma.cart.upsert({
       where: { userId },
-      create: { userId },
+      create: { user: { connect: { id: userId } } },
       update: {},
       include: {
         items: {
+          orderBy: { createdAt: 'asc' },
           include: { variant: { select: { sku: true, name: true, status: true } } },
         },
       },

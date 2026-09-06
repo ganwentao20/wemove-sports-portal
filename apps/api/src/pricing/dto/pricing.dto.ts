@@ -1,4 +1,4 @@
-import { Type } from 'class-transformer';
+import { Transform, Type } from 'class-transformer';
 import {
   IsBoolean,
   IsEnum,
@@ -21,6 +21,14 @@ const SCOPES: PricingScopeLiteral[] = [
   'B2B_DEFAULT',
 ];
 
+const DB_INT_MAX = 2_147_483_647;
+
+function parseBooleanQuery({ value }: { value: unknown }): unknown {
+  if (value === 'true') return true;
+  if (value === 'false') return false;
+  return value;
+}
+
 export class CreatePricingRuleDto {
   @IsString()
   variantId!: string;
@@ -28,15 +36,24 @@ export class CreatePricingRuleDto {
   @IsEnum(SCOPES)
   scope!: PricingScopeLiteral;
 
-  @ValidateIf((o: CreatePricingRuleDto) => o.scope === 'COMPANY_SPECIFIC')
+  @ValidateIf(
+    (o: CreatePricingRuleDto) =>
+      o.scope === 'COMPANY_SPECIFIC' || o.companyId !== undefined,
+  )
   @IsString()
   companyId?: string;
 
-  @ValidateIf((o: CreatePricingRuleDto) => o.scope === 'PRICE_TABLE')
+  @ValidateIf(
+    (o: CreatePricingRuleDto) =>
+      o.scope === 'PRICE_TABLE' || o.bookId !== undefined,
+  )
   @IsString()
   bookId?: string;
 
-  @ValidateIf((o: CreatePricingRuleDto) => o.scope === 'TIER_LEVEL')
+  @ValidateIf(
+    (o: CreatePricingRuleDto) =>
+      o.scope === 'TIER_LEVEL' || o.tierId !== undefined,
+  )
   @IsString()
   tierId?: string;
 
@@ -44,17 +61,20 @@ export class CreatePricingRuleDto {
   @Type(() => Number)
   @IsInt()
   @Min(0)
+  @Max(DB_INT_MAX)
   priority: number = 0;
 
   @Type(() => Number)
   @IsInt()
   @Min(1)
+  @Max(DB_INT_MAX)
   priceCents!: number;
 
   @IsOptional()
   @Type(() => Number)
   @IsInt()
   @Min(1)
+  @Max(DB_INT_MAX)
   minQty: number = 1;
 
   @IsOptional()
@@ -72,15 +92,24 @@ export class UpdatePricingRuleDto {
   @IsEnum(SCOPES)
   scope?: PricingScopeLiteral;
 
-  @ValidateIf((o: UpdatePricingRuleDto) => o.scope === 'COMPANY_SPECIFIC')
+  @ValidateIf(
+    (o: UpdatePricingRuleDto) =>
+      o.scope === 'COMPANY_SPECIFIC' || o.companyId !== undefined,
+  )
   @IsString()
   companyId?: string;
 
-  @ValidateIf((o: UpdatePricingRuleDto) => o.scope === 'PRICE_TABLE')
+  @ValidateIf(
+    (o: UpdatePricingRuleDto) =>
+      o.scope === 'PRICE_TABLE' || o.bookId !== undefined,
+  )
   @IsString()
   bookId?: string;
 
-  @ValidateIf((o: UpdatePricingRuleDto) => o.scope === 'TIER_LEVEL')
+  @ValidateIf(
+    (o: UpdatePricingRuleDto) =>
+      o.scope === 'TIER_LEVEL' || o.tierId !== undefined,
+  )
   @IsString()
   tierId?: string;
 
@@ -88,18 +117,21 @@ export class UpdatePricingRuleDto {
   @Type(() => Number)
   @IsInt()
   @Min(0)
+  @Max(DB_INT_MAX)
   priority?: number;
 
   @IsOptional()
   @Type(() => Number)
   @IsInt()
   @Min(1)
+  @Max(DB_INT_MAX)
   priceCents?: number;
 
   @IsOptional()
   @Type(() => Number)
   @IsInt()
   @Min(1)
+  @Max(DB_INT_MAX)
   minQty?: number;
 
   @IsOptional()
@@ -147,6 +179,7 @@ export class PricingRuleQueryDto {
   tierId?: string;
 
   @IsOptional()
+  @Transform(parseBooleanQuery)
   @IsBoolean()
   active?: boolean;
 }

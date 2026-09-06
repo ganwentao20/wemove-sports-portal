@@ -5,7 +5,11 @@ import { BizException, ERROR_CODES } from '../common/errors.js';
 import { toPaged } from '../common/pagination.dto.js';
 import type { Paged } from '../common/api-response.js';
 import { resolveDealerPrice } from './pricing-engine.js';
-import type { PriceContext, PricingRuleCandidate, ResolvedPrice } from './pricing-engine.js';
+import type {
+  PriceContext,
+  PricingRuleCandidate,
+  ResolvedPrice,
+} from './pricing-engine.js';
 import type {
   CreatePricingRuleDto,
   PricingRuleQueryDto,
@@ -46,21 +50,25 @@ export class PricingAdminService {
 
   async detail(id: string) {
     const rule = await this.prisma.pricingRule.findUnique({ where: { id } });
-    if (!rule) throw new BizException(ERROR_CODES.NOT_FOUND, 'pricing rule not found', 404);
+    if (!rule)
+      throw new BizException(
+        ERROR_CODES.NOT_FOUND,
+        'pricing rule not found',
+        404,
+      );
     return rule;
   }
 
   async create(dto: CreatePricingRuleDto, actor: JwtPayload) {
-    await this.validateScopeRefs(dto);
+    await this.ensureVariantExists(dto.variantId);
+    const refs = await this.normalizeScopeRefs(dto.scope, dto);
 
     const rule = await this.prisma.pricingRule.create({
       data: {
         variantId: dto.variantId,
         scope: dto.scope,
         priority: dto.priority ?? 0,
-        companyId: dto.companyId ?? null,
-        bookId: dto.bookId ?? null,
-        tierId: dto.tierId ?? null,
+        ...refs,
         priceCents: dto.priceCents,
         minQty: dto.minQty ?? 1,
         active: dto.active ?? true,
@@ -82,24 +90,28 @@ export class PricingAdminService {
 
   async update(id: string, dto: UpdatePricingRuleDto, actor: JwtPayload) {
     const before = await this.prisma.pricingRule.findUnique({ where: { id } });
-    if (!before) throw new BizException(ERROR_CODES.NOT_FOUND, 'pricing rule not found', 404);
+    if (!before)
+      throw new BizException(
+        ERROR_CODES.NOT_FOUND,
+        'pricing rule not found',
+        404,
+      );
 
-    const effectiveScope = dto.scope ?? (before.scope as CreatePricingRuleDto['scope']);
-    await this.validateScopeRefs({
-      scope: effectiveScope,
-      companyId: dto.companyId,
-      bookId: dto.bookId,
-      tierId: dto.tierId,
-    } as Partial<CreatePricingRuleDto>);
+    const effectiveScope =
+      dto.scope ?? (before.scope as CreatePricingRuleDto['scope']);
+    const scopeChanged = effectiveScope !== before.scope;
+    const refs = await this.normalizeScopeRefs(
+      effectiveScope,
+      dto,
+      scopeChanged ? undefined : before,
+    );
 
     const rule = await this.prisma.pricingRule.update({
       where: { id },
       data: {
         ...(dto.scope ? { scope: dto.scope } : {}),
         ...(dto.priority !== undefined ? { priority: dto.priority } : {}),
-        ...(dto.companyId !== undefined ? { companyId: dto.companyId } : {}),
-        ...(dto.bookId !== undefined ? { bookId: dto.bookId } : {}),
-        ...(dto.tierId !== undefined ? { tierId: dto.tierId } : {}),
+        ...refs,
         ...(dto.priceCents !== undefined ? { priceCents: dto.priceCents } : {}),
         ...(dto.minQty !== undefined ? { minQty: dto.minQty } : {}),
         ...(dto.active !== undefined ? { active: dto.active } : {}),
@@ -122,7 +134,12 @@ export class PricingAdminService {
 
   async remove(id: string, actor: JwtPayload) {
     const before = await this.prisma.pricingRule.findUnique({ where: { id } });
-    if (!before) throw new BizException(ERROR_CODES.NOT_FOUND, 'pricing rule not found', 404);
+    if (!before)
+      throw new BizException(
+        ERROR_CODES.NOT_FOUND,
+        'pricing rule not found',
+        404,
+      );
 
     await this.prisma.pricingRule.delete({ where: { id } });
 
@@ -141,12 +158,17 @@ export class PricingAdminService {
   async resolveDealerPriceFor(
     variantId: string,
     ctx: ResolvePriceQueryDto,
-  ): Promise<{ variantId: string; input: ResolvePriceQueryDto; resolved: ResolvedPrice | null }> {
+  ): Promise<{
+    variantId: string;
+    input: ResolvePriceQueryDto;
+    resolved: ResolvedPrice | null;
+  }> {
     const variant = await this.prisma.productVariant.findUnique({
       where: { id: variantId },
       select: { id: true, b2bDefaultPriceCents: true },
     });
-    if (!variant) throw new BizException(ERROR_CODES.NOT_FOUND, 'variant not found', 404);
+    if (!variant)
+      throw new BizException(ERROR_CODES.NOT_FOUND, 'variant not found', 404);
 
     const rules = await this.prisma.pricingRule.findMany({
       where: { variantId, active: true },
@@ -194,24 +216,124 @@ export class PricingAdminService {
       quantity: ctx.quantity,
     };
 
-    return { variantId, input: ctx, resolved: resolveDealerPrice(candidates, priceContext) };
+    return {
+      variantId,
+      input: ctx,
+      resolved: resolveDealerPrice(candidates, priceContext),
+    };
   }
 
-  private async validateScopeRefs(dto: Partial<CreatePricingRuleDto>): Promise<void> {
-    const scope = dto.scope;
-    if (!scope) return;
+  private async ensureVariantExists(variantId: string): Promise<void> {
+    const exists = await this.prisma.productVariant.findUnique({
+      where: { id: variantId },
+      select: { id: true },
+    });
+    if (!exists)
+      throw new BizException(
+        ERROR_CODES.VALIDATION,
+        'variantId not found',
+        422,
+      );
+  }
 
-    if (scope === 'COMPANY_SPECIFIC' && dto.companyId) {
-      const exists = await this.prisma.dealerCompany.findUnique({ where: { id: dto.companyId } });
-      if (!exists) throw new BizException(ERROR_CODES.VALIDATION, 'companyId not found', 422);
+  private async normalizeScopeRefs(
+    scope: CreatePricingRuleDto['scope'],
+    supplied: Pick<UpdatePricingRuleDto, 'companyId' | 'bookId' | 'tierId'>,
+    existing?: {
+      companyId: string | null;
+      bookId: string | null;
+      tierId: string | null;
+    },
+  ): Promise<{
+    companyId: string | null;
+    bookId: string | null;
+    tierId: string | null;
+  }> {
+    const companyId = supplied.companyId ?? existing?.companyId ?? null;
+    const bookId = supplied.bookId ?? existing?.bookId ?? null;
+    const tierId = supplied.tierId ?? existing?.tierId ?? null;
+
+    if (scope === 'COMPANY_SPECIFIC') {
+      if (supplied.bookId !== undefined || supplied.tierId !== undefined) {
+        throw new BizException(
+          ERROR_CODES.VALIDATION,
+          'bookId/tierId are not allowed for COMPANY_SPECIFIC',
+          422,
+        );
+      }
+      if (!companyId)
+        throw new BizException(
+          ERROR_CODES.VALIDATION,
+          'companyId is required',
+          422,
+        );
+      const exists = await this.prisma.dealerCompany.findUnique({
+        where: { id: companyId },
+      });
+      if (!exists)
+        throw new BizException(
+          ERROR_CODES.VALIDATION,
+          'companyId not found',
+          422,
+        );
+      return { companyId, bookId: null, tierId: null };
     }
-    if (scope === 'PRICE_TABLE' && dto.bookId) {
-      const exists = await this.prisma.priceBook.findUnique({ where: { id: dto.bookId } });
-      if (!exists) throw new BizException(ERROR_CODES.VALIDATION, 'bookId not found', 422);
+
+    if (scope === 'PRICE_TABLE') {
+      if (supplied.companyId !== undefined || supplied.tierId !== undefined) {
+        throw new BizException(
+          ERROR_CODES.VALIDATION,
+          'companyId/tierId are not allowed for PRICE_TABLE',
+          422,
+        );
+      }
+      if (!bookId)
+        throw new BizException(
+          ERROR_CODES.VALIDATION,
+          'bookId is required',
+          422,
+        );
+      const exists = await this.prisma.priceBook.findUnique({
+        where: { id: bookId },
+      });
+      if (!exists)
+        throw new BizException(ERROR_CODES.VALIDATION, 'bookId not found', 422);
+      return { companyId: null, bookId, tierId: null };
     }
-    if (scope === 'TIER_LEVEL' && dto.tierId) {
-      const exists = await this.prisma.dealerTier.findUnique({ where: { id: dto.tierId } });
-      if (!exists) throw new BizException(ERROR_CODES.VALIDATION, 'tierId not found', 422);
+
+    if (scope === 'TIER_LEVEL') {
+      if (supplied.companyId !== undefined || supplied.bookId !== undefined) {
+        throw new BizException(
+          ERROR_CODES.VALIDATION,
+          'companyId/bookId are not allowed for TIER_LEVEL',
+          422,
+        );
+      }
+      if (!tierId)
+        throw new BizException(
+          ERROR_CODES.VALIDATION,
+          'tierId is required',
+          422,
+        );
+      const exists = await this.prisma.dealerTier.findUnique({
+        where: { id: tierId },
+      });
+      if (!exists)
+        throw new BizException(ERROR_CODES.VALIDATION, 'tierId not found', 422);
+      return { companyId: null, bookId: null, tierId };
     }
+
+    if (
+      supplied.companyId !== undefined ||
+      supplied.bookId !== undefined ||
+      supplied.tierId !== undefined
+    ) {
+      throw new BizException(
+        ERROR_CODES.VALIDATION,
+        'scope references are not allowed for B2B_DEFAULT',
+        422,
+      );
+    }
+    return { companyId: null, bookId: null, tierId: null };
   }
 }

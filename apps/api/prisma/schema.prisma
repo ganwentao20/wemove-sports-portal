@@ -129,6 +129,7 @@ model User {
   dealerApplications DealerApplication[] // 本人提交的资质申请（归属判定依据）
   tokens        UserToken[]
   auditLogs     AuditLog[] @relation("ActorCustomer")
+  cart          Cart?
   createdAt     DateTime      @default(now())
   updatedAt     DateTime      @updatedAt
 
@@ -468,7 +469,8 @@ model ContactMessage {
 /// 购物车：登录 customer 一对一（userId）；首次加购自动创建。价格在加购时快照防后续改价。
 model Cart {
   id        String     @id @default(cuid())
-  userId    String?    @unique
+  userId    String     @unique
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
   items     CartItem[]
   createdAt DateTime   @default(now())
   updatedAt DateTime   @updatedAt
