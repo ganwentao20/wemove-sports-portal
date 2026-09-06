@@ -218,7 +218,7 @@ export class AuthService {
     }
 
     await this.redis.del(`wm:rl:staff:fail:${email}`);
-    const roles = staff.roles.map((r) => r.role.code);
+    const roles = staff.roles.map((r: any) => r.role.code);
     void this.audit.record({
       actorKind: 'STAFF',
       actorStaffId: staff.id,
@@ -317,7 +317,7 @@ export class AuthService {
         kind: 'staff',
         email: staff.email,
         name: staff.name,
-        roles: staff.roles.map((r) => r.role.code),
+        roles: staff.roles.map((r: any) => r.role.code),
       };
     }
 

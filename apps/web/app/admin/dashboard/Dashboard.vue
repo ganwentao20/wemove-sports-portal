@@ -77,7 +77,7 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 
-const API = 'http://127.0.0.1:8000'
+const API = '/api/v1'
 const router = useRouter()
 
 const stats = ref({ articles: 0, faqs: 0, leads: 0, media: 0 })
@@ -88,15 +88,15 @@ const go = (path) => router.push(path)
 
 onMounted(async () => {
   try {
-    const res = await fetch(`${API}/api/dashboard/stats`)
+    const res = await fetch(`${API}/dashboard/stats`)
     if (!res.ok) throw new Error(`HTTP ${res.status}`)
     const data = await res.json()
 
     stats.value = {
-      articles: 0,
-      faqs: 0,
-      leads: 0,
-      media: data.media_total ?? 0,
+      articles: data.articles ?? 0,
+      faqs: data.faqs ?? 0,
+      leads: data.leads ?? 0,
+      media: data.media ?? 0,
     }
     taskCounts.value = {
       leads: 0,

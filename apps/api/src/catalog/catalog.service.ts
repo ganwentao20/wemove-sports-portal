@@ -119,7 +119,7 @@ export class CatalogService {
       gallery: row.gallery,
       category: row.category,
       seo: row.seo,
-      variants: row.variants.map((v) => ({
+      variants: row.variants.map((v: any) => ({
         id: v.id,
         sku: v.sku,
         name: v.name,
@@ -142,7 +142,7 @@ export class CatalogService {
       },
       orderBy: { sortOrder: 'asc' },
     });
-    return cats.map((c) => ({
+    return cats.map((c: any) => ({
       code: c.code,
       slug: c.slug,
       name: c.name,

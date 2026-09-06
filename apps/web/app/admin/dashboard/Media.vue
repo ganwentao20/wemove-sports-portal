@@ -5,6 +5,11 @@
     <div class="upload-area">
       <h2>Upload</h2>
       <input type="file" ref="fileInput" @change="onFileChange" />
+      <select v-model="visibility">
+        <option value="PUBLIC">Public</option>
+        <option value="DEALER_ONLY">Dealer only</option>
+        <option value="INTERNAL">Internal</option>
+      </select>
       <p v-if="uploading" class="hint">Uploading... {{ progress }}%</p>
       <p v-if="uploadUrl" class="hint">
         Signed URL: <code>{{ uploadUrl }}</code>
@@ -42,18 +47,30 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 
-const API = 'http://127.0.0.1:8000'
+const API = '/api/v1'
 const fileInput = ref(null)
 const uploading = ref(false)
 const progress = ref(0)
 const uploadUrl = ref('')
 const media = ref([])
+const visibility = ref('PUBLIC')
+
+const authHeaders = () => {
+  const token = window.localStorage.getItem('wemove_admin_token')
+  return token ? { Authorization: `Bearer ${token}` } : {}
+}
+
+const readData = async (res) => {
+  const body = await res.json()
+  return body?.data ?? body
+}
 
 const loadMedia = async () => {
   try {
     const res = await fetch(`${API}/media/`)
     if (!res.ok) throw new Error(`HTTP ${res.status}`)
-    media.value = await res.json()
+    const data = await readData(res)
+    media.value = Array.isArray(data) ? data : []
   } catch (e) {
     console.error('加载媒体文件失败', e)
   }
@@ -72,15 +89,18 @@ const onFileChange = async (e) => {
 
     const uploadRes = await fetch(`${API}/media/upload`, {
       method: 'POST',
+      headers: authHeaders(),
       body: formData,
     })
     if (!uploadRes.ok) throw new Error(`HTTP ${uploadRes.status}`)
-    const result = await uploadRes.json()
+    const result = await readData(uploadRes)
 
     progress.value = 80
-    const signRes = await fetch(`${API}/media/${result.id}/sign?expire=60`)
+    const signRes = await fetch(`${API}/media/${result.id}/sign?expire=60`, {
+      headers: authHeaders(),
+    })
     if (!signRes.ok) throw new Error(`HTTP ${signRes.status}`)
-    const signData = await signRes.json()
+    const signData = await readData(signRes)
     uploadUrl.value = `${API}${signData.url}`
 
     progress.value = 100
@@ -106,7 +126,11 @@ const copyUrl = async (url) => {
 
 const remove = async (id) => {
   try {
-    // 该后端当前未提供删除接口，保留前端本地移除作为兼容处理
+    const res = await fetch(`${API}/media/${id}`, {
+      method: 'DELETE',
+      headers: authHeaders(),
+    })
+    if (!res.ok) throw new Error(`HTTP ${res.status}`)
     media.value = media.value.filter(item => item.id !== id)
   } catch (e) {
     console.error('删除失败', e)

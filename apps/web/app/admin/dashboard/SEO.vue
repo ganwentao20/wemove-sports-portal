@@ -50,7 +50,7 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 
-const API = 'http://127.0.0.1:8000'
+const API = '/api/v1'
 const global = ref({
   page_key: 'global',
   meta_title: '',

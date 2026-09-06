@@ -53,16 +53,16 @@ async function seedRbac() {
       code: 'SUPER_ADMIN',
       name: '超级管理员',
       description: '全权限（种子演示）',
-      permissions: { create: allPerms.map((p) => ({ permissionId: p.id })) },
+      permissions: { create: allPerms.map((p: any) => ({ permissionId: p.id })) },
     },
     include: { permissions: true },
   });
   // 幂等：增量补齐权限
-  const existing = new Set(role.permissions.map((rp) => rp.permissionId));
-  const missing = allPerms.filter((p) => !existing.has(p.id));
+  const existing = new Set(role.permissions.map((rp: any) => rp.permissionId));
+  const missing = allPerms.filter((p: any) => !existing.has(p.id));
   if (missing.length > 0) {
     await prisma.rolePermission.createMany({
-      data: missing.map((p) => ({ roleId: role.id, permissionId: p.id })),
+      data: missing.map((p: any) => ({ roleId: role.id, permissionId: p.id })),
     });
   }
 
@@ -94,15 +94,15 @@ async function seedRbac() {
       code: 'CATALOG_OPERATOR',
       name: '商品运营',
       description: '商品/价格维护（演示角色）',
-      permissions: { create: operatorPerms.map((p) => ({ permissionId: p.id })) },
+      permissions: { create: operatorPerms.map((p: any) => ({ permissionId: p.id })) },
     },
     include: { permissions: true },
   });
-  const opExisting = new Set(operatorRole.permissions.map((rp) => rp.permissionId));
-  const opMissing = operatorPerms.filter((p) => !opExisting.has(p.id));
+  const opExisting = new Set(operatorRole.permissions.map((rp: any) => rp.permissionId));
+  const opMissing = operatorPerms.filter((p: any) => !opExisting.has(p.id));
   if (opMissing.length > 0) {
     await prisma.rolePermission.createMany({
-      data: opMissing.map((p) => ({ roleId: operatorRole.id, permissionId: p.id })),
+      data: opMissing.map((p: any) => ({ roleId: operatorRole.id, permissionId: p.id })),
     });
   }
 

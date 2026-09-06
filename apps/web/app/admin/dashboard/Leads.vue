@@ -32,8 +32,8 @@
           </td>
           <td>{{ row.created_at }}</td>
           <td>
-            <button @click="advance(row)" :disabled="row.status >= 3">
-              {{ row.status >= 3 ? 'Closed' : 'Advance →' }}
+            <button @click="advance(row)" :disabled="row.status === 'CLOSED'">
+              {{ row.status === 'CLOSED' ? 'Closed' : 'Advance →' }}
             </button>
             <button class="danger" @click="remove(row.id)">Delete</button>
           </td>
@@ -47,19 +47,35 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 
-const API = 'http://127.0.0.1:8000'
+const API = '/api/v1'
 const leads = ref([])
 
+const authHeaders = () => {
+  const token = window.localStorage.getItem('wemove_admin_token')
+  return token ? { Authorization: `Bearer ${token}` } : {}
+}
+
+const readData = async (res) => {
+  const body = await res.json()
+  return body?.data ?? body
+}
+
 const statusText = (s) => {
-  const map = ['New', 'In Progress', 'Resolved', 'Closed']
+  const map = {
+    NEW: 'New',
+    IN_PROGRESS: 'In Progress',
+    RESOLVED: 'Resolved',
+    CLOSED: 'Closed',
+  }
   return map[s] || 'Unknown'
 }
 
 const loadLeads = async () => {
   try {
-    const res = await fetch(`${API}/contacts/`)
+    const res = await fetch(`${API}/contacts/`, { headers: authHeaders() })
     if (!res.ok) throw new Error(`HTTP ${res.status}`)
-    leads.value = await res.json()
+    const data = await readData(res)
+    leads.value = Array.isArray(data) ? data : []
   } catch (e) {
     console.error('加载客户线索失败', e)
   }
@@ -72,10 +88,12 @@ const refresh = () => {
 const advance = async (row) => {
   if (row.status >= 3) return
   try {
-    const params = new URLSearchParams({ status: String(row.status + 1) })
+    const statuses = ['NEW', 'IN_PROGRESS', 'RESOLVED', 'CLOSED']
+    const currentIndex = statuses.indexOf(row.status)
+    const params = new URLSearchParams({ status: statuses[Math.min(currentIndex + 1, statuses.length - 1)] })
     const res = await fetch(`${API}/contacts/${row.id}/status`, {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      headers: { ...authHeaders(), 'Content-Type': 'application/x-www-form-urlencoded' },
       body: params.toString(),
     })
     if (!res.ok) throw new Error(`HTTP ${res.status}`)
@@ -87,7 +105,10 @@ const advance = async (row) => {
 
 const remove = async (id) => {
   try {
-    const res = await fetch(`${API}/contacts/${id}`, { method: 'DELETE' })
+    const res = await fetch(`${API}/contacts/${id}`, {
+      method: 'DELETE',
+      headers: authHeaders(),
+    })
     if (!res.ok) throw new Error(`HTTP ${res.status}`)
     leads.value = leads.value.filter(item => item.id !== id)
   } catch (e) {
