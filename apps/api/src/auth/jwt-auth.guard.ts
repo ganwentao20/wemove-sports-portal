@@ -48,3 +48,20 @@ export class JwtAuthGuard implements CanActivate {
     }
   }
 }
+
+/**
+ * 可选登录守卫：携带有效 Bearer 时注入 req.user；未登录/无效令牌一律放行。
+ * 用于"游客可提交、登录则绑定归属"的接口（如经销商资质申请）。
+ * 注意：仅作归属绑定增强，绝不可用它替代需要强制登录的鉴权。
+ */
+@Injectable()
+export class OptionalJwtAuthGuard extends JwtAuthGuard {
+  override async canActivate(context: ExecutionContext): Promise<boolean> {
+    try {
+      await super.canActivate(context);
+    } catch {
+      // 匿名/无效令牌：放行（user 保持 undefined）
+    }
+    return true;
+  }
+}
