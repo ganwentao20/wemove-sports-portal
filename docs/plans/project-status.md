@@ -1,21 +1,21 @@
 # 项目审计与当前状态
 
-快照日期：2026-09-06　分支：`refactor/foundation-audit`
+快照日期：2026-09-06　集成分支：`integration/merge-20260906`
 
 ## 结论
 
-仓库主干可安装、lint、测试和构建，但产品需求文档曾把长期愿景与当前实现混写，快速开始命令也落后于已提交迁移。此次重构只修改组长负责的共享基座和文档；A–E 的远端分支、PR 与 WIP 均原样保留。
+组长共享基座、B 的经销商 PR #1/#3、E 的测试 PR #5 已按依赖顺序进入集成分支并通过全仓验证。A、C 暂未达到合并门槛；D 的源码已由成员直接提交到 main，本次保留源码，仅移除可再生成的 Python 字节码缓存。
 
 ## 分支与贡献保护
 
 | 责任 | 分支/PR | 审计状态 | 本次处理 |
 |---|---|---|---|
-| A 陈婧琳 | `origin/feature/storefront-a` | 继续提交客户购物流程，尚未进入 main | 不覆盖，后续单独评审/合并 |
-| B 朱容杰 | PR #1 / `feature/dealer-app-b`；PR #3 / `feature/dealer-apply-b` | 后端申请 API 与前端分步申请分别评审中 | 不覆盖，按依赖顺序评审 |
+| A 陈婧琳 | `origin/feature/storefront-a` | 无 PR；Bearer JWT 存在 localStorage，且含约 30MB 未优化原图 | 暂缓合并，保留分支并要求安全/资源修复 |
+| B 朱容杰 | PR #1 / `feature/dealer-app-b`；PR #3 / `feature/dealer-apply-b` | 后端申请 API、前端分步申请及审核/授权目录已验证 | 已按 #1 → #3 合并；补齐批准后企业/OWNER 事务 |
 | C 周慧莹 | `origin/feature/pricing-crud-c` | 相对 main 仅见 lockfile 变化 | 不代写其业务模块，需继续提交 C1 |
-| D 倪依玲 | `origin/wip/member-d-python-cms` | WIP 保留；对应旧改动未进入当前 main | 不删除、不改写；需按现架构重新评审 |
-| E 龙祖怡 | PR #2 已合并；PR #5 / `feature/smoke-e2e-e` | CI/Mailpit 已在 main；目录冒烟与压测计划评审中 | 不修改其工作流/Compose/测试分支 |
-| 组长 甘文韬 | 本分支 | 共享代码安全修复、文档重构 | 独立分支提交，PR 合入 |
+| D 倪依玲 | 已直接进入 main | FastAPI/Python 与 Vue SFC 与现 Nest/Next 架构并存，当前 npm 构建不加载 | 保留源码；移除 `__pycache__`，后续迁移适配 |
+| E 龙祖怡 | PR #2；PR #5 / `feature/smoke-e2e-e` | CI/Mailpit、目录 DB 冒烟和压测记录均已验证 | PR #5 已进入集成分支 |
+| 组长 甘文韬 | `refactor/foundation-audit` | 共享安全修复、就绪探针和文档重构 | 已进入集成分支 |
 
 ## 质量验证
 
@@ -24,10 +24,10 @@
 | `npm run prisma:generate` | 通过 | Prisma Client 6.19.3 生成成功 |
 | `npm run lint` | 通过 | API/Web 工作区无 lint 错误 |
 | `npm run typecheck` | 通过 | API/Web TypeScript 检查通过 |
-| `npm test` | 通过 | 29 个单元测试通过 |
-| `npm run build` | 通过 | Next.js 22 个静态路由生成成功；NestJS 构建成功 |
-| `npm run test:e2e -w api` | 通过（离线部分） | 12 个无数据库 e2e 通过；2 个 DB/Redis 用例按环境门控跳过 |
-| DB e2e | 本机未执行 | Docker Desktop 服务未运行；CI 已配置 PostgreSQL/Redis 环境，应由 PR CI 复核 |
+| `npm test` | 通过 | 43 个单元测试通过 |
+| `npm run build` | 通过 | Next.js 23 个路由生成成功；NestJS 构建成功 |
+| `npm run test:e2e -w api` | 通过（离线部分） | 12 个无数据库 e2e 通过；7 个 DB/Redis 用例按环境门控跳过 |
+| DB e2e | 本机未执行 | Docker Desktop 服务未运行；PR #1/#3/#5 的 GitHub CI 均已成功，合入 main 后再跑主干 CI |
 
 ## 已修复问题
 
@@ -40,14 +40,16 @@
 7. 全仓脚本移除废弃的 `-ws` 写法，新增 `typecheck` 和 `verify`。
 8. 快速开始统一使用 `npm ci`、`db:deploy`，补充 Mailpit；修正课程邮件/压缩包命名。
 9. 就绪探针同时验证 PostgreSQL 与 Redis，依赖故障时返回 503；生产 CORS 只接受显式 HTTPS 来源。
+10. 经销商申请补齐企业名称/注册号；审核批准在同一事务中创建或批准企业、绑定申请人为 OWNER 并回填 `companyId`。
+11. 删除误提交的 4 个 `__pycache__/*.pyc`，新增 Python 缓存忽略规则，D 的源码保持不变。
 
 ## 未替组员越界处理的待办
 
-- A：评审 storefront 的响应式、可访问性和 API 接线后合并。
-- B：先完成 PR #1 后端评审，再处理以其为基线的 PR #3 前端申请流程。
+- A：改用更安全的会话方案，压缩/替换大图并开 PR 后再评审合并。
+- B：继续实现价格表授权关系、Quick Order、RFQ/PO；本轮申请/审核链已合并。
 - C：实现商品/SKU CRUD、迁移、价格/库存/订单纵向切片并补测试。
-- D：在当前 Next/Nest 架构内提交 Admin/CMS 切片，避免直接引入第二套后端。
-- E：推进 PR #5 目录冒烟与压测计划，随后补 Mailpit 邮件闭环、越权用例和可复核性能结果。
+- D：把现有 FastAPI/Vue 实验代码迁移为当前 Next/Nest 可执行切片，禁止继续提交缓存与运行时上传文件。
+- E：PR #5 已合并；继续补 Mailpit 邮件闭环、越权用例和可复核性能复测。
 - 组长：在仓库设置中确认 `main` 分支保护；结项时依据证据填写工作量比例。
 
 ## 已知风险
