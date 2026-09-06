@@ -1,21 +1,22 @@
-# apps/api — WEMOVE 后端（NestJS 12 · Prisma 6 · PostgreSQL 16 · Redis 预留）
+# apps/api — WEMOVE 后端（NestJS 12 · Prisma 6 · PostgreSQL 16 · Redis 7）
 
 全局前缀 `api/v1`；所有响应统一 `{ code, message, data, traceId }`（code=0 成功）。
 异常经全局过滤器归一（42200 参数 / 40100 未登录 / 40300 无权限 / 40400 不存在 / 40900 冲突 / 50000 内部）。
 
 ## 模块归属（纵向到人）
 
-| 模块 | 职责 | 负责人 |
-|---|---|---|
-| `src/common/` | 统一响应体/错误码/分页/traceId/全局过滤器 | 组长（公共基座） |
-| `src/prisma/` | Prisma 服务（懒连接、全局注入） | 组长 |
-| `src/auth/` | 注册/登录（User）、员工登录（Staff）、JWT 双体系、`/auth/me` | 组长 |
-| `src/rbac/` | `@Roles()` + `RolesGuard`（员工角色），权限点在 `Role/Permission` 表 | 组长 |
-| `src/audit/` | 审计记录 `AuditService.record()`（fire-and-forget） | 组长 |
-| `src/health/` | `/health/live` `/health/ready`（探活） | 组长/E |
-| `src/pricing/` | **价格引擎（纯函数 + 单测）**：企业专属价 > 价格表 > 等级价 > B2B 默认价；零售只走 MSRP/Sale | 组员 C（引擎与组长联调） |
-| `src/catalog/` | 商品公开只读切片（PLP/PDP 数据源，白名单出参防底价泄漏） | 组员 C（演示切片） |
-| 待建：`dealer/` `order/` `cart/` `cms/` `media/` `contact/` `seo/` | B2B 审批流/RFQ/PO（B）、购物车订单（C）、CMS/媒体（D） | B/C/D |
+| 模块                                                     | 职责                                                                                         | 负责人                   |
+| -------------------------------------------------------- | -------------------------------------------------------------------------------------------- | ------------------------ |
+| `src/common/`                                            | 统一响应体/错误码/分页/traceId/全局过滤器                                                    | 组长（公共基座）         |
+| `src/prisma/`                                            | Prisma 服务（懒连接、全局注入）                                                              | 组长                     |
+| `src/auth/`                                              | 注册/登录（User）、员工登录（Staff）、JWT 双体系、`/auth/me`                                 | 组长                     |
+| `src/rbac/`                                              | `@Roles()` + `RolesGuard`（员工角色），权限点在 `Role/Permission` 表                         | 组长                     |
+| `src/audit/`                                             | 审计记录 `AuditService.record()`（fire-and-forget）                                          | 组长                     |
+| `src/health/`                                            | `/health/live` `/health/ready`（探活）                                                       | 组长/E                   |
+| `src/pricing/`                                           | **价格引擎（纯函数 + 单测）**：企业专属价 > 价格表 > 等级价 > B2B 默认价；零售只走 MSRP/Sale | 组员 C（引擎与组长联调） |
+| `src/catalog/`                                           | 商品公开只读切片（PLP/PDP 数据源，白名单出参防底价泄漏）                                     | 组员 C（演示切片）       |
+| `src/dealer/`                                            | 经销商申请提交、本人/企业边界查询、防刷限流、后台审核状态机与审计                            | 组员 B                   |
+| 待建：`order/` `cart/` `cms/` `media/` `contact/` `seo/` | B2B RFQ/PO（B）、购物车订单（C）、CMS/媒体（D）                                              | B/C/D                    |
 
 ## 工程约定
 
@@ -32,7 +33,7 @@
 ## 数据库（Prisma 6）
 
 ```bash
-npm run db:up        # 根目录：docker compose 起 PG16+Redis7
+npm run db:up        # 根目录：docker compose 起 PG16 + Redis7 + Mailpit
 cd apps/api
 copy .env.example .env            # Windows；或手动复制 infra/.env.example 同值
 npx prisma migrate dev --name init # 生成迁移并建表
@@ -42,34 +43,40 @@ npx prisma studio                 # 可视化查看（可选）
 
 Schema 单一事实源：`prisma/schema.prisma`（归属注释 M1/MA/MB/MC/MD/ME）。
 **新增表流程**：改 schema → `prisma migrate dev --name xxx` → 迁移 SQL 一并提交。
+
 > 升级提示：Prisma 当前固定 v6（经典约定）；v7+ 需 prisma.config.ts 与新 client，
 > 由组员 C/E 评估后统一升级。
 
 ## API 一览
 
-| 方法 | 路径 | 说明 |
-|---|---|---|
-| GET | `/health/live` `/health/ready` | 探活（ready 需 DB） |
-| POST | `/auth/register` | C 端注册（18+ 声明必填；EMAIL_VERIFY_REQUIRED=true 时注册为 PENDING） |
-| POST | `/auth/verify-email` | 邮箱验证（一次性令牌，24h 有效） |
-| POST | `/auth/resend-verification` | 重发验证邮件（防枚举：统一返回 ok） |
-| POST | `/auth/login` | C 端/经销商成员登录（Redis 失败限流：单邮箱 5 次/15min、单 IP 30 次/min） |
-| POST | `/auth/staff/login` | 后台员工登录（角色入 token；独立限流） |
-| POST | `/auth/forgot-password` | 忘记密码（发重置邮件，1h 有效；防枚举） |
-| POST | `/auth/reset-password` | 重置密码（一次性令牌；同邮箱旧重置令牌一并作废） |
-| GET | `/auth/me` | 当前登录者（Bearer） |
-| POST | `/auth/logout` | 登出：jti 入 Redis 黑名单，失效即刻生效（Bearer） |
-| GET | `/products` `/products/:slug` `/categories` | 公开目录（游客） |
-| GET/POST | `/admin/staff` | 员工列表（搜索/状态/分页）/ 新增（均仅 SUPER_ADMIN） |
-| GET/PATCH | `/admin/staff/:id` | 员工详情 / 更新（含全量角色替换） |
-| PATCH | `/admin/staff/:id/password` | 管理员重置员工密码（SUPER_ADMIN） |
-| PATCH | `/admin/me/password` | 员工改自己的密码（登录即可） |
-| GET/POST | `/admin/roles` · PUT `/admin/roles/:id/permissions` | 角色列表（含权限/staff 数）/ 新建 / 分配权限 |
-| GET | `/admin/permissions` | 权限点按域分组输出 |
-| GET | `/admin/audit` | 审计日志（actorKind/action/entity 过滤 + 分页，含操作人姓名邮箱与 before/after 变更值） |
-| POST | `/admin/me/mfa/setup` | MFA 启用第一步：验证当前密码，返回 base32 secret + otpauthUrl（供扫码） |
-| POST | `/admin/me/mfa/confirm` | 用 6 位动态码确认启用（连续错 5 次锁 15 分钟） |
-| POST | `/admin/me/mfa/disable` | 用动态码停用并清除密钥 |
+| 方法      | 路径                                                | 说明                                                                                    |
+| --------- | --------------------------------------------------- | --------------------------------------------------------------------------------------- |
+| GET       | `/health/live` `/health/ready`                      | live 仅检查进程；ready 同时检查 DB/Redis，故障时返回 503                                 |
+| POST      | `/auth/register`                                    | C 端注册（18+ 声明必填；EMAIL_VERIFY_REQUIRED=true 时注册为 PENDING）                   |
+| POST      | `/auth/verify-email`                                | 邮箱验证（一次性令牌，24h 有效）                                                        |
+| POST      | `/auth/resend-verification`                         | 重发验证邮件（防枚举：统一返回 ok）                                                     |
+| POST      | `/auth/login`                                       | C 端/经销商成员登录（Redis 失败限流：单邮箱 5 次/15min、单 IP 30 次/min）               |
+| POST      | `/dealer/applications`                              | 提交经销商资质申请（公开，单 IP 5 次/min；Redis 不可用时降级）                          |
+| GET       | `/dealer/applications/:id`                          | 查询本人或所属企业申请（Bearer JWT，跨账号返回 403）                                    |
+| GET       | `/dealer/catalog?quantity=5`                        | 已审批经销商目录与企业/等级/B2B 默认成交价（Bearer JWT）                                |
+| GET       | `/admin/dealer/applications`                        | 审核工作台列表，可按 status 筛选（仅 SUPER_ADMIN）                                      |
+| PATCH     | `/admin/dealer/applications/:id/review`             | 审核流转；批准时事务创建/批准企业并绑定申请人为 OWNER，终态不可回退并留审计              |
+| POST      | `/auth/staff/login`                                 | 后台员工登录（角色入 token；独立限流）                                                  |
+| POST      | `/auth/forgot-password`                             | 忘记密码（发重置邮件，1h 有效；防枚举）                                                 |
+| POST      | `/auth/reset-password`                              | 重置密码（一次性令牌；同邮箱旧重置令牌一并作废）                                        |
+| GET       | `/auth/me`                                          | 当前登录者（Bearer）                                                                    |
+| POST      | `/auth/logout`                                      | 登出：jti 入 Redis 黑名单，失效即刻生效（Bearer）                                       |
+| GET       | `/products` `/products/:slug` `/categories`         | 公开目录（游客）                                                                        |
+| GET/POST  | `/admin/staff`                                      | 员工列表（搜索/状态/分页）/ 新增（均仅 SUPER_ADMIN）                                    |
+| GET/PATCH | `/admin/staff/:id`                                  | 员工详情 / 更新（含全量角色替换）                                                       |
+| PATCH     | `/admin/staff/:id/password`                         | 管理员重置员工密码（SUPER_ADMIN）                                                       |
+| PATCH     | `/admin/me/password`                                | 员工改自己的密码（登录即可）                                                            |
+| GET/POST  | `/admin/roles` · PUT `/admin/roles/:id/permissions` | 角色列表（含权限/staff 数）/ 新建 / 分配权限                                            |
+| GET       | `/admin/permissions`                                | 权限点按域分组输出                                                                      |
+| GET       | `/admin/audit`                                      | 审计日志（actorKind/action/entity 过滤 + 分页，含操作人姓名邮箱与 before/after 变更值） |
+| POST      | `/admin/me/mfa/setup`                               | MFA 启用第一步：验证当前密码，返回 base32 secret + otpauthUrl（供扫码）                 |
+| POST      | `/admin/me/mfa/confirm`                             | 用 6 位动态码确认启用（连续错 5 次锁 15 分钟）                                          |
+| POST      | `/admin/me/mfa/disable`                             | 用动态码停用并清除密钥                                                                  |
 
 ## MFA 二次认证（安全红线）
 

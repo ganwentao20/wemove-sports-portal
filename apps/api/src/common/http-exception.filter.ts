@@ -48,6 +48,13 @@ export class AllExceptionsFilter implements ExceptionFilter {
     // 1) 显式业务码（BizException 或 response 携带 code）
     if (exception instanceof HttpException) {
       const status = exception.getStatus();
+      if (status >= HttpStatus.INTERNAL_SERVER_ERROR) {
+        return {
+          status,
+          code: ERROR_CODES.INTERNAL,
+          message: 'Internal Server Error',
+        };
+      }
       const raw = exception.getResponse() as RawResponse | string;
       if (typeof raw === 'object' && raw !== null) {
         if (typeof raw.code === 'number') {
@@ -80,8 +87,12 @@ export class AllExceptionsFilter implements ExceptionFilter {
     }
 
     // 3) 未知异常
-    const message = exception instanceof Error ? exception.message : 'Internal Server Error';
-    return { status: HttpStatus.INTERNAL_SERVER_ERROR, code: ERROR_CODES.INTERNAL, message };
+    // 未知异常只写服务端日志，避免把数据库、文件路径等内部信息暴露给客户端。
+    return {
+      status: HttpStatus.INTERNAL_SERVER_ERROR,
+      code: ERROR_CODES.INTERNAL,
+      message: 'Internal Server Error',
+    };
   }
 
   private defaultCodeOf(status: number): number {
@@ -118,7 +129,7 @@ export class AllExceptionsFilter implements ExceptionFilter {
         return {
           status: HttpStatus.INTERNAL_SERVER_ERROR,
           code: ERROR_CODES.INTERNAL,
-          message: `数据库操作失败（${err.code}）`,
+          message: 'Internal Server Error',
         };
     }
   }

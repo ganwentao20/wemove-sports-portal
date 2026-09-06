@@ -3,6 +3,11 @@ import { RedisService } from '../redis/redis.service.js';
 
 const DEFAULT_PER_MINUTE = 12000; // 兼容 100 并发压测（100rps×60s=6000）；按需 env 调低防刷
 
+export function positiveIntegerEnv(value: string | undefined, fallback: number): number {
+  const parsed = Number(value);
+  return Number.isSafeInteger(parsed) && parsed > 0 ? parsed : fallback;
+}
+
 /**
  * 全局 IP 固定窗口限流工厂（组长）：
  * - 键 wm:rl:global:{ip}，窗口 60s；上限 = env GLOBAL_RATE_LIMIT_PER_MIN（默认 12000）
@@ -15,7 +20,7 @@ export function createGlobalRateLimit(redis: RedisService) {
       next();
       return;
     }
-    const limit = Number(process.env.GLOBAL_RATE_LIMIT_PER_MIN ?? DEFAULT_PER_MINUTE);
+    const limit = positiveIntegerEnv(process.env.GLOBAL_RATE_LIMIT_PER_MIN, DEFAULT_PER_MINUTE);
     const count = await redis.incrWithTtl(`wm:rl:global:${req.ip ?? 'anon'}`, 60);
     if (count !== null && count > limit) {
       res.setHeader('Retry-After', '60');

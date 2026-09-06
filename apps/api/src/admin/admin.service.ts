@@ -346,6 +346,7 @@ export class AdminService {
   // ============================================================ MFA（TOTP）
   /** 生成新密钥（启用状态下须先 disable；需要当前密码防越权启用） */
   async setupMfa(payload: JwtPayload, password: string) {
+    this.assertStaff(payload);
     const staff = await this.prisma.staff.findUnique({
       where: { id: payload.sub },
       select: { id: true, email: true, passwordHash: true, mfaEnabled: true },
@@ -375,6 +376,7 @@ export class AdminService {
 
   /** 用动态码确认启用 */
   async confirmMfa(payload: JwtPayload, code: string) {
+    this.assertStaff(payload);
     const staff = await this.prisma.staff.findUnique({
       where: { id: payload.sub },
       select: { id: true, mfaEnabled: true, mfaSecret: true },
@@ -401,6 +403,7 @@ export class AdminService {
 
   /** 停用并清除密钥 */
   async disableMfa(payload: JwtPayload, code: string) {
+    this.assertStaff(payload);
     const staff = await this.prisma.staff.findUnique({
       where: { id: payload.sub },
       select: { id: true, mfaEnabled: true, mfaSecret: true },
@@ -426,6 +429,12 @@ export class AdminService {
   }
 
   // ============================================================ 内部工具
+  private assertStaff(payload: JwtPayload) {
+    if (payload.kind !== 'staff') {
+      throw new BizException(ERROR_CODES.FORBIDDEN, 'staff only', 403);
+    }
+  }
+
   /** 校验角色编码集合存在并按序返回（未知编码 → 422） */
   private async resolveRoles(codes: string[]) {
     const unique = Array.from(new Set(codes));

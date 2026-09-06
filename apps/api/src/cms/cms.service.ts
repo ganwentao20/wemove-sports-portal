@@ -1,4 +1,5 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { BizException, ERROR_CODES } from '../common/errors.js';
 
@@ -63,9 +64,13 @@ export class CmsService {
       data: {
         ...(input.slug !== undefined ? { slug: input.slug } : {}),
         ...(input.title !== undefined ? { title: input.title } : {}),
-        ...(input.sections !== undefined ? { sections: input.sections } : {}),
+        ...(input.sections !== undefined
+          ? { sections: input.sections === null ? Prisma.JsonNull : input.sections }
+          : {}),
         ...(input.status !== undefined ? { status: input.status } : {}),
-        ...(input.seo !== undefined ? { seo: input.seo } : {}),
+        ...(input.seo !== undefined
+          ? { seo: input.seo === null ? Prisma.JsonNull : input.seo }
+          : {}),
       },
     });
   }
