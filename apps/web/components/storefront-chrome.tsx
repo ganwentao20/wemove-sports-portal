@@ -5,13 +5,9 @@ import { useEffect, useState } from 'react';
 import { SiteMobileMenu } from './site-mobile-menu';
 import { CART_KEY, readStoredList } from '../lib/storefront-storage';
 import { readCustomer } from '../lib/customer-store';
+import { siteSections } from '../lib/site-sections';
 
-const NAV = [
-  { href: '/products', label: '产品系列' },
-  { href: '/play-learn', label: '玩法灵感' },
-  { href: '/support', label: '支持中心' },
-  { href: '/contact', label: '联系我们' },
-];
+const NAV = siteSections;
 
 const PORTAL_LINKS = [
   { href: '/customer/login', label: '登录/注册' },
@@ -52,13 +48,13 @@ export function StorefrontChrome() {
           <button type="button" onClick={closeAnnouncement} aria-label="关闭站点公告">关闭</button>
         </div>
       ) : null}
-      <div className="mx-auto flex h-14 max-w-6xl items-center justify-between gap-4 px-4">
+      <div className="mx-auto flex h-14 max-w-7xl items-center justify-between gap-3 px-4">
         <Link href="/" className="flex items-center gap-2 text-lg font-bold tracking-tight">
           <span className="text-[var(--wm-primary)]">WEMOVE</span>
           <span className="text-[var(--wm-dark)]">SPORTS</span>
         </Link>
 
-        <nav className="hidden items-center gap-5 text-sm text-[var(--wm-gray)] md:flex">
+        <nav className="hidden items-center gap-3 text-sm text-[var(--wm-gray)] lg:flex">
           {NAV.map((item) => (
             <Link key={item.href} href={item.href} className="transition-colors hover:text-[var(--wm-dark)]">
               {item.label}
@@ -66,7 +62,7 @@ export function StorefrontChrome() {
           ))}
         </nav>
 
-        <div className="hidden items-center gap-3 text-sm md:flex">
+        <div className="hidden items-center gap-2 text-sm md:flex">
           <select className="locale-switcher" value={locale} onChange={(event) => changeLocale(event.target.value)} aria-label="语言与货币切换">
             <option>中文 / CNY</option>
             <option>English / USD</option>

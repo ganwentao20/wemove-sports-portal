@@ -2,9 +2,9 @@
 
 import { useMemo, useState } from 'react';
 import { ProductCard } from './product-card';
-import type { Product } from '../lib/products';
+import { productCategories, type Product } from '../lib/products';
 
-const FILTERS = ['全部', '3 岁及以上', '4 岁及以上', '亲子共玩', '搭建探索', '空间思维'];
+const FILTERS = ['全部', ...productCategories.map((category) => category.label), '3 岁及以上', '4 岁及以上', '亲子共玩', '搭建探索', '空间思维'];
 const SORTS = [
   { label: '默认排序', value: 'default' },
   { label: '价格从低到高', value: 'price-asc' },
@@ -23,8 +23,9 @@ export function ProductCatalog({ products }: { products: Product[] }) {
     const normalized = keyword.trim().toLowerCase();
     const filtered = products.filter((product) => {
       const matchFilter = filter === '全部' || product.tags.includes(filter) || product.scene === filter;
-      const searchable = `${product.name} ${product.description} ${product.scene} ${product.age} ${product.pieces}`.toLowerCase();
-      return matchFilter && (!normalized || searchable.includes(normalized));
+      const matchCategory = product.categoryLabel === filter;
+      const searchable = `${product.name} ${product.description} ${product.categoryLabel} ${product.scene} ${product.age} ${product.pieces}`.toLowerCase();
+      return (matchFilter || matchCategory) && (!normalized || searchable.includes(normalized));
     });
 
     return [...filtered].sort((first, second) => {
@@ -71,7 +72,9 @@ export function ProductCatalog({ products }: { products: Product[] }) {
         </div>
       ) : (
         <div className="empty-state">
-          没有找到匹配产品。可以清空搜索词，或切换到“全部”分类。
+          {productCategories.some((category) => category.label === filter && category.status === 'pending-assets')
+            ? `“${filter}”栏目已按原网站保留入口，产品素材和接口待成员补充后可直接接入。`
+            : '没有找到匹配产品。可以清空搜索词，或切换到“全部”分类。'}
           <button type="button" onClick={() => { setKeyword(''); setFilter('全部'); setSort('default'); }}>重置筛选</button>
         </div>
       )}

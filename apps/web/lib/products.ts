@@ -1,6 +1,8 @@
 export type Product = {
   slug: string;
   name: string;
+  category: string;
+  categoryLabel: string;
   age: string;
   scene: string;
   image: string;
@@ -14,10 +16,70 @@ export type Product = {
   tags: string[];
 };
 
+export type ProductCategory = {
+  slug: string;
+  label: string;
+  description: string;
+  status: 'ready' | 'pending-assets';
+};
+
+export const productCategories: ProductCategory[] = [
+  {
+    slug: 'toy-category',
+    label: '玩具品类',
+    description: '木质轨道积木、转盘、蛇形轨道等已完成可演示购物流程。',
+    status: 'ready',
+  },
+  {
+    slug: 'furniture-custom',
+    label: '家具定制',
+    description: '保留原网站栏目入口，后续接入定制案例、报价与预约接口。',
+    status: 'pending-assets',
+  },
+  {
+    slug: 'pilot-production',
+    label: '中试打样',
+    description: '保留原网站栏目入口，后续接入打样服务、流程说明与咨询接口。',
+    status: 'pending-assets',
+  },
+  {
+    slug: 'stem-education',
+    label: 'STEM教育',
+    description: '保留原网站栏目入口，后续接入课程包、教案与活动报名接口。',
+    status: 'pending-assets',
+  },
+  {
+    slug: 'research-development',
+    label: '科研研发',
+    description: '保留原网站栏目入口，后续接入研发能力、合作案例与资料下载。',
+    status: 'pending-assets',
+  },
+  {
+    slug: 'charity',
+    label: '公益项目',
+    description: '保留原网站栏目入口，后续接入公益活动、项目介绍与报名信息。',
+    status: 'pending-assets',
+  },
+  {
+    slug: 'craft-dream',
+    label: '匠心筑梦',
+    description: '保留原网站栏目入口，后续接入品牌故事、工艺展示与媒体素材。',
+    status: 'pending-assets',
+  },
+  {
+    slug: 'manuals',
+    label: '电子说明书',
+    description: '保留原网站栏目入口，后续接入产品说明书、视频教程与下载接口。',
+    status: 'pending-assets',
+  },
+];
+
 export const products: Product[] = [
   {
     slug: 'standard-50',
     name: '标准款 50 轨道积木',
+    category: 'toy-category',
+    categoryLabel: '玩具品类',
     age: '3 岁及以上',
     scene: '亲子共玩',
     image: '/products/standard-50.jpg',
@@ -33,6 +95,8 @@ export const products: Product[] = [
   {
     slug: 'cugolino',
     name: 'Cugolino 轨道积木',
+    category: 'toy-category',
+    categoryLabel: '玩具品类',
     age: '4 岁及以上',
     scene: '搭建探索',
     image: '/products/cugolino.jpg',
@@ -48,9 +112,11 @@ export const products: Product[] = [
   {
     slug: 'turntable',
     name: '大小转盘轨道积木',
+    category: 'toy-category',
+    categoryLabel: '玩具品类',
     age: '4 岁及以上',
     scene: '空间思维',
-    image: '/products/turntable.png',
+    image: '/products/turntable.jpg',
     description: '用转盘、坡度和轨道组合创造不同路径，训练孩子对方向与节奏的判断。',
     material: '天然榉木',
     weight: '约 3.8 kg',
@@ -63,6 +129,8 @@ export const products: Product[] = [
   {
     slug: 'snake',
     name: '蛇形套装',
+    category: 'toy-category',
+    categoryLabel: '玩具品类',
     age: '3 岁及以上',
     scene: '亲子共玩',
     image: '/products/snake.png',

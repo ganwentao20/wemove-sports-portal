@@ -3,6 +3,7 @@ import Image from 'next/image';
 import { HomeShowcase } from '../../components/home-showcase';
 import { ProductCard } from '../../components/product-card';
 import { products } from '../../lib/products';
+import { siteSections } from '../../lib/site-sections';
 
 /**
  * 首页（骨架）：模块占位 —— 正式内容由 CmsPage.home sections 驱动（组员 A 渲染 + 组员 D 后台配置）
@@ -10,6 +11,7 @@ import { products } from '../../lib/products';
  */
 export default function HomePage() {
   const featuredProducts = products.slice(0, 4);
+  const homeSections = siteSections.filter((section) => section.href !== '/');
 
   return (
     <div className="storefront-home">
@@ -27,11 +29,14 @@ export default function HomePage() {
 
       <section className="home-section">
         <h2>探索 WEMOVE</h2>
-        <p>以开放式搭建为核心，把产品浏览、收藏、比较和账户入口串成完整前台流程。</p>
+        <p>恢复原网站的多栏目入口：已有素材的玩具品类先做完整动态流程，其它栏目保留页面和接口接入位置。</p>
         <div className="categories">
-          <Link href="/products"><span>产品系列</span><strong>筛选、搜索、收藏、比较</strong></Link>
-          <Link href="/play-learn"><span>STEM 玩法</span><strong>展示玩法灵感与教育价值</strong></Link>
-          <Link href="/customer/register"><span>账户流程</span><strong>登录注册与 18 岁确认</strong></Link>
+          {homeSections.map((section) => (
+            <Link key={section.href} href={section.href}>
+              <span>{section.label}</span>
+              <strong>{section.bullets[0]}</strong>
+            </Link>
+          ))}
         </div>
       </section>
 
