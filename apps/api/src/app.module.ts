@@ -8,6 +8,7 @@ import { AuditModule } from './audit/audit.module.js';
 import { AdminModule } from './admin/admin.module.js';
 import { CatalogModule } from './catalog/catalog.module.js';
 import { PricingModule } from './pricing/pricing.module.js';
+import { CartModule } from './cart/cart.module.js';
 import { FallbackModule } from './common/fallback.module.js';
 
 /**
@@ -30,6 +31,7 @@ import { FallbackModule } from './common/fallback.module.js';
     AdminModule,
     CatalogModule,
     PricingModule,
+    CartModule,
     FallbackModule,
   ],
 })
