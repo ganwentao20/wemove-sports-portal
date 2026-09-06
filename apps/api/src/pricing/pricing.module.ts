@@ -8,8 +8,16 @@ import {
   type ResolvedPrice,
   type ViewerContext,
 } from './pricing-engine.js';
+import { PricingAdminController } from './pricing-admin.controller.js';
+import { PricingAdminService } from './pricing-admin.service.js';
+import { RolesGuard } from '../rbac/roles.guard.js';
+import { RequireMfaGuard } from '../mfa/require-mfa.guard.js';
+import { AuditModule } from '../audit/audit.module.js';
+import { AuthModule } from '../auth/auth.module.js';
+import { RedisModule } from '../redis/redis.module.js';
+import { MfaModule } from '../mfa/mfa.module.js';
 
-/** 引擎门面：供 Service 层注入（后续由组员 C 实现 DB 候选规则装配，见 schema PricingRule） */
+/** 引擎门面：供后续订单模块注入（组员 C 的 admin service 直接用 pricing-engine 纯函数，避免反向循环依赖） */
 @Injectable()
 export class PricingEngine {
   dealer(rules: PricingRuleCandidate[], ctx: PriceContext): ResolvedPrice | null {
@@ -26,7 +34,9 @@ export class PricingEngine {
 }
 
 @Module({
-  providers: [PricingEngine],
-  exports: [PricingEngine],
+  imports: [AuditModule, AuthModule, RedisModule, MfaModule],
+  controllers: [PricingAdminController],
+  providers: [PricingEngine, PricingAdminService, RolesGuard, RequireMfaGuard],
+  exports: [PricingEngine, PricingAdminService],
 })
 export class PricingModule {}
