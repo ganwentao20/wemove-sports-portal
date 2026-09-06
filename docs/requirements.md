@@ -155,11 +155,12 @@
 
 | 状态 | 内容 |
 |---|---|
-| 已在 main | monorepo、24 个 Prisma 模型、统一 API、认证/RBAC/MFA/审计、目录读取切片、PG/Redis/Mailpit 与 CI |
+| 已在 main | monorepo、24 个 Prisma 模型、统一 API、认证/RBAC/MFA/审计、真实目录/搜索/PDP、PG/Redis/Mailpit 与 CI |
 | 已在 main | B 的 PR #1/#3/#6（申请、审核、企业绑定、安全登录与授权目录）；C 的 PR #8（价格规则 CRUD、价格装配与 B2C 购物车）；E 的 PR #5（目录 DB 冒烟与压测记录） |
 | 待修复后合并 | A 的 `feature/storefront-a`（独立 B2C 会话接线、业务范围与大图） |
 | 部分接入 main | D 的 NestJS CMS/媒体/联系模块已接入；Vue Admin UI 与 FastAPI 原型仍需迁移或继续隔离 |
-| 已完成加固 | 生产配置校验、内部错误脱敏、trace-id 校验、登录/MFA 锁定、HttpOnly 会话代理、经销商审核 MFA、购物车归属、价格规则引用边界、统一验证脚本与文档 |
+| 已在 main | B2C 注册/安全登录、账户中心、SKU 加购与购物车管理；移动端导航已可用，旧 A 分支的超大资源与不安全会话未合入 |
+| 已完成加固 | 生产配置校验、内部错误脱敏、trace-id 校验、登录/MFA 锁定、三类隔离的 HttpOnly 会话、经销商审核 MFA、购物车归属、价格规则引用边界、统一验证脚本与文档 |
 
 完成状态只以合并后的代码、CI、演示及测试证据共同判定，不以文档描述或分支存在替代。
 
