@@ -105,6 +105,8 @@ export class CatalogAdminService {
         slug: dto.slug.trim().toLowerCase(),
         summary: dto.summary?.trim() || null,
         description: dto.description?.trim() || null,
+        ageGuidance: dto.ageGuidance?.trim() || null,
+        resources: (dto.resources ?? []) as Prisma.InputJsonValue,
         categoryId: dto.categoryId ?? null,
         status: dto.status,
       },
@@ -139,6 +141,12 @@ export class CatalogAdminService {
           : {}),
         ...(dto.description !== undefined
           ? { description: dto.description.trim() || null }
+          : {}),
+        ...(dto.ageGuidance !== undefined
+          ? { ageGuidance: dto.ageGuidance.trim() || null }
+          : {}),
+        ...(dto.resources !== undefined
+          ? { resources: dto.resources as Prisma.InputJsonValue }
           : {}),
         ...(dto.categoryId !== undefined
           ? { categoryId: dto.categoryId || null }

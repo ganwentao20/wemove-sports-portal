@@ -85,7 +85,9 @@ npm run dev                         # 7) 前台 3000 / API 8080
 | `docs/README.md` | 交付物清单、**课程红线**（思政报告/会议纪要/邮件与压缩包命名规范） |
 | `docs/development-conventions.md` | 开发/安全/合规**注意事项**、Git 协作规范（详细约定不写在 README） |
 | `docs/onboarding.md` | 新成员上手指南（环境、跑通、首次 PR、FAQ） |
-| `docs/requirements.md` | 课程验收口径的需求文档 v0.2（完整愿景与本期范围分离） |
+| `docs/requirements.md` | 课程验收口径的需求文档 v0.3（完整愿景与本期范围分离） |
+| `docs/test-report.md` / `docs/operation-manual.md` | 持续更新的测试报告与系统操作手册 |
+| `docs/delivery-readiness.md` | 最终交付就绪清单与需成员/真实环境补充的证据 |
 | `docs/plans/project-status.md` | 代码/分支/风险审计与当前真实状态 |
 | `docs/plans/schedule-current.md` | 第 8 组当前进度计划与成员任务 |
 | `docs/plans/` | 全员首个任务拆解卡、需求文档（④）大纲、PR 评审与事件记录 |

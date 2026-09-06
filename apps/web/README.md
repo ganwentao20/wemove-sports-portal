@@ -6,8 +6,8 @@
 |---|---|---|
 | `app/(storefront)/` | 品牌官网：`/` `/products`(PLP) `/products/[slug]`(PDP) `/compare` `/play-learn` `/support` `/contact` `/search` | 组员 A |
 | `app/customer/` | B2C 用户中心：login/register/account | 组员 A（API：组长/组员 C） |
-| `app/dealer/` | 经销商门户：apply/login/dashboard（Quick Order/RFQ/PO 子页待建） | 组员 B |
-| `app/admin/` | 运营后台：login/dashboard（PIM/CMS/Media 子页待建） | 组员 D |
+| `app/dealer/` | 经销商门户：apply/login/dashboard/quick-order（RFQ/PO 依联合状态机决策） | 组员 B |
+| `app/admin/` | 运营后台：login/dashboard/products/orders/dealers/cms/media/contacts | 组员 D |
 
 ## 关键约定
 

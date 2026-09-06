@@ -24,7 +24,10 @@
 | `onboarding.md` | 新成员 30 分钟上手指南（环境/跑通/首 PR/FAQ/红线） | 组长维护 |
 | `plans/initial-tasks.md` | 全员首个任务拆解卡 + 组长任务队列 + 例会#1 议程 | 组长维护 |
 | `plans/requirements-outline.md` | 需求文档（④整合版）目录大纲与章节分工 | 组长牵头 |
-| `requirements.md` | 项目需求文档 v0.2（课程基线、验收标准、需求追踪） | 组长牵头 |
+| `requirements.md` | 项目需求文档 v0.3（课程基线、验收标准、需求追踪） | 组长牵头 |
+| `test-report.md` | 测试环境、功能/安全/性能证据、缺陷与待补截图 | E 牵头/全员复测 |
+| `operation-manual.md` | 当前四门户操作步骤与安全注意事项 | D 牵头 |
+| `delivery-readiness.md` | 最终交付物现状、责任人与停止线 | 组长统筹 |
 | `deliverables/下午班-08组-WEMOVE-SPORTS-项目需求文档-v0.2.docx` | 已排版的 Word 需求文档（提交候选件） | 组长统筹 |
 | `plans/project-status.md` | 仓库、分支、质量与风险审计快照 | 组长维护 |
 | `plans/schedule-current.md` | 第 8 组当前进度计划（动态更新） | 组长统筹 |

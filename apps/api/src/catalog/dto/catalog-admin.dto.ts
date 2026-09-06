@@ -1,5 +1,6 @@
 import { Type } from 'class-transformer';
 import {
+  IsArray,
   IsBoolean,
   IsEnum,
   IsInt,
@@ -82,6 +83,16 @@ export class CreateProductDto {
 
   @IsOptional()
   @IsString()
+  @MaxLength(500)
+  ageGuidance?: string;
+
+  @IsOptional()
+  @IsArray()
+  @IsObject({ each: true })
+  resources?: Record<string, unknown>[];
+
+  @IsOptional()
+  @IsString()
   categoryId?: string;
 
   @IsOptional()
@@ -110,6 +121,16 @@ export class UpdateProductDto {
   @IsString()
   @MaxLength(20_000)
   description?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(500)
+  ageGuidance?: string;
+
+  @IsOptional()
+  @IsArray()
+  @IsObject({ each: true })
+  resources?: Record<string, unknown>[];
 
   @IsOptional()
   @IsString()

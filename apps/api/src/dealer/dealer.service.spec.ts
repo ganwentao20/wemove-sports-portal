@@ -67,6 +67,17 @@ function setup(found: ApplicationFixture | null = application) {
     product: { findMany: vi.fn().mockResolvedValue([]) },
     productVariant: { findMany: vi.fn().mockResolvedValue([]) },
     pricingRule: { findMany: vi.fn().mockResolvedValue([]) },
+    mediaAsset: {
+      findMany: vi.fn().mockResolvedValue([
+        {
+          id: 'media-license',
+          key: '12345678-1234-1234-1234-123456789012.pdf',
+          fileName: 'license.pdf',
+          mimeType: 'application/pdf',
+          sizeBytes: 1024,
+        },
+      ]),
+    },
     $transaction: vi.fn(),
   };
   prismaMock.$transaction.mockImplementation(async (callback) =>
@@ -99,7 +110,7 @@ const customer = (
 });
 
 describe('DealerService', () => {
-  it('normalizes email and forces attachment visibility to PRIVATE', async () => {
+  it('normalizes email and accepts only a matching private media attachment', async () => {
     const { service, prisma } = setup();
     await service.createApplication(
       {
@@ -111,7 +122,13 @@ describe('DealerService', () => {
         country: 'CN',
         businessType: 'Retailer',
         attachments: [
-          { fileName: ' license.pdf ', key: 'private/license.pdf' },
+          {
+            mediaId: 'media-license',
+            attachmentToken: '12345678-1234-1234-1234-123456789012.pdf',
+            fileName: 'license.pdf',
+            mimeType: 'application/pdf',
+            sizeBytes: 1024,
+          },
         ],
       },
       '127.0.0.1',
@@ -126,13 +143,44 @@ describe('DealerService', () => {
           attachments: [
             {
               fileName: 'license.pdf',
-              key: 'private/license.pdf',
+              mediaId: 'media-license',
+              mimeType: 'application/pdf',
+              sizeBytes: 1024,
               visibility: 'PRIVATE',
             },
           ],
         }),
       }),
     );
+  });
+
+  it('rejects an attachment descriptor that does not match stored private media', async () => {
+    const { service, prisma } = setup();
+    vi.mocked(prisma.mediaAsset.findMany).mockResolvedValue([]);
+    await expect(
+      service.createApplication(
+        {
+          companyName: 'WEMOVE Dealer Ltd.',
+          legalRegNo: 'CN-DEMO-003',
+          contactName: 'Buyer',
+          contactEmail: 'buyer@example.com',
+          phone: '13800000000',
+          country: 'CN',
+          businessType: 'Retailer',
+          attachments: [
+            {
+              mediaId: 'forged-media',
+              attachmentToken: '12345678-1234-1234-1234-123456789012.pdf',
+              fileName: 'license.pdf',
+              mimeType: 'application/pdf',
+              sizeBytes: 1024,
+            },
+          ],
+        },
+        '127.0.0.1',
+      ),
+    ).rejects.toMatchObject({ status: 422 });
+    expect(prisma.dealerApplication.create).not.toHaveBeenCalled();
   });
 
   it('登录用户提交时绑定 applicantId（仅 customer）', async () => {

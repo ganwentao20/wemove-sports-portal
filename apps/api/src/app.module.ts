@@ -20,8 +20,8 @@ import { FallbackModule } from './common/fallback.module.js';
  * 根模块 —— 业务模块按“纵向到人”拆分：
  * M1 组长：redis/email 基座 + auth(双体系/邮箱闭环/限流/登出黑名单) + rbac + audit
  *          + admin(员工管理/角色权限/审计查询)
- * MC 组员C：catalog(演示切片) + pricing(价格引擎)（订单/购物车模块待加入）
- * MB 组员B：dealer 申请模块；MD 组员D：cms / media / contact 模块待加入
+ * MC 组员C：catalog + pricing + cart + order（价格快照与库存事务）
+ * MB 组员B：dealer 申请/审核/Quick Order；MD 组员D：cms / media / contact
  *
  * 注意：FallbackModule（404 兜底）必须保持 imports 最后一位。
  */

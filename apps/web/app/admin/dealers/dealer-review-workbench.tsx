@@ -9,6 +9,8 @@ type ApplicationStatus =
   "SUBMITTED" | "UNDER_REVIEW" | "MORE_INFO_REQUIRED" | "APPROVED" | "REJECTED";
 type Application = {
   id: string;
+  companyName: string;
+  legalRegNo: string;
   contactName: string;
   contactEmail: string;
   phone: string;
@@ -16,8 +18,39 @@ type Application = {
   businessType: string;
   status: ApplicationStatus;
   remark: string | null;
+  attachments: unknown;
   createdAt: string;
 };
+
+type Qualification = {
+  mediaId: string;
+  fileName: string;
+  mimeType: string;
+  sizeBytes: number;
+};
+
+function qualifications(value: unknown): Qualification[] {
+  if (!Array.isArray(value)) return [];
+  return value.flatMap((item) => {
+    if (!item || typeof item !== "object") return [];
+    const row = item as Record<string, unknown>;
+    if (
+      typeof row.mediaId !== "string" ||
+      typeof row.fileName !== "string" ||
+      typeof row.mimeType !== "string" ||
+      typeof row.sizeBytes !== "number"
+    )
+      return [];
+    return [
+      {
+        mediaId: row.mediaId,
+        fileName: row.fileName,
+        mimeType: row.mimeType,
+        sizeBytes: row.sizeBytes,
+      },
+    ];
+  });
+}
 
 const statusLabels: Record<ApplicationStatus, string> = {
   SUBMITTED: "Submitted",
@@ -98,6 +131,28 @@ export function DealerReviewWorkbench() {
     router.refresh();
   }
 
+  async function openQualification(attachment: Qualification) {
+    setError("");
+    try {
+      const signed = await secureApiFetch<{ url: string }>(
+        "staff",
+        `/media/${encodeURIComponent(attachment.mediaId)}/sign?expire=300`,
+      );
+      const opened = window.open(
+        `/api/v1${signed.url}`,
+        "_blank",
+        "noopener,noreferrer",
+      );
+      if (!opened) window.location.assign(`/api/v1${signed.url}`);
+    } catch (cause) {
+      setError(
+        cause instanceof ApiError
+          ? cause.message
+          : "Unable to open qualification file.",
+      );
+    }
+  }
+
   return (
     <main className="mx-auto max-w-7xl px-4 py-10">
       <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
@@ -113,7 +168,9 @@ export function DealerReviewWorkbench() {
             MFA code
             <input
               value={mfaCode}
-              onChange={(event) => setMfaCode(event.target.value.replace(/\D/g, "").slice(0, 6))}
+              onChange={(event) =>
+                setMfaCode(event.target.value.replace(/\D/g, "").slice(0, 6))
+              }
               inputMode="numeric"
               autoComplete="one-time-code"
               placeholder="000000"
@@ -135,7 +192,10 @@ export function DealerReviewWorkbench() {
               ))}
             </select>
           </label>
-          <button onClick={() => void signOut()} className="pb-2 text-sm text-neutral-500 underline">
+          <button
+            onClick={() => void signOut()}
+            className="pb-2 text-sm text-neutral-500 underline"
+          >
             Sign out
           </button>
         </div>
@@ -166,6 +226,10 @@ export function DealerReviewWorkbench() {
               >
                 <div className="flex flex-col justify-between gap-3 md:flex-row">
                   <div>
+                    <p className="font-semibold">{item.companyName}</p>
+                    <p className="mt-1 text-xs text-neutral-500">
+                      Registration: {item.legalRegNo}
+                    </p>
                     <h2 className="font-semibold">
                       {item.contactName} · {item.businessType}
                     </h2>
@@ -180,6 +244,26 @@ export function DealerReviewWorkbench() {
                     {statusLabels[item.status]}
                   </span>
                 </div>
+                {qualifications(item.attachments).length > 0 && (
+                  <div className="mt-4 rounded-xl bg-neutral-50 p-4">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-neutral-500">
+                      Private qualifications
+                    </p>
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      {qualifications(item.attachments).map((attachment) => (
+                        <button
+                          key={attachment.mediaId}
+                          type="button"
+                          onClick={() => void openQualification(attachment)}
+                          className="rounded-lg border bg-white px-3 py-2 text-left text-sm hover:border-[#2B5F8A]"
+                        >
+                          {attachment.fileName} ·{" "}
+                          {(attachment.sizeBytes / 1024).toFixed(1)} KB
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
                 {!terminal && (
                   <div className="mt-4 border-t pt-4">
                     <textarea

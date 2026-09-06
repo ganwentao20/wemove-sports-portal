@@ -46,7 +46,10 @@ function toCard(row: ProductPublicRow): ProductCardDto {
   // 变体区间“最低零售价”（sale ?? msrp）：PLP 卡片展示起点价
   let lowestCents: number | null = null;
   for (const v of row.variants) {
-    const price = resolveRetailPrice({ msrpCents: v.msrpCents, salePriceCents: v.salePriceCents });
+    const price = resolveRetailPrice({
+      msrpCents: v.msrpCents,
+      salePriceCents: v.salePriceCents,
+    });
     if (price && (lowestCents === null || price.priceCents < lowestCents)) {
       lowestCents = price.priceCents;
     }
@@ -59,7 +62,10 @@ function toCard(row: ProductPublicRow): ProductCardDto {
     categorySlug: row.category?.slug,
     priceCents: lowestCents,
     priceSource: lowestCents !== null ? 'MSRP' : null, // 起点价语义：MSRP 展示；SALE 精度在 PDP
-    coverImage: Array.isArray(row.gallery) && row.gallery.length > 0 ? (row.gallery as unknown[])[0] : undefined,
+    coverImage:
+      Array.isArray(row.gallery) && row.gallery.length > 0
+        ? (row.gallery as unknown[])[0]
+        : undefined,
   };
 }
 
@@ -68,15 +74,27 @@ export class CatalogService {
   constructor(private readonly prisma: PrismaService) {}
 
   /** 公开列表：关键字（名称/摘要）+ 分类 slug 过滤 + 分页 */
-  async list(query: { page: number; pageSize: number; search?: string; categorySlug?: string }): Promise<Paged<ProductCardDto>> {
+  async list(query: {
+    page: number;
+    pageSize: number;
+    search?: string;
+    categorySlug?: string;
+  }): Promise<Paged<ProductCardDto>> {
     const where = {
       status: 'ACTIVE' as const,
       ...(query.categorySlug ? { category: { slug: query.categorySlug } } : {}),
       ...(query.search
         ? {
             OR: [
-              { name: { contains: query.search, mode: 'insensitive' as const } },
-              { summary: { contains: query.search, mode: 'insensitive' as const } },
+              {
+                name: { contains: query.search, mode: 'insensitive' as const },
+              },
+              {
+                summary: {
+                  contains: query.search,
+                  mode: 'insensitive' as const,
+                },
+              },
             ],
           }
         : {}),
@@ -116,6 +134,8 @@ export class CatalogService {
       name: row.name,
       summary: row.summary,
       description: row.description,
+      ageGuidance: row.ageGuidance,
+      resources: row.resources,
       gallery: row.gallery,
       category: row.category,
       seo: row.seo,
@@ -124,7 +144,10 @@ export class CatalogService {
         sku: v.sku,
         name: v.name,
         attrs: v.attrs,
-        price: resolveRetailPrice({ msrpCents: v.msrpCents, salePriceCents: v.salePriceCents }),
+        price: resolveRetailPrice({
+          msrpCents: v.msrpCents,
+          salePriceCents: v.salePriceCents,
+        }),
         // 说明：经销商价格（价格表/企业专属/等级价/B2B 默认）一律经 /dealer 专属端点 + 鉴权输出（组员 B/C）
       })),
     };

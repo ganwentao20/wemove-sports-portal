@@ -81,6 +81,25 @@ export class MediaService {
     }));
   }
 
+  async listPublic() {
+    const files = await this.prisma.mediaAsset.findMany({
+      where: { visibility: 'PUBLIC' },
+      select: {
+        id: true,
+        fileName: true,
+        mimeType: true,
+        sizeBytes: true,
+        createdAt: true,
+      },
+      orderBy: { createdAt: 'desc' },
+      take: 100,
+    });
+    return files.map((file) => ({
+      ...file,
+      downloadUrl: `/media/${file.id}/download`,
+    }));
+  }
+
   async create(
     file: UploadedMediaFile,
     requestedVisibility: string | undefined,
@@ -118,7 +137,7 @@ export class MediaService {
       media = await this.prisma.mediaAsset.create({
         data: {
           key,
-          fileName: file.originalname.slice(0, 255),
+          fileName: file.originalname.slice(0, 160),
           mimeType: file.mimetype,
           sizeBytes: file.size,
           visibility,
@@ -154,6 +173,36 @@ export class MediaService {
       url: `/media/${media.id}`,
       visibility: media.visibility,
     };
+  }
+
+  async createDealerAttachment(file: UploadedMediaFile) {
+    await mkdir(this.storageRoot, { recursive: true });
+    const extension = extname(String(file.originalname ?? '')).toLowerCase();
+    const key = `${randomUUID()}${extension}`;
+    const storedPath = join(this.storageRoot, key);
+    await writeFile(storedPath, file.buffer);
+    try {
+      const media = await this.prisma.mediaAsset.create({
+        data: {
+          key,
+          fileName: file.originalname.slice(0, 160),
+          mimeType: file.mimetype,
+          sizeBytes: file.size,
+          visibility: 'DEALER_ONLY',
+        },
+      });
+      return {
+        mediaId: media.id,
+        attachmentToken: media.key,
+        fileName: media.fileName,
+        mimeType: media.mimeType,
+        sizeBytes: media.sizeBytes,
+        visibility: 'PRIVATE' as const,
+      };
+    } catch (error) {
+      await unlink(storedPath).catch(() => undefined);
+      throw error;
+    }
   }
 
   async sign(id: string, expireSeconds = 60) {

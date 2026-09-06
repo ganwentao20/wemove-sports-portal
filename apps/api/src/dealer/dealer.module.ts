@@ -6,6 +6,7 @@ import { RolesGuard } from '../rbac/roles.guard.js';
 import { OptionalJwtAuthGuard } from '../auth/jwt-auth.guard.js';
 import { MfaModule } from '../mfa/mfa.module.js';
 import { RequireMfaGuard } from '../mfa/require-mfa.guard.js';
+import { MediaModule } from '../media/media.module.js';
 import { DealerController } from './dealer.controller.js';
 import { DealerAdminController } from './dealer-admin.controller.js';
 import { DealerService } from './dealer.service.js';
@@ -15,7 +16,7 @@ import { DealerService } from './dealer.service.js';
  * OptionalJwtAuthGuard 在本模块 providers 注册（依赖 RedisModule 的 RedisService 与全局 JwtService）。
  */
 @Module({
-  imports: [RedisModule, AuditModule, PricingModule, MfaModule],
+  imports: [RedisModule, AuditModule, PricingModule, MfaModule, MediaModule],
   controllers: [DealerController, DealerAdminController],
   providers: [DealerService, OptionalJwtAuthGuard, RolesGuard, RequireMfaGuard],
   exports: [DealerService],

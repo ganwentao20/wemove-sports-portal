@@ -21,6 +21,7 @@ type Product = {
   name: string;
   slug: string;
   status: ProductStatus;
+  ageGuidance: string | null;
   category: { id: string; name: string } | null;
   variants: Variant[];
 };
@@ -101,6 +102,8 @@ export function ProductWorkbench() {
             .trim()
             .toLowerCase(),
           categoryId: String(form.get("categoryId") ?? "") || undefined,
+          ageGuidance:
+            String(form.get("ageGuidance") ?? "").trim() || undefined,
           status: String(form.get("status") ?? "DRAFT"),
         }),
       });
@@ -269,6 +272,12 @@ export function ProductWorkbench() {
                 </option>
               ))}
             </select>
+            <textarea
+              name="ageGuidance"
+              maxLength={500}
+              placeholder="Age and adult supervision guidance"
+              className="min-h-20 rounded-lg border px-3 py-2 sm:col-span-2"
+            />
             <select
               name="status"
               className="rounded-lg border bg-white px-3 py-2"

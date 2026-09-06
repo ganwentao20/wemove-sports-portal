@@ -15,6 +15,7 @@ import type {
 } from './dto/review-dealer-application.dto.js';
 
 const APPLICATION_RATE_LIMIT = { max: 5, windowSec: 60 } as const;
+const ATTACHMENT_RATE_LIMIT = { max: 10, windowSec: 3600 } as const;
 
 interface ApprovalApplication {
   id: string;
@@ -38,6 +39,20 @@ export class DealerService {
     private readonly audit: AuditService,
     private readonly pricing: PricingEngine,
   ) {}
+
+  async assertAttachmentUploadAllowed(ip?: string) {
+    const count = await this.redis.incrWithTtl(
+      `wm:rl:dealer-attachment:ip:${ip ?? 'anon'}`,
+      ATTACHMENT_RATE_LIMIT.windowSec,
+    );
+    if (count !== null && count > ATTACHMENT_RATE_LIMIT.max) {
+      throw new BizException(
+        ERROR_CODES.RATE_LIMIT,
+        'too many qualification uploads, try later',
+        429,
+      );
+    }
+  }
 
   /**
    * 提交申请（公开可提交；携带登录态（customer）时绑定 applicantId 便于本人跟进）。
@@ -97,14 +112,47 @@ export class DealerService {
       }
     }
 
-    const attachments: Prisma.InputJsonValue = dto.attachments.map(
-      (attachment) => ({
-        fileName: attachment.fileName.trim(),
-        key: attachment.key.trim(),
-        ...(attachment.url ? { url: attachment.url } : {}),
-        visibility: 'PRIVATE',
-      }),
-    );
+    const mediaIds = [...new Set(dto.attachments.map((item) => item.mediaId))];
+    const storedMedia = mediaIds.length
+      ? await this.prisma.mediaAsset.findMany({
+          where: { id: { in: mediaIds }, visibility: 'DEALER_ONLY' },
+          select: {
+            id: true,
+            key: true,
+            fileName: true,
+            mimeType: true,
+            sizeBytes: true,
+          },
+        })
+      : [];
+    const storedById = new Map(storedMedia.map((item) => [item.id, item]));
+    if (
+      storedMedia.length !== mediaIds.length ||
+      dto.attachments.some((item) => {
+        const stored = storedById.get(item.mediaId);
+        return (
+          !stored ||
+          stored.fileName !== item.fileName ||
+          stored.key !== item.attachmentToken ||
+          stored.mimeType !== item.mimeType ||
+          stored.sizeBytes !== item.sizeBytes
+        );
+      })
+    ) {
+      throw new BizException(
+        ERROR_CODES.VALIDATION,
+        'qualification attachment is invalid',
+        422,
+      );
+    }
+
+    const attachments: Prisma.InputJsonValue = dto.attachments.map((item) => ({
+      mediaId: item.mediaId,
+      fileName: item.fileName,
+      mimeType: item.mimeType,
+      sizeBytes: item.sizeBytes,
+      visibility: 'PRIVATE',
+    }));
 
     const application = await this.prisma.dealerApplication.create({
       data: {

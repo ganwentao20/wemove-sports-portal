@@ -1,6 +1,6 @@
 # WEMOVE SPORTS 官网与业务门户重构——项目需求文档
 
-版本：v0.2　日期：2026-09-06　组别：下午班第 8 组
+版本：v0.3　日期：2026-09-07　组别：下午班第 8 组
 
 ## 1. 文档控制
 
@@ -155,11 +155,15 @@
 
 | 状态 | 内容 |
 |---|---|
-| 已在 main | monorepo、24 个 Prisma 模型、统一 API、认证/RBAC/MFA/审计、真实目录/搜索/PDP、PG/Redis/Mailpit 与 CI |
+| 已在 main | monorepo、26 个 Prisma 模型、统一 API、认证/RBAC/MFA/审计、真实目录/搜索/PDP、PG/Redis/Mailpit 与 CI |
 | 已在 main | B 的 PR #1/#3/#6（申请、审核、企业绑定、安全登录与授权目录）；C 的 PR #8（价格规则 CRUD、价格装配与 B2C 购物车）；E 的 PR #5（目录 DB 冒烟与压测记录） |
-| 待修复后合并 | A 的 `feature/storefront-a`（独立 B2C 会话接线、业务范围与大图） |
-| 部分接入 main | D 的 NestJS CMS/媒体/联系模块已接入；Vue Admin UI 与 FastAPI 原型仍需迁移或继续隔离 |
+| 保留未合并 | A 的 `feature/storefront-a` 含 localStorage 会话、偏题页面和超大原图；主线已以真实 API 重写相关功能 |
+| 已在 main | D 域的 Next/Nest Dashboard、CMS、媒体、支持下载与联系工单已接入；历史 Vue/FastAPI 原型仅作保全 |
 | 已在 main | B2C 注册/安全登录、账户中心、SKU 加购与购物车管理；移动端导航已可用，旧 A 分支的超大资源与不安全会话未合入 |
+| 已在 main | 邮箱验证/重发/忘记与重置密码页面；商品/SKU/库存后台；B2C 结算、订单快照、库存事务与订单后台；Quick Order 逐行校验 |
+| 已在 main | CMS 草稿隔离、媒体 5 MB 与类型限制、联系工单 UI、后台 MFA/审计；metadata、robots、动态 sitemap 与基础 301 |
+| 已在 main | PDP 图集/规格/适龄/资料、支持下载/FAQ、对比、Play & Learn、实时后台 Dashboard；经销商资质私有上传与签名查看 |
+| 已由 CI 复核 | main CI #39：PostgreSQL 迁移、Redis 认证、目录与订单库存 e2e、68 项单测、lint/typecheck/build 全通过 |
 | 已完成加固 | 生产配置校验、内部错误脱敏、trace-id 校验、登录/MFA 锁定、三类隔离的 HttpOnly 会话、经销商审核 MFA、购物车归属、价格规则引用边界、统一验证脚本与文档 |
 
 完成状态只以合并后的代码、CI、演示及测试证据共同判定，不以文档描述或分支存在替代。
@@ -186,3 +190,4 @@
 |---|---|---|---|
 | v0.1 | 2026-08 | 协作初稿 | 甘文韬 |
 | v0.2 | 2026-09-06 | 按课程材料、现网站、Git 分支及代码审计重构；拆分课程基线与长期愿景 | 甘文韬 |
+| v0.3 | 2026-09-07 | 同步订单/库存/Quick Order、私有资质、公开内容与运营后台、认证页面、SEO 及 CI #39 基线；明确 RFQ/PO 和外部证据边界 | 甘文韬 |

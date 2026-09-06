@@ -1,0 +1,3 @@
+ALTER TABLE "Product"
+ADD COLUMN "ageGuidance" TEXT,
+ADD COLUMN "resources" JSONB NOT NULL DEFAULT '[]';

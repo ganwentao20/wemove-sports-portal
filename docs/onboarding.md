@@ -55,7 +55,7 @@ Mailpit 开发收件箱：http://localhost:8025。演示凭据仅可用于本地
 | `apps/api/src/catalog` | 商品目录切片 | C |
 | `apps/api/src/dealer` | B2B 申请、审核与授权目录 | B |
 | `apps/api/src/cms|media|contact` | 内容/媒体/工单 API | D |
-| `apps/api/src/cart`；`apps/api/src/order`（待建） | 购物车 / 订单 | C |
+| `apps/api/src/cart`；`apps/api/src/order` | 购物车 / 订单与库存事务 | C |
 | `apps/api/prisma/schema.prisma` | 数据表（**改必开会**，迁移随 PR 提交） | 组长统筹 |
 | `infra/`、`.github/`、`docs/` | 工程与文档 | E / 组长 |
 | `prisma/seed.ts`、测试与压测 | 测试数据与质量 | E |

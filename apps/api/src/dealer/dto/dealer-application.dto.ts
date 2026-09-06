@@ -4,10 +4,12 @@ import {
   IsArray,
   IsEmail,
   IsIn,
+  IsInt,
   IsOptional,
   IsString,
-  IsUrl,
   MaxLength,
+  Max,
+  Min,
   MinLength,
   ValidateNested,
 } from 'class-validator';
@@ -16,18 +18,26 @@ import {
 export class DealerApplicationAttachmentDto {
   @IsString()
   @MinLength(1)
-  @MaxLength(160)
-  fileName: string;
+  @MaxLength(40)
+  mediaId: string;
+
+  @IsString()
+  @MinLength(32)
+  @MaxLength(100)
+  attachmentToken: string;
 
   @IsString()
   @MinLength(1)
-  @MaxLength(300)
-  key: string;
+  @MaxLength(160)
+  fileName: string;
 
-  @IsOptional()
-  @IsUrl({ require_protocol: true })
-  @MaxLength(500)
-  url?: string;
+  @IsIn(['image/jpeg', 'image/png', 'application/pdf'])
+  mimeType: string;
+
+  @IsInt()
+  @Min(1)
+  @Max(5 * 1024 * 1024)
+  sizeBytes: number;
 
   @IsOptional()
   @IsIn(['PRIVATE'])

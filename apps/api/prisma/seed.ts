@@ -53,7 +53,9 @@ async function seedRbac() {
       code: 'SUPER_ADMIN',
       name: '超级管理员',
       description: '全权限（种子演示）',
-      permissions: { create: allPerms.map((p: any) => ({ permissionId: p.id })) },
+      permissions: {
+        create: allPerms.map((p: any) => ({ permissionId: p.id })),
+      },
     },
     include: { permissions: true },
   });
@@ -94,15 +96,22 @@ async function seedRbac() {
       code: 'CATALOG_OPERATOR',
       name: '商品运营',
       description: '商品/价格维护（演示角色）',
-      permissions: { create: operatorPerms.map((p: any) => ({ permissionId: p.id })) },
+      permissions: {
+        create: operatorPerms.map((p: any) => ({ permissionId: p.id })),
+      },
     },
     include: { permissions: true },
   });
-  const opExisting = new Set(operatorRole.permissions.map((rp: any) => rp.permissionId));
+  const opExisting = new Set(
+    operatorRole.permissions.map((rp: any) => rp.permissionId),
+  );
   const opMissing = operatorPerms.filter((p: any) => !opExisting.has(p.id));
   if (opMissing.length > 0) {
     await prisma.rolePermission.createMany({
-      data: opMissing.map((p: any) => ({ roleId: operatorRole.id, permissionId: p.id })),
+      data: opMissing.map((p: any) => ({
+        roleId: operatorRole.id,
+        permissionId: p.id,
+      })),
     });
   }
 
@@ -135,14 +144,24 @@ async function seedDemoAccounts() {
       status: 'ACTIVE',
     },
   });
-  console.log('[demo] customer@wemove.local / dealer@wemove.local (pwd Demo@123456)');
+  console.log(
+    '[demo] customer@wemove.local / dealer@wemove.local (pwd Demo@123456)',
+  );
 }
 
 async function seedCatalog() {
   const cats: Array<{ code: string; slug: string; name: string }> = [
     { code: 'BOWLING', slug: 'kids-bowling', name: 'Kids Bowling' },
-    { code: 'BALANCE', slug: 'balance-coordination', name: 'Balance & Coordination' },
-    { code: 'OUTDOOR', slug: 'outdoor-throw-games', name: 'Outdoor Throw Games' },
+    {
+      code: 'BALANCE',
+      slug: 'balance-coordination',
+      name: 'Balance & Coordination',
+    },
+    {
+      code: 'OUTDOOR',
+      slug: 'outdoor-throw-games',
+      name: 'Outdoor Throw Games',
+    },
   ];
   const catIds = new Map<string, string>();
   for (const c of cats) {
@@ -158,6 +177,7 @@ async function seedCatalog() {
     slug: string;
     name: string;
     category: string;
+    ageGuidance: string;
     variants: Array<{
       sku: string;
       name: string;
@@ -171,25 +191,59 @@ async function seedCatalog() {
       slug: 'strike-kids-bowling-set-6-pin',
       name: 'Strike! Kids Bowling Set — 6 Pins',
       category: 'BOWLING',
+      ageGuidance:
+        'Recommended for ages 3+. Adult assembly and supervision required.',
       variants: [
-        { sku: 'WM-BOWL-06-A', name: '6-Pin Set / Red', msrp: 3999, sale: 2999, b2b: 1899, stock: 120 },
-        { sku: 'WM-BOWL-06-B', name: '6-Pin Set / Blue', msrp: 3999, sale: 2999, b2b: 1899, stock: 90 },
+        {
+          sku: 'WM-BOWL-06-A',
+          name: '6-Pin Set / Red',
+          msrp: 3999,
+          sale: 2999,
+          b2b: 1899,
+          stock: 120,
+        },
+        {
+          sku: 'WM-BOWL-06-B',
+          name: '6-Pin Set / Blue',
+          msrp: 3999,
+          sale: 2999,
+          b2b: 1899,
+          stock: 90,
+        },
       ],
     },
     {
       slug: 'balance-board-wooden-arc',
       name: 'Wooden Balance Board — Arc',
       category: 'BALANCE',
+      ageGuidance:
+        'Recommended for ages 3+. Use on a level surface with adult supervision.',
       variants: [
-        { sku: 'WM-BAL-ARC-01', name: 'Arc Board / Natural', msrp: 2499, sale: 1999, b2b: 1250, stock: 200 },
+        {
+          sku: 'WM-BAL-ARC-01',
+          name: 'Arc Board / Natural',
+          msrp: 2499,
+          sale: 1999,
+          b2b: 1250,
+          stock: 200,
+        },
       ],
     },
     {
       slug: 'ring-toss-outdoor-game-set',
       name: 'Ring Toss Outdoor Game Set',
       category: 'OUTDOOR',
+      ageGuidance:
+        'Recommended for ages 4+. Adult supervision required during play.',
       variants: [
-        { sku: 'WM-TOSS-RING-01', name: 'Classic Ring Toss', msrp: 1899, sale: 1499, b2b: 899, stock: 300 },
+        {
+          sku: 'WM-TOSS-RING-01',
+          name: 'Classic Ring Toss',
+          msrp: 1899,
+          sale: 1499,
+          b2b: 899,
+          stock: 300,
+        },
       ],
     },
   ];
@@ -206,12 +260,14 @@ async function seedCatalog() {
       update: {
         name: p.name,
         categoryId: catIds.get(p.category),
+        ageGuidance: p.ageGuidance,
         status: 'ACTIVE',
       },
       create: {
         slug: p.slug,
         name: p.name,
         summary: `Demo ${p.name}`,
+        ageGuidance: p.ageGuidance,
         categoryId: catIds.get(p.category),
         status: 'ACTIVE',
       },
@@ -244,7 +300,11 @@ async function seedCatalog() {
 
       // 示例价格规则：Gold 等级价（TIER_LEVEL）
       const existing = await prisma.pricingRule.findFirst({
-        where: { variantId: variant.id, scope: 'TIER_LEVEL', tierId: goldTier.id },
+        where: {
+          variantId: variant.id,
+          scope: 'TIER_LEVEL',
+          tierId: goldTier.id,
+        },
       });
       if (!existing) {
         await prisma.pricingRule.create({
@@ -259,11 +319,15 @@ async function seedCatalog() {
       }
     }
   }
-  console.log('[catalog] categories/products seeded (3/3) with gold tier rules');
+  console.log(
+    '[catalog] categories/products seeded (3/3) with gold tier rules',
+  );
 }
 
 async function seedDemoCompany() {
-  const user = await prisma.user.findUnique({ where: { email: 'dealer@wemove.local' } });
+  const user = await prisma.user.findUnique({
+    where: { email: 'dealer@wemove.local' },
+  });
   if (!user) return;
   const tier = await prisma.dealerTier.findUnique({ where: { code: 'gold' } });
   const company = await prisma.dealerCompany.upsert({

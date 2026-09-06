@@ -19,8 +19,12 @@ export class CmsService {
 
   async dashboardStats() {
     const [articles, faqs, leads, media] = await Promise.all([
-      this.prisma.cmsPage.count({ where: { slug: { contains: 'article' } } }),
-      this.prisma.cmsPage.count({ where: { slug: { contains: 'faq' } } }),
+      this.prisma.cmsPage.count({
+        where: { slug: { contains: 'article' }, status: 'PUBLISHED' },
+      }),
+      this.prisma.cmsPage.count({
+        where: { slug: { contains: 'faq' }, status: 'PUBLISHED' },
+      }),
       this.prisma.contactMessage.count(),
       this.prisma.mediaAsset.count(),
     ]);

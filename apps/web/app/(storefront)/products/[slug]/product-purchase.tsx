@@ -32,6 +32,12 @@ export function ProductPurchase({
     () => variants.find((item) => item.id === variantId),
     [variantId, variants],
   );
+  const attributes = useMemo(() => {
+    if (!selected?.attrs || typeof selected.attrs !== "object" || Array.isArray(selected.attrs)) return [];
+    return Object.entries(selected.attrs as Record<string, unknown>)
+      .filter(([, value]) => ["string", "number", "boolean"].includes(typeof value))
+      .map(([key, value]) => [key, String(value)] as const);
+  }, [selected]);
 
   async function addToCart() {
     if (!selected?.price) return;
@@ -85,6 +91,16 @@ export function ProductPurchase({
           ))}
         </select>
       </label>
+      {attributes.length > 0 && (
+        <dl className="grid grid-cols-2 gap-x-4 gap-y-2 rounded-xl bg-neutral-50 p-4 text-sm">
+          {attributes.map(([key, value]) => (
+            <div key={key}>
+              <dt className="text-neutral-500">{key}</dt>
+              <dd className="font-medium">{value}</dd>
+            </div>
+          ))}
+        </dl>
+      )}
       <label className="block text-sm font-medium">
         Quantity
         <input

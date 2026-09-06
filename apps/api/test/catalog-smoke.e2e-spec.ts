@@ -35,7 +35,12 @@ describe.skipIf(!runDb)('Catalog 主链路冒烟（需 DB）', () => {
 
     // 自己造测试数据（CI 里没有 seed，所以不能依赖演示数据）
     const category = await prisma.productCategory.create({
-      data: { code: categoryCode, slug: categorySlug, name: 'E2 Smoke Category', active: true },
+      data: {
+        code: categoryCode,
+        slug: categorySlug,
+        name: 'E2 Smoke Category',
+        active: true,
+      },
     });
     categoryId = category.id;
     const product = await prisma.product.create({
@@ -43,6 +48,8 @@ describe.skipIf(!runDb)('Catalog 主链路冒烟（需 DB）', () => {
         name: 'E2 Smoke Product',
         slug: productSlug,
         summary: 'created by E2 smoke test',
+        ageGuidance: 'Ages 6+ with adult supervision.',
+        resources: [{ label: 'Manual', url: '/manual.pdf', type: 'PDF' }],
         categoryId: category.id,
         status: 'ACTIVE',
       },
@@ -62,25 +69,37 @@ describe.skipIf(!runDb)('Catalog 主链路冒烟（需 DB）', () => {
 
   afterAll(async () => {
     await app?.close();
-    if (productId) await prisma.product.delete({ where: { id: productId } }).catch(() => undefined);
-    if (categoryId) await prisma.productCategory.delete({ where: { id: categoryId } }).catch(() => undefined);
+    if (productId)
+      await prisma.product
+        .delete({ where: { id: productId } })
+        .catch(() => undefined);
+    if (categoryId)
+      await prisma.productCategory
+        .delete({ where: { id: categoryId } })
+        .catch(() => undefined);
     await prisma.$disconnect();
   });
 
   it('GET /api/v1/health/live → 统一成功响应体', async () => {
-    const res = await request(app.getHttpServer()).get('/api/v1/health/live').expect(200);
+    const res = await request(app.getHttpServer())
+      .get('/api/v1/health/live')
+      .expect(200);
     expect(res.body.code).toBe(0);
   });
 
   it('GET /api/v1/categories → 包含自建分类', async () => {
-    const res = await request(app.getHttpServer()).get('/api/v1/categories').expect(200);
+    const res = await request(app.getHttpServer())
+      .get('/api/v1/categories')
+      .expect(200);
     expect(res.body.code).toBe(0);
     const cats = res.body.data as Array<{ slug: string }>;
     expect(cats.map((c) => c.slug)).toContain(categorySlug);
   });
 
   it('GET /api/v1/products → 列表含自建商品卡片且无 B2B 字段', async () => {
-    const res = await request(app.getHttpServer()).get('/api/v1/products').expect(200);
+    const res = await request(app.getHttpServer())
+      .get('/api/v1/products')
+      .expect(200);
     expect(res.body.code).toBe(0);
     const cards = res.body.data.items as Array<Record<string, unknown>>;
     const found = cards.find((c) => c.slug === productSlug);
@@ -97,9 +116,15 @@ describe.skipIf(!runDb)('Catalog 主链路冒烟（需 DB）', () => {
     expect(res.body.code).toBe(0);
     const detail = res.body.data as {
       slug: string;
+      ageGuidance: string;
+      resources: Array<{ label: string; url: string }>;
       variants: Array<{ sku: string; price: { priceCents: number } }>;
     };
     expect(detail.slug).toBe(productSlug);
+    expect(detail.ageGuidance).toBe('Ages 6+ with adult supervision.');
+    expect(detail.resources).toEqual([
+      { label: 'Manual', url: '/manual.pdf', type: 'PDF' },
+    ]);
     const variant = detail.variants.find((v) => v.sku === sku);
     if (!variant) throw new Error('fixture variant not found in detail');
     expect(variant.price.priceCents).toBe(1999);

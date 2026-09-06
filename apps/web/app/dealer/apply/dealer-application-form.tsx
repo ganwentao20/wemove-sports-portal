@@ -11,7 +11,16 @@ type ApplicationResponse = {
   status: string;
 };
 
-type FormData = {
+type ApplicationAttachment = {
+  mediaId: string;
+  attachmentToken: string;
+  fileName: string;
+  mimeType: string;
+  sizeBytes: number;
+  visibility: "PRIVATE";
+};
+
+type ApplicationFields = {
   companyName: string;
   legalRegNo: string;
   contactName: string;
@@ -19,11 +28,9 @@ type FormData = {
   phone: string;
   country: string;
   businessType: string;
-  documentName: string;
-  documentUrl: string;
 };
 
-const initialForm: FormData = {
+const initialForm: ApplicationFields = {
   companyName: "",
   legalRegNo: "",
   contactName: "",
@@ -31,9 +38,9 @@ const initialForm: FormData = {
   phone: "",
   country: "",
   businessType: "",
-  documentName: "",
-  documentUrl: "",
 };
+
+const qualificationTypes = ["application/pdf", "image/jpeg", "image/png"];
 
 const inputClass =
   "mt-2 w-full min-w-0 rounded-xl border border-neutral-300 bg-white px-3 py-2.5 text-neutral-950 outline-none transition focus:border-[#2B5F8A] focus:ring-2 focus:ring-[#2B5F8A]/20";
@@ -44,6 +51,7 @@ export function DealerApplicationForm() {
   const router = useRouter();
   const [step, setStep] = useState(0);
   const [form, setForm] = useState(initialForm);
+  const [documentFile, setDocumentFile] = useState<File | null>(null);
   const [confirmed, setConfirmed] = useState(false);
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -53,7 +61,7 @@ export function DealerApplicationForm() {
     [step],
   );
 
-  function update(field: keyof FormData, value: string) {
+  function update(field: keyof ApplicationFields, value: string) {
     setForm((current) => ({ ...current, [field]: value }));
     setError("");
   }
@@ -76,8 +84,13 @@ export function DealerApplicationForm() {
     ) {
       return "Please provide the company name, registration number, country and business type.";
     }
-    if (form.documentUrl && !/^https?:\/\//i.test(form.documentUrl)) {
-      return "The qualification document link must start with http:// or https://.";
+    if (
+      documentFile &&
+      (!qualificationTypes.includes(documentFile.type) ||
+        documentFile.size < 1 ||
+        documentFile.size > 5 * 1024 * 1024)
+    ) {
+      return "Qualification files must be PDF, JPG or PNG and no larger than 5 MB.";
     }
     return "";
   }
@@ -103,17 +116,16 @@ export function DealerApplicationForm() {
     setSubmitting(true);
     setError("");
     try {
-      const attachments = form.documentUrl.trim()
-        ? [
-            {
-              fileName:
-                form.documentName.trim() || "Business qualification document",
-              key: `external/${encodeURIComponent(form.documentName.trim() || "qualification-document")}`,
-              url: form.documentUrl.trim(),
-              visibility: "PRIVATE" as const,
-            },
-          ]
-        : [];
+      let attachments: ApplicationAttachment[] = [];
+      if (documentFile) {
+        const upload = new FormData();
+        upload.append("file", documentFile);
+        const attachment = await apiFetch<ApplicationAttachment>(
+          "/dealer/application-attachments",
+          { method: "POST", body: upload },
+        );
+        attachments = [attachment];
+      }
 
       const application = await apiFetch<ApplicationResponse>(
         "/dealer/applications",
@@ -245,7 +257,9 @@ export function DealerApplicationForm() {
                 <input
                   className={inputClass}
                   value={form.companyName}
-                  onChange={(event) => update("companyName", event.target.value)}
+                  onChange={(event) =>
+                    update("companyName", event.target.value)
+                  }
                   autoComplete="organization"
                   required
                 />
@@ -283,26 +297,19 @@ export function DealerApplicationForm() {
                   <option value="OTHER">Other</option>
                 </select>
               </Field>
-              <Field label="Document name">
+              <Field label="Qualification document">
                 <input
                   className={inputClass}
-                  value={form.documentName}
-                  onChange={(event) =>
-                    update("documentName", event.target.value)
-                  }
-                  placeholder="e.g. Business license"
+                  type="file"
+                  accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png"
+                  onChange={(event) => {
+                    setDocumentFile(event.target.files?.[0] ?? null);
+                    setError("");
+                  }}
                 />
-              </Field>
-              <Field label="Qualification document URL">
-                <input
-                  className={inputClass}
-                  type="url"
-                  value={form.documentUrl}
-                  onChange={(event) =>
-                    update("documentUrl", event.target.value)
-                  }
-                  placeholder="https://..."
-                />
+                <p className="mt-2 text-xs text-neutral-500">
+                  Optional. PDF, JPG or PNG; maximum 5 MB. Stored privately.
+                </p>
               </Field>
             </div>
           </section>
@@ -327,10 +334,7 @@ export function DealerApplicationForm() {
               <Review label="Business type" value={form.businessType} />
               <Review
                 label="Qualification"
-                value={
-                  form.documentName ||
-                  (form.documentUrl ? "Document link provided" : "Not provided")
-                }
+                value={documentFile?.name ?? "Not provided"}
               />
             </dl>
             <label className="mt-6 flex items-start gap-3 text-sm text-neutral-700">

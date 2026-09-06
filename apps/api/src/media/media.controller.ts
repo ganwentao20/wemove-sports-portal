@@ -43,6 +43,11 @@ export class MediaController {
     return this.media.list();
   }
 
+  @Get('public')
+  publicList() {
+    return this.media.listPublic();
+  }
+
   @Post('upload')
   @UseGuards(JwtAuthGuard, RolesGuard, RequireMfaGuard)
   @Roles('SUPER_ADMIN')

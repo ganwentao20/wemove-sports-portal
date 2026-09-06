@@ -14,10 +14,10 @@
 | `src/audit/`                                             | 审计记录 `AuditService.record()`（fire-and-forget）                                          | 组长                     |
 | `src/health/`                                            | `/health/live` `/health/ready`（探活）                                                       | 组长/E                   |
 | `src/pricing/`                                           | **价格引擎（纯函数 + 单测）**：企业专属价 > 价格表 > 等级价 > B2B 默认价；零售只走 MSRP/Sale | 组员 C（引擎与组长联调） |
-| `src/catalog/`                                           | 商品公开只读切片（PLP/PDP 数据源，白名单出参防底价泄漏）                                     | 组员 C（演示切片）       |
-| `src/dealer/`                                            | 经销商申请提交、本人/企业边界查询、防刷限流、后台审核状态机与审计                            | 组员 B                   |
-| `src/cart/`；待建：`order/` `seo/`                      | B2C 购物车已接入；订单/结算（C）与 SEO 网关能力（D/组长）待后续切片                         | C/D/组长                 |
-| `src/cms/` `src/media/` `src/contact/`                  | CMS、媒体与联系工单 API                                                                      | D                        |
+| `src/catalog/`                                           | 商品公开目录 + 商品/分类/SKU/库存后台（白名单出参防底价泄漏）                                 | 组员 C                   |
+| `src/dealer/`                                            | 经销商申请与私有资质、本人/企业边界、防刷限流、审核状态机与 Quick Order                    | 组员 B                   |
+| `src/cart/` `src/order/`                                | B2C 购物车、结算快照、库存事务与订单状态机                                                   | C                        |
+| `src/cms/` `src/media/` `src/contact/`                  | CMS 草稿/发布、受限媒体与联系工单 API                                                         | D                        |
 
 ## 工程约定
 
@@ -27,8 +27,8 @@
 - **防越权**：经销商价经 `pricing-engine.isAllowedDealerPriceView` 判定 + 企业边界 companyId 注入，
   公开接口只映射零售价（见 `catalog.service.ts` 注释与安全测试点）。
 - **审计**：后台敏感操作前调用 `audit.record({...})`。
-- **测试**：vitest。纯逻辑单测放 `src/**/*.spec.ts`（离线可跑）；e2e 在 `test/`（`npm run test:e2e`，
-  当前仅覆盖不依赖 DB 的约定链路；DB 集成用例由组员 E 在 docker 中补）。
+- **测试**：vitest。纯逻辑单测放 `src/**/*.spec.ts`（离线可跑）；e2e 在 `test/`（`npm run test:e2e`）；
+  设置 `E2E_DB=1` 时纳入 PostgreSQL/Redis 认证、目录和订单库存闭环。
 - **lint**：`npm run lint`（oxlint）。格式：prettier（`npm run format`）。
 
 ## 数据库（Prisma 6）
@@ -59,8 +59,10 @@ Schema 单一事实源：`prisma/schema.prisma`（归属注释 M1/MA/MB/MC/MD/ME
 | POST      | `/auth/resend-verification`                         | 重发验证邮件（防枚举：统一返回 ok）                                                     |
 | POST      | `/auth/login`                                       | C 端/经销商成员登录（Redis 失败限流：单邮箱 5 次/15min、单 IP 30 次/min）               |
 | POST      | `/dealer/applications`                              | 提交经销商资质申请（公开，单 IP 5 次/min；Redis 不可用时降级）                          |
+| POST      | `/dealer/application-attachments`                   | 资质私有上传（PDF/JPG/PNG、5 MB，单 IP 10 次/hour）                                   |
 | GET       | `/dealer/applications/:id`                          | 查询本人或所属企业申请（Bearer JWT，跨账号返回 403）                                    |
 | GET       | `/dealer/catalog?quantity=5`                        | 已审批经销商目录与企业/等级/B2B 默认成交价（Bearer JWT）                                |
+| POST      | `/dealer/quick-order/validate`                      | 最多 100 行 SKU/数量逐行校验授权价、重复项与库存（经销商会话）                           |
 | GET       | `/admin/dealer/applications`                        | 审核工作台列表，可按 status 筛选（仅 SUPER_ADMIN）                                      |
 | PATCH     | `/admin/dealer/applications/:id/review`             | 审核流转；批准时事务创建/批准企业并绑定申请人为 OWNER，终态不可回退并留审计              |
 | POST      | `/auth/staff/login`                                 | 后台员工登录（角色入 token；独立限流）                                                  |
@@ -90,6 +92,14 @@ Schema 单一事实源：`prisma/schema.prisma`（归属注释 M1/MA/MB/MC/MD/ME
 | PATCH | `/cart/items/:variantId` | 改量（quantity=0 等同删除） |
 | DELETE | `/cart/items/:variantId` | 移除单个变体行 |
 | DELETE | `/cart` | 清空购物车 |
+| POST | `/orders/checkout` | 客户结算：价格快照、购物车行锁与条件库存预留 |
+| GET | `/orders` `/orders/:id` | 仅本人订单列表/详情 |
+| PATCH | `/orders/:id/cancel` | 客户取消待处理订单并返还预留库存 |
+| GET/PATCH | `/admin/orders` `/admin/orders/:id/status` | 后台订单列表与 MFA 状态流转 |
+| GET/POST/PATCH | `/admin/catalog/*` | 商品、分类、SKU 与库存管理（MFA + 审计） |
+| GET/POST/PATCH/DELETE | `/cms/pages` | 公共端仅已发布；管理写操作 MFA + 审计 |
+| GET/POST/DELETE | `/media` | 管理媒体；`/media/public` 只列公开文件；上传限 5 MB JPG/PNG/WebP/PDF，私有文件签名下载 |
+| GET/POST/PUT | `/contacts` | 访客留言、后台列表与 MFA 工单状态更新 |
 
 ## MFA 二次认证（安全红线）
 
@@ -120,4 +130,4 @@ Schema 单一事实源：`prisma/schema.prisma`（归属注释 M1/MA/MB/MC/MD/ME
 - 单元：`npm test`（纯逻辑，离线可跑）。
 - e2e 离线冒烟：`npm run test:e2e`（响应体/校验/门禁约定）。
 - **DB 集成闭环（需 docker 的 PG+Redis）**：设置 `E2E_DB=1` 后运行 test:e2e，
-  覆盖 注册→邮箱验证→登录→登出黑名单 与 登录失败限流 429（CI 编排由组员 E 接入）。
+  覆盖注册→验证→登录→登出/限流、公开目录，以及结算→库存预留→本人订单→取消返库；CI #39 已通过。
