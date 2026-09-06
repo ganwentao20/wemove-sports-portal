@@ -1,9 +1,11 @@
-import { ApiError, type ApiEnvelope } from './api';
+import { ApiError, type ApiEnvelope } from "./api";
 
-export type SessionKind = 'dealer' | 'staff';
+export type SessionKind = "customer" | "dealer" | "staff";
 
 async function readEnvelope<T>(response: Response): Promise<T> {
-  const body = (await response.json().catch(() => null)) as ApiEnvelope<T> | null;
+  const body = (await response
+    .json()
+    .catch(() => null)) as ApiEnvelope<T> | null;
   if (!response.ok || !body || body.code !== 0) {
     throw new ApiError(
       body?.message ?? `Request failed with HTTP ${response.status}`,
@@ -16,10 +18,10 @@ async function readEnvelope<T>(response: Response): Promise<T> {
 
 function secureHeaders(init?: RequestInit): Headers {
   const headers = new Headers(init?.headers);
-  headers.set('Accept', 'application/json');
-  headers.set('x-wemove-csrf', '1');
+  headers.set("Accept", "application/json");
+  headers.set("x-wemove-csrf", "1");
   if (init?.body != null && !(init.body instanceof FormData)) {
-    headers.set('Content-Type', 'application/json');
+    headers.set("Content-Type", "application/json");
   }
   return headers;
 }
@@ -30,7 +32,7 @@ export async function sessionLogin<T>(
   credentials: { email: string; password: string },
 ): Promise<T> {
   const response = await fetch(`/api/session/${kind}/login`, {
-    method: 'POST',
+    method: "POST",
     headers: secureHeaders(),
     body: JSON.stringify(credentials),
   });
@@ -43,18 +45,19 @@ export async function secureApiFetch<T>(
   path: string,
   init?: RequestInit,
 ): Promise<T> {
-  if (!path.startsWith('/')) throw new Error('secure API path must start with /');
+  if (!path.startsWith("/"))
+    throw new Error("secure API path must start with /");
   const response = await fetch(`/api/secure/${kind}${path}`, {
     ...init,
     headers: secureHeaders(init),
-    cache: init?.cache ?? 'no-store',
+    cache: init?.cache ?? "no-store",
   });
   return readEnvelope<T>(response);
 }
 
 export async function sessionLogout(kind: SessionKind): Promise<void> {
   const response = await fetch(`/api/session/${kind}/logout`, {
-    method: 'POST',
+    method: "POST",
     headers: secureHeaders(),
   });
   await readEnvelope<unknown>(response);
