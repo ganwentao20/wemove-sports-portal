@@ -6,25 +6,40 @@ import { useMemo, useState } from 'react';
 import type { Product } from '../lib/products';
 import { COMPARE_KEY, FAVORITES_KEY, addStoredItem, toggleStoredItem } from '../lib/storefront-storage';
 
-const scenes = ['全部', '亲子共玩', '搭建探索', '空间思维'];
+const PAGE_SIZE = 4;
 
 export function HomeShowcase({ products }: { products: Product[] }) {
   const [scene, setScene] = useState('全部');
+  const [page, setPage] = useState(1);
   const [activeSlug, setActiveSlug] = useState(products[0]?.slug ?? '');
   const [message, setMessage] = useState('选择一个系列，页面会即时切换展示重点。');
+
+  const scenes = useMemo(() => ['全部', ...Array.from(new Set(products.map((product) => product.scene)))], [products]);
 
   const visibleProducts = useMemo(
     () => (scene === '全部' ? products : products.filter((product) => product.scene === scene)),
     [products, scene],
   );
 
+  const totalPages = Math.max(1, Math.ceil(visibleProducts.length / PAGE_SIZE));
+  const currentPage = Math.min(page, totalPages);
+  const pagedProducts = visibleProducts.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
   const activeProduct = products.find((product) => product.slug === activeSlug) ?? visibleProducts[0] ?? products[0];
 
   const chooseScene = (nextScene: string) => {
     const nextProducts = nextScene === '全部' ? products : products.filter((product) => product.scene === nextScene);
     setScene(nextScene);
+    setPage(1);
     if (nextProducts[0]) setActiveSlug(nextProducts[0].slug);
     setMessage(`已切换到「${nextScene}」场景。`);
+  };
+
+  const changePage = (nextPage: number) => {
+    const safePage = Math.min(Math.max(nextPage, 1), totalPages);
+    const firstProduct = visibleProducts[(safePage - 1) * PAGE_SIZE];
+    setPage(safePage);
+    if (firstProduct) setActiveSlug(firstProduct.slug);
+    setMessage(`已切换到第 ${safePage} 页，每页展示 ${PAGE_SIZE} 款产品。`);
   };
 
   const saveFavorite = () => {
@@ -59,7 +74,7 @@ export function HomeShowcase({ products }: { products: Product[] }) {
 
       <div className="showcase-layout">
         <div className="showcase-list">
-          {visibleProducts.map((product) => (
+          {pagedProducts.map((product) => (
             <button
               key={product.slug}
               type="button"
@@ -74,6 +89,17 @@ export function HomeShowcase({ products }: { products: Product[] }) {
               <small>{product.age} · {product.pieces}</small>
             </button>
           ))}
+          {totalPages > 1 ? (
+            <div className="showcase-pagination" aria-label="首页产品分页">
+              <button type="button" onClick={() => changePage(currentPage - 1)} disabled={currentPage === 1}>
+                上一页
+              </button>
+              <span>第 {currentPage} / {totalPages} 页 · 共 {visibleProducts.length} 款</span>
+              <button type="button" onClick={() => changePage(currentPage + 1)} disabled={currentPage === totalPages}>
+                下一页
+              </button>
+            </div>
+          ) : null}
         </div>
 
         <article className="showcase-detail">
