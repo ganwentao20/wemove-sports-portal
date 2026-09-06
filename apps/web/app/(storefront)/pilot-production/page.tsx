@@ -6,12 +6,12 @@ export default function PilotProductionPage() {
   return (
     <main className="pilot-page">
       <section className="pilot-hero">
-        <Image src={pilotSamples[1].image} alt="" width={1800} height={620} priority={false} />
         <div>
           <p className="eyebrow">Pilot Production</p>
           <h1>中试打样</h1>
-          <p>从原型到成品的一站式工艺打磨</p>
+          <p>用样品先验证结构、尺寸、工艺与质感，再进入小批量或正式生产，减少盲目量产风险。</p>
         </div>
+        <Image src="/products/pilot-hero.png" alt="中试打样木质样品展示" width={1800} height={620} priority={false} />
       </section>
 
       <section className="pilot-card-grid" aria-label="中试打样素材">
