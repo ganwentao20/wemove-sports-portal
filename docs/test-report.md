@@ -4,7 +4,7 @@
 
 ## 1. 测试范围与结论
 
-本报告覆盖公共目录、客户认证与购物车、B2C 订单和库存事务、经销商申请/审批/授权价格/Quick Order、员工 RBAC/MFA/审计，以及 CMS、媒体、联系工单和工程质量门禁。本轮提交 `a270a52` 本地全仓验证通过；[GitHub Actions CI #39](https://github.com/ganwentao20/wemove-sports-portal/actions/runs/34057122274) 已在 PostgreSQL 16 与 Redis 7 真环境成功完成迁移、e2e 和构建。
+本报告覆盖公共目录、客户认证与购物车、B2C 订单和库存事务、经销商申请/私有资质/审批/授权价格/Quick Order、员工 RBAC/MFA/审计，以及 CMS、媒体、联系工单和工程质量门禁。冻结代码提交 `5c9d5bf` 本地全仓验证通过；[GitHub Actions CI #40](https://github.com/ganwentao20/wemove-sports-portal/actions/runs/34058318600) 已在 PostgreSQL 16 与 Redis 7 真环境成功完成迁移、e2e 和构建。
 
 当前结论：P0 主链路已具备自动化证据；已实现的 P1 订单与 Quick Order 切片通过单元/构建验证。浏览器兼容截图、邮件 UI 截图和最新数据库 e2e 截图须在部署或本地 Docker 可用后补入最终提交包。
 
@@ -29,7 +29,7 @@
 | 单元 | `npm test` | 14 文件、69 用例通过 | 认证限流、MFA、价格优先级、购物车归属、私有附件、审核/订单状态机、Quick Order |
 | 离线 e2e | `npm run test:e2e -w api` | 12 通过、8 环境门控 | 响应 envelope、404、参数与权限元数据 |
 | 生产构建 | `npm run build` | 通过 | Next 全部路由 + Nest build |
-| DB e2e | GitHub Actions CI #39 | 通过 | 迁移、认证/Redis、目录、订单库存闭环 |
+| DB e2e | GitHub Actions CI #40 | 通过 | 迁移、认证/Redis、目录（含 PDP 字段）、订单库存闭环 |
 
 ## 4. 功能与安全矩阵
 
@@ -41,8 +41,8 @@
 | DLR-02/03 | 审核与跨企业读取 | 写操作 MFA+审计；跨企业 403 | Dealer 单测与控制器元数据测试 | 通过 |
 | DLR-04 | Quick Order 无效/重复/库存不足 | 逐行错误，不泄漏未授权 SKU | Dealer 单测 2 项 | 通过 |
 | PRICE-01/02 | 公开价格隔离与优先级 | 不返回 B2B 字段；企业>价表>等级>默认 | Catalog e2e + Pricing 单测 | 通过 |
-| ORDER-01 | 结算快照 | 整数分保存商品/SKU/单价快照 | Order 单测 + DB e2e | 通过（CI #39） |
-| STOCK-01 | 库存并发扣减 | 事务、购物车行锁、条件扣减、不为负 | Order 单测 + DB e2e | 通过（CI #39） |
+| ORDER-01 | 结算快照 | 整数分保存商品/SKU/单价快照 | Order 单测 + DB e2e | 通过（CI #40） |
+| STOCK-01 | 库存并发扣减 | 事务、购物车行锁、条件扣减、不为负 | Order 单测 + DB e2e | 通过（CI #40） |
 | ORDER-02 | 非法状态转换 | 409；取消/履约正确释放 reservation | 8 项状态机单测 + DB e2e | 通过 |
 | ADM-02/03 | MFA 与审计 | 第 5 次失败锁定；关键写操作记录前后值 | MFA 单测、服务测试 | 通过 |
 | WEB-04 | 联系表单 | 前后端校验、成功/失败反馈、蜜罐 | 构建 + 人工演示待截图 | 通过（截图待补） |

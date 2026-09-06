@@ -4,7 +4,7 @@
 
 ## 结论
 
-组长共享基座、B 的经销商 PR #1/#3/#6、C 的价格规则与购物车 PR #8、E 的测试 PR #5 已按依赖顺序合入 main。重新同步远端后未发现其他成员的新提交或开放 PR；A 的旧分支仍含偏题页面、大图和 localStorage 会话，因此继续保全但不整体合并。主线提交 `a270a52` 已补齐商品/SKU/库存后台、B2C 订单库存事务、Quick Order、认证邮件页面、CMS/媒体/工单后台及 SEO 基础，GitHub Actions CI #39 全部成功。
+组长共享基座、B 的经销商 PR #1/#3/#6、C 的价格规则与购物车 PR #8、E 的测试 PR #5 已按依赖顺序合入 main。重新同步远端后未发现其他成员的新提交或开放 PR；A 的旧分支仍含偏题页面、大图和 localStorage 会话，因此继续保全但不整体合并。冻结代码提交 `5c9d5bf` 已补齐商品/SKU/库存后台、B2C 订单库存事务、Quick Order、私有资质、认证邮件页面、公开内容、CMS/媒体/工单后台及 SEO 基础，GitHub Actions CI #40 全部成功。
 
 ## 分支与贡献保护
 
@@ -27,7 +27,7 @@
 | `npm test` | 通过 | 14 文件、69 个单元测试通过（含购物车、价格、私有附件、审核/订单状态机与 Quick Order） |
 | `npm run build` | 通过 | Next.js 全部路由生成成功；NestJS 构建成功 |
 | `npm run test:e2e -w api` | 通过（离线部分） | 12 个无数据库 e2e 通过；8 个 DB/Redis 用例按环境门控跳过 |
-| DB e2e | GitHub CI #39 通过 | PostgreSQL 迁移、Redis 认证、目录与新增订单库存事务均成功；本机 Docker Desktop 未运行 |
+| DB e2e | GitHub CI #40 通过 | PostgreSQL 迁移、Redis 认证、目录与订单库存事务均成功；本机 Docker Desktop 未运行 |
 
 ## 已修复问题
 
@@ -69,7 +69,7 @@
 - A：主线已补齐安全认证、目录、PDP、对比、Play & Learn、购物车和订单；继续提交地址簿、愿望单及经授权的轻量视觉资源，旧分支不得原样覆盖。
 - B/C：Quick Order 与 B2C Order 已完成；先共同评审 PriceBook 企业授权、RFQ 报价版本和企业 PO 快照 Schema，再分别实现。
 - D：当前 Next/Nest CMS、媒体与工单切片已可构建；需在冻结版本复核并向操作手册补实际截图。
-- E：CI #39 已覆盖订单库存 DB e2e；继续补 Mailpit 邮件闭环、混合负载、浏览器兼容与可复核截图。
+- E：CI #40 已覆盖最新迁移与订单库存 DB e2e；继续补 Mailpit 邮件闭环、混合负载、浏览器兼容与可复核截图。
 - 全员：上传六份独立技术现状/思政报告、正式会议纪要和 PPT 内容，并在例会上确认工作量比例。
 - 组长：`main` 已按团队决定开放给 Write 协作者直接推送且无需审核；持续关注主线 CI，结项时依据证据填写工作量比例。
 
