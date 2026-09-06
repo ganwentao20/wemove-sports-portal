@@ -1,7 +1,7 @@
 # ============================================================
-# WEMOVE SPORTS 本地基础设施编排（PostgreSQL 16 + Redis 7）
+# WEMOVE SPORTS 本地基础设施编排（PostgreSQL 16 + Redis 7 + Mailpit）
 # 用法（仓库根目录执行）：
-#   npm run db:up      # 启动数据库
+#   npm run db:up      # 启动数据库 + 开发收件箱
 #   npm run db:down    # 停止
 # 环境变量来自同目录 infra/.env（不提交，复制 .env.example 为 .env）
 # ============================================================
@@ -40,6 +40,19 @@ services:
       interval: 5s
       timeout: 3s
       retries: 12
+
+  mailpit:
+    image: axllent/mailpit:latest
+    container_name: wemove-mailpit
+    restart: unless-stopped
+    ports:
+      - '1025:1025'
+      - '8025:8025'
+    healthcheck:
+      test: ['CMD', '/mailpit', 'readyz']
+      interval: 10s
+      timeout: 3s
+      retries: 5
 
 volumes:
   pgdata:

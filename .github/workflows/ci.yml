@@ -1,4 +1,4 @@
-# WEMOVE SPORTS · 基础 CI（骨架版，组员 E 负责完善：数据库服务、集成/压测段）
+# WEMOVE SPORTS · CI（lint + 单测 + 构建 + DB 集成 e2e）
 name: CI
 
 on:
@@ -17,6 +17,34 @@ jobs:
     strategy:
       matrix:
         node-version: [22]
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: wemove
+          POSTGRES_PASSWORD: wemove_dev
+          POSTGRES_DB: wemove
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U wemove -d wemove"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 20
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 20
+    env:
+      DATABASE_URL: postgresql://wemove:wemove_dev@localhost:5432/wemove?schema=public
+      REDIS_URL: redis://localhost:6379/0
+      E2E_DB: '1'
+      JWT_ACCESS_SECRET: ci_dev_only_change_me
     steps:
       - uses: actions/checkout@v4
 
@@ -37,6 +65,12 @@ jobs:
 
       - name: Unit tests (workspaces, if present)
         run: npm test
+
+      - name: Apply database migrations
+        run: npm run db:deploy
+
+      - name: E2E tests with DB (auth flow, E2E_DB gate)
+        run: npm run test:e2e -w api
 
       - name: Build api
         run: npm run build:api
