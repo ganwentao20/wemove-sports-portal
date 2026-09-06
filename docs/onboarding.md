@@ -23,15 +23,13 @@ git config --local http.proxy http://127.0.0.1:7897   # 以本机代理端口为
 git clone https://github.com/ganwentao20/wemove-sports-portal.git
 cd wemove-sports-portal
 
-npm install          # 全仓依赖（在仓库根执行一次即可）
-npm run db:up        # 启动 PostgreSQL + Redis（首次拉镜像较慢）
-docker ps            # 应看到 wemove-postgres / wemove-redis 均 healthy
-
-cd apps/api
-copy .env.example .env    # Windows；macOS/Linux: cp .env.example .env
-npx prisma migrate dev --name init
-npm run prisma:seed       # RBAC + 演示账号 + 演示商品（幂等）
-cd ../..
+npm ci                         # 按 package-lock.json 安装全仓依赖
+copy apps\api\.env.example apps\api\.env  # Windows；macOS/Linux 用 cp
+npm run db:up                  # PostgreSQL + Redis + Mailpit
+docker ps                      # 三个容器均应 healthy
+npm run prisma:generate
+npm run db:deploy              # 应用已提交迁移；不要重复创建 init 迁移
+npm run db:seed                # RBAC + 本地演示账号 + 演示商品（幂等）
 
 npm run dev               # 并行启动 web(3000) + api(8080)
 ```
@@ -40,9 +38,9 @@ npm run dev               # 并行启动 web(3000) + api(8080)
 - 前台 http://localhost:3000（首页 → Products → 任一商品详情）
 - API 探活 http://localhost:8080/api/v1/health/live → `{"code":0,...}`
 
-演示账号：`admin@wemove.local / Admin@12345`（后台）；`customer@wemove.local`、`dealer@wemove.local`（密码 `Demo@123456`）。
+Mailpit 开发收件箱：http://localhost:8025。演示凭据仅可用于本地/测试，禁止沿用到生产。
 
-> 只写前端时 API 可以不开？不行 —— 页面数据走代理 `/api/v1`，请保持 `npm run dev` 两个进程都起。
+> 只做静态样式时可使用页面内已有 fallback 数据；联调认证、价格、目录等真实流程时必须同时启动 API 与基础设施。
 
 ## 三、仓库地图：谁改哪里（避免冲突）
 
@@ -73,7 +71,7 @@ git add -A && git commit -m "feat(dealer): 新增经销商申请 API"
 git push -u origin feature/dealer-ming
 ```
 1. 到 GitHub 仓库点 **Compare & pull request**（用 PR 模板填写）；
-2. 等 **CI 绿** + ≥1 人评审后合并；main 已受保护，**不要直推 main**。
+2. 等 **CI 绿** + ≥1 人评审后合并；项目协作政策要求保护 `main`，**不要直推 main**。
 
 ## 五、常见坑（FAQ）
 
@@ -84,6 +82,7 @@ git push -u origin feature/dealer-ming
 | `prisma migrate` 连接失败 | `apps/api/.env` 没建或数据库没起：`npm run db:up` |
 | `dev` 起 api 报 8080 被占用 | `netstat -ano | findstr 8080` 找到进程结束，或改 `apps/api/.env` PORT |
 | 前端页面能开但数据是 mock | 页面尚未接线 API（见页面注释中的负责人） |
+| 邮箱验证信没收到 | 本地邮件进入 Mailpit：http://localhost:8025；确认 SMTP_HOST=localhost、SMTP_PORT=1025 |
 | TS 报 `Cannot find module './x.js'` | api 是 ESM：**导入必须写 `.js` 后缀**，哪怕源文件是 `.ts` |
 | 改了 schema 但 Prisma Client 类型没变 | 根目录执行 `npm run prisma:generate`（或跑一次迁移） |
 | 不知道某接口返回什么 | 看 `apps/api/README.md` API 一览 + 统一响应体约定 |

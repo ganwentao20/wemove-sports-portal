@@ -47,13 +47,13 @@
 
 ## 六、Git 协作规范（6 人拉入后生效）
 
-1. 分支：`main`（受保护，禁止直推）→ `feature/<模块>-<英文名>` → PR 合并（≥1 人评审）。
+1. 分支：`main`（应在仓库设置中启用保护，团队禁止直推）→ `feature/<模块>-<英文名>` → PR 合并（≥1 人评审）。
 2. 提交信息用 Conventional Commits：`feat:` `fix:` `docs:` `chore:` `test:` `refactor:`。
 3. 改 `apps/api/prisma/schema.prisma` 必须**同 PR 附迁移 SQL**（`npm run db:migrate` 生成）。
 4. 新增依赖须在 PR 描述说明用途；CI（lint/单测/构建）绿了才能合。
 
 ## 七、数据库与本地环境注意
 
-1. 本地数据库：`npm run db:up`（Docker PG16+Redis7）；`apps/api/.env` 由 `.env.example` 复制（不入库）。
+1. 本地基础设施：`npm run db:up`（Docker PG16 + Redis7 + Mailpit）；`apps/api/.env` 由 `.env.example` 复制（不入库）。
 2. 首次 clone 后按根 README「快速开始」执行；Prisma 版本固定 6.x，升级到 7 需组员 C/E 评审后统一进行。
 3. 运行中的演示服务与本机 Docker 容器仅用于本地开发，**不得包含任何真实客户数据**。

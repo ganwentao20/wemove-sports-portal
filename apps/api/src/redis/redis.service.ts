@@ -73,6 +73,22 @@ export class RedisService implements OnModuleDestroy {
     }
   }
 
+  /** 读取整数计数。键不存在返回 0；Redis 不可用或值非法返回 null。 */
+  async getNumber(key: string): Promise<number | null> {
+    const client = this.ensure();
+    if (!client) return null;
+    try {
+      const value = await client.get(key);
+      if (value === null) return 0;
+      const parsed = Number(value);
+      return Number.isSafeInteger(parsed) && parsed >= 0 ? parsed : null;
+    } catch (err) {
+      this.logger.warn(`redis get failed: ${err instanceof Error ? err.message : String(err)}`);
+      this.reset();
+      return null;
+    }
+  }
+
   /** 删除键（登录成功清除失败计数）。false = Redis 不可用 */
   async del(key: string): Promise<boolean> {
     const client = this.ensure();
