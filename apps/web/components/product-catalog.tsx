@@ -4,7 +4,6 @@ import { useMemo, useState } from 'react';
 import { ProductCard } from './product-card';
 import { productCategories, type Product } from '../lib/products';
 
-const FILTERS = ['全部', ...productCategories.map((category) => category.label), '3 岁及以上', '4 岁及以上', '亲子共玩', '搭建探索', '空间思维'];
 const SORTS = [
   { label: '默认排序', value: 'default' },
   { label: '价格从低到高', value: 'price-asc' },
@@ -18,6 +17,11 @@ export function ProductCatalog({ products }: { products: Product[] }) {
   const [filter, setFilter] = useState('全部');
   const [keyword, setKeyword] = useState('');
   const [sort, setSort] = useState('default');
+
+  const filters = useMemo(() => {
+    const dynamicLabels = products.flatMap((product) => [product.age, product.scene, ...product.tags]);
+    return ['全部', ...productCategories.map((category) => category.label), ...Array.from(new Set(dynamicLabels))];
+  }, [products]);
 
   const visibleProducts = useMemo(() => {
     const normalized = keyword.trim().toLowerCase();
@@ -51,7 +55,7 @@ export function ProductCatalog({ products }: { products: Product[] }) {
           ))}
         </select>
         <div className="filter-buttons" aria-label="商品筛选">
-          {FILTERS.map((item) => (
+          {filters.map((item) => (
             <button
               key={item}
               type="button"
