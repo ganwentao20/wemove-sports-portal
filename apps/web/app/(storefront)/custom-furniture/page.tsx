@@ -11,7 +11,7 @@ export default function CustomFurniturePage() {
           <h1>家具定制</h1>
           <p>
             这里已接入原网站家具定制素材。当前先展示案例、材质和场景说明，
-            后续成员接口完成后可替换为真实案例列表、报价、预约和咨询提交。
+            后续成员接口完成后可替换为真实案例列表、需求提交、预约咨询和报价确认。
           </p>
           <Link className="primary-link" href="/contact">预约定制咨询</Link>
         </div>
@@ -38,9 +38,9 @@ export default function CustomFurniturePage() {
       <section className="furniture-flow">
         <h2>接口接入预留流程</h2>
         <div>
-          <article><span>01</span><strong>提交需求</strong><p>收集尺寸、空间、预算和联系方式，后续对接定制咨询接口。</p></article>
-          <article><span>02</span><strong>生成报价</strong><p>由成员接口返回材料、工艺、周期与报价区间。</p></article>
-          <article><span>03</span><strong>预约沟通</strong><p>保存沟通记录并进入订单或项目跟进流程。</p></article>
+          <article><span>01</span><strong>提交需求</strong><p>收集空间、用途、尺寸意向和联系方式，后续对接定制咨询接口。</p></article>
+          <article><span>02</span><strong>等待确认</strong><p>价格、制作工期、材料方案等购买决策信息，由接口或人工咨询结果返回。</p></article>
+          <article><span>03</span><strong>预约沟通</strong><p>保存沟通记录并进入订单或项目跟进流程，不在静态页面编写具体报价。</p></article>
         </div>
       </section>
     </main>
