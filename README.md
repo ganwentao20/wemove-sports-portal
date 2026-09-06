@@ -1,6 +1,6 @@
 # WEMOVE SPORTS · 官网与业务门户重构项目
 
-> **目标站点**：https://www.wemovetoy.com ｜ 课程：《软件开发实践2》团队大作业
+> **现网站**：http://www.wemovetoy.com（待迁移）｜ **重构目标**：HTTPS 正式站 ｜ 课程：《软件开发实践2》团队大作业
 > 以运动游戏玩具（儿童保龄球套装、平衡板等）为核心的品牌出海 Web 系统。
 
 ## 一、项目定位
@@ -26,7 +26,7 @@
 wemove-sports-portal/
 ├─ apps/web/   前台（(storefront) 官网 / customer / dealer / admin 路由组）
 ├─ apps/api/   后端（common/auth/rbac/audit/catalog/pricing + prisma schema 与 seed）
-├─ infra/      docker-compose（PostgreSQL 16 + Redis 7）
+├─ infra/      docker-compose（PostgreSQL 16 + Redis 7 + Mailpit）
 ├─ docs/       文档中心（见「文档导航」）
 └─ .github/    CI
 ```
@@ -49,19 +49,18 @@ wemove-sports-portal/
 前置：Node ≥ 22、Docker Desktop、npm ≥ 10。
 
 ```bash
-npm install                        # 1) 安装全仓依赖
-npm run db:up                      # 2) 启动 PostgreSQL+Redis
-cd apps/api
-copy .env.example .env             # 3) 生成本地环境变量（Windows；Linux/macOS 用 cp）
-npx prisma migrate dev --name init #    建表（含演示数据见 seed）
-npm run prisma:seed
-cd ../..
-npm run dev                        # 4) 并行启动：前台 3000 / API 8080
+npm ci                              # 1) 按 lockfile 安装全仓依赖
+copy apps\api\.env.example apps\api\.env  # 2) Windows；Linux/macOS 用 cp
+npm run db:up                       # 3) 启动 PostgreSQL + Redis + Mailpit
+npm run prisma:generate             # 4) 生成 Prisma Client
+npm run db:deploy                   # 5) 应用仓库中已提交的迁移
+npm run db:seed                     # 6) 写入本地演示数据（幂等）
+npm run dev                         # 7) 前台 3000 / API 8080
 ```
 
-验证：浏览器打开 http://localhost:3000（首页/商品列表），API 探活 http://localhost:8080/api/v1/health/live。
+验证：浏览器打开 http://localhost:3000；API 存活探针为 http://localhost:8080/api/v1/health/live，就绪探针为 http://localhost:8080/api/v1/health/ready（PostgreSQL 与 Redis 任一不可用时返回 503）。
 
-演示账号：`admin@wemove.local / Admin@12345`（后台）；`customer@wemove.local`、`dealer@wemove.local`（密码 `Demo@123456`）。
+开发收件箱：http://localhost:8025。演示账号和密码仅用于本地/测试环境，见 seed 与 `.env.example`，严禁部署到生产。
 
 > 更多环境变量说明见 `apps/api/.env.example` 与 `apps/web/.env.example`。
 
@@ -72,8 +71,9 @@ npm run dev                        # 4) 并行启动：前台 3000 / API 8080
 | `npm run dev` | 并行启动 web(3000) + api(8080) |
 | `npm run dev:web` / `npm run dev:api` | 单独启动某一端 |
 | `npm run build` | 生产构建（web + api） |
-| `npm run lint` / `npm test` | 全仓 lint / 单测 |
-| `npm run db:up` / `db:down` | 启停 PG + Redis |
+| `npm run lint` / `npm run typecheck` / `npm test` | 全仓静态检查 / 类型检查 / 单测 |
+| `npm run verify` | Prisma 生成 + lint + typecheck + 单测 + 构建 |
+| `npm run db:up` / `db:down` | 启停 PostgreSQL + Redis + Mailpit |
 | `npm run db:migrate` / `db:seed` / `db:studio` | Prisma 迁移 / 种子数据 / 可视化 |
 | `npm run prisma:generate` | 生成 Prisma Client（改 schema 后执行） |
 | `npm run test:e2e -w api` | API 冒烟 e2e |
@@ -85,6 +85,9 @@ npm run dev                        # 4) 并行启动：前台 3000 / API 8080
 | `docs/README.md` | 交付物清单、**课程红线**（思政报告/会议纪要/邮件与压缩包命名规范） |
 | `docs/development-conventions.md` | 开发/安全/合规**注意事项**、Git 协作规范（详细约定不写在 README） |
 | `docs/onboarding.md` | 新成员上手指南（环境、跑通、首次 PR、FAQ） |
+| `docs/requirements.md` | 课程验收口径的需求文档 v0.2（完整愿景与本期范围分离） |
+| `docs/plans/project-status.md` | 代码/分支/风险审计与当前真实状态 |
+| `docs/plans/schedule-current.md` | 第 8 组当前进度计划与成员任务 |
 | `docs/plans/` | 全员首个任务拆解卡、需求文档（④）大纲、PR 评审与事件记录 |
 | `docs/drafts/` | 需求文档（④）v0.1 过程稿（协作评审用） |
 | `docs/adr/0001-architecture-and-stack.md` | 技术选型与架构决策记录 |

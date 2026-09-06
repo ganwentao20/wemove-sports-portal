@@ -5,10 +5,12 @@ import 'dotenv/config';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module.js';
 import { setupApp } from './bootstrap-app.js';
+import { assertRuntimeConfig } from './config/runtime-config.js';
 
 const PORT = Number(process.env.PORT ?? 8080);
 
 async function bootstrap() {
+  assertRuntimeConfig();
   const app = await NestFactory.create(AppModule);
   app.enableShutdownHooks();
   await setupApp(app);
