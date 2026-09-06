@@ -49,6 +49,7 @@ Schema 单一事实源：`prisma/schema.prisma`（归属注释 M1/MA/MB/MC/MD/ME
 
 ## API 一览
 
+
 | 方法      | 路径                                                | 说明                                                                                    |
 | --------- | --------------------------------------------------- | --------------------------------------------------------------------------------------- |
 | GET       | `/health/live` `/health/ready`                      | live 仅检查进程；ready 同时检查 DB/Redis，故障时返回 503                                 |
@@ -77,6 +78,17 @@ Schema 单一事实源：`prisma/schema.prisma`（归属注释 M1/MA/MB/MC/MD/ME
 | POST      | `/admin/me/mfa/setup`                               | MFA 启用第一步：验证当前密码，返回 base32 secret + otpauthUrl（供扫码）                 |
 | POST      | `/admin/me/mfa/confirm`                             | 用 6 位动态码确认启用（连续错 5 次锁 15 分钟）                                          |
 | POST      | `/admin/me/mfa/disable`                             | 用动态码停用并清除密钥                                                                  |
+| GET | `/admin/pricing-rules` | 价格规则列表（variantId/scope/companyId/bookId/tierId/active 过滤 + 分页，SUPER_ADMIN/CATALOG_OPERATOR + MFA） |
+| GET | `/admin/pricing-rules/:id` | 价格规则详情 |
+| POST | `/admin/pricing-rules` | 新建价格规则（scope-specific 字段强校验 + 外键存在性校验） |
+| PATCH | `/admin/pricing-rules/:id` | 更新规则（全量审计 before/after） |
+| DELETE | `/admin/pricing-rules/:id` | 删除规则（审计留痕） |
+| GET | `/admin/pricing-rules/resolve` | 引擎装配调试：传 companyId/tierId/bookId/quantity 返回命中规则与取价 |
+| GET | `/cart` | 我的购物车（customer Bearer，变体维度 + 行小计/总价） |
+| POST | `/cart/items` | 加购（variantId+quantity，合并同变体；库存超卖防护） |
+| PATCH | `/cart/items/:variantId` | 改量（quantity=0 等同删除） |
+| DELETE | `/cart/items/:variantId` | 移除单个变体行 |
+| DELETE | `/cart` | 清空购物车 |
 
 ## MFA 二次认证（安全红线）
 

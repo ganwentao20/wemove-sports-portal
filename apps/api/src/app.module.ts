@@ -8,6 +8,7 @@ import { AuditModule } from './audit/audit.module.js';
 import { AdminModule } from './admin/admin.module.js';
 import { CatalogModule } from './catalog/catalog.module.js';
 import { PricingModule } from './pricing/pricing.module.js';
+import { CartModule } from './cart/cart.module.js';
 import { CmsModule } from './cms/cms.module.js';
 import { MediaModule } from './media/media.module.js';
 import { ContactModule } from './contact/contact.module.js';
@@ -34,6 +35,7 @@ import { FallbackModule } from './common/fallback.module.js';
     AdminModule,
     CatalogModule,
     PricingModule,
+    CartModule,
     CmsModule,
     MediaModule,
     ContactModule,
