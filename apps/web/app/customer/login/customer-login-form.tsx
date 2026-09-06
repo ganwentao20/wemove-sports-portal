@@ -2,6 +2,7 @@
 
 import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { ApiError } from "../../../lib/api";
 import { sessionLogin } from "../../../lib/secure-api";
 
@@ -45,6 +46,14 @@ export function CustomerLoginForm() {
         placeholder="Email"
         className="w-full rounded-xl border border-neutral-300 px-4 py-3 text-sm outline-none focus:border-[var(--wm-primary)]"
       />
+      <div className="text-right">
+        <Link
+          href="/forgot-password"
+          className="text-sm font-medium text-[var(--wm-primary)] underline"
+        >
+          Forgot password?
+        </Link>
+      </div>
       <input
         name="password"
         type="password"

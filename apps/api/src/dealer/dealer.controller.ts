@@ -14,6 +14,7 @@ import type { JwtPayload } from '../auth/auth.service.js';
 import { DealerService } from './dealer.service.js';
 import { CreateDealerApplicationDto } from './dto/dealer-application.dto.js';
 import { DealerCatalogQueryDto } from './dto/dealer-catalog-query.dto.js';
+import { QuickOrderDto } from './dto/quick-order.dto.js';
 
 /**
  * MB：经销商申请入口。
@@ -48,5 +49,15 @@ export class DealerController {
     @CurrentUser() user: JwtPayload,
   ) {
     return this.dealer.listDealerCatalog(query.quantity, user);
+  }
+
+  /** DLR-04：批量 SKU/数量逐行校验和企业价格预览，不创建业务单据。 */
+  @UseGuards(JwtAuthGuard)
+  @Post('quick-order/validate')
+  validateQuickOrder(
+    @Body() dto: QuickOrderDto,
+    @CurrentUser() user: JwtPayload,
+  ) {
+    return this.dealer.validateQuickOrder(dto.lines, user);
   }
 }

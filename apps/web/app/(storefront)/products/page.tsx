@@ -22,7 +22,6 @@ type ProductPage = {
   total: number;
   page: number;
   pageSize: number;
-  totalPages: number;
 };
 type Category = {
   code: string;
@@ -56,6 +55,9 @@ export default async function ProductsPage({
   const products = productsResult.ok ? productsResult.data : null;
   const productsError = productsResult.ok ? null : productsResult.message;
   const categories = categoriesResult.ok ? categoriesResult.data : [];
+  const totalPages = products
+    ? Math.ceil(products.total / products.pageSize)
+    : 0;
 
   function pageHref(nextPage: number): string {
     const nextQuery = new URLSearchParams({ page: String(nextPage) });
@@ -148,7 +150,7 @@ export default async function ProductsPage({
         </div>
       )}
 
-      {products && products.totalPages > 1 && (
+      {products && totalPages > 1 && (
         <nav
           className="mt-8 flex justify-center gap-3 text-sm"
           aria-label="Product pagination"
@@ -162,9 +164,9 @@ export default async function ProductsPage({
             </Link>
           )}
           <span className="px-2 py-2 text-neutral-500">
-            Page {products.page} of {products.totalPages}
+            Page {products.page} of {totalPages}
           </span>
-          {products.page < products.totalPages && (
+          {products.page < totalPages && (
             <Link
               className="rounded-lg border px-4 py-2"
               href={pageHref(products.page + 1)}

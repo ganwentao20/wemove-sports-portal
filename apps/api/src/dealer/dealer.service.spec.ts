@@ -65,10 +65,13 @@ function setup(found: ApplicationFixture | null = application) {
     },
     dealerMember: { upsert: vi.fn().mockResolvedValue({}) },
     product: { findMany: vi.fn().mockResolvedValue([]) },
+    productVariant: { findMany: vi.fn().mockResolvedValue([]) },
     pricingRule: { findMany: vi.fn().mockResolvedValue([]) },
     $transaction: vi.fn(),
   };
-  prismaMock.$transaction.mockImplementation(async (callback) => callback(prismaMock));
+  prismaMock.$transaction.mockImplementation(async (callback) =>
+    callback(prismaMock),
+  );
   const prisma = prismaMock as unknown as PrismaService;
   const redis = {
     incrWithTtl: vi.fn().mockResolvedValue(1),
@@ -366,5 +369,82 @@ describe('DealerService', () => {
       price: { priceCents: 2500, source: 'COMPANY_SPECIFIC' },
     });
     expect(result[0]?.variants[0]).not.toHaveProperty('b2bDefaultPriceCents');
+  });
+
+  it('Quick Order 逐行返回成交价、重复 SKU 和未授权 SKU 错误', async () => {
+    const { service, prisma } = setup();
+    vi.mocked(prisma.productVariant.findMany).mockResolvedValue([
+      {
+        id: 'variant-1',
+        sku: 'BALL-1',
+        name: 'Red',
+        b2bDefaultPriceCents: 3000,
+        stock: { available: 20 },
+        product: { name: 'Ball' },
+      },
+    ] as never);
+    vi.mocked(prisma.pricingRule.findMany).mockResolvedValue([
+      {
+        id: 'company-rule',
+        variantId: 'variant-1',
+        scope: 'COMPANY_SPECIFIC',
+        priority: 0,
+        companyId: 'company-a',
+        bookId: null,
+        tierId: null,
+        priceCents: 2500,
+        minQty: 1,
+      },
+    ] as never);
+
+    const result = await service.validateQuickOrder(
+      [
+        { sku: ' ball-1 ', quantity: 5 },
+        { sku: 'BALL-1', quantity: 1 },
+        { sku: 'UNKNOWN', quantity: 2 },
+      ],
+      customer({ companyId: 'company-a' }),
+    );
+
+    expect(result).toMatchObject({
+      valid: false,
+      totalCents: 12_500,
+      results: [
+        {
+          row: 1,
+          sku: 'BALL-1',
+          ok: true,
+          unitPriceCents: 2500,
+          lineTotalCents: 12_500,
+        },
+        { row: 2, ok: false, code: 'DUPLICATE_SKU' },
+        { row: 3, ok: false, code: 'SKU_NOT_FOUND_OR_UNAUTHORIZED' },
+      ],
+    });
+  });
+
+  it('Quick Order 对库存不足给出逐行错误且不计入总额', async () => {
+    const { service, prisma } = setup();
+    vi.mocked(prisma.productVariant.findMany).mockResolvedValue([
+      {
+        id: 'variant-1',
+        sku: 'BALL-1',
+        name: null,
+        b2bDefaultPriceCents: 3000,
+        stock: { available: 2 },
+        product: { name: 'Ball' },
+      },
+    ] as never);
+
+    const result = await service.validateQuickOrder(
+      [{ sku: 'BALL-1', quantity: 3 }],
+      customer({ companyId: 'company-a' }),
+    );
+
+    expect(result).toMatchObject({
+      valid: false,
+      totalCents: 0,
+      results: [{ ok: false, code: 'INSUFFICIENT_STOCK' }],
+    });
   });
 });

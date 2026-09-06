@@ -3,6 +3,8 @@ import { createReadStream } from 'node:fs';
 import { mkdir, unlink, writeFile } from 'node:fs/promises';
 import { createHmac, timingSafeEqual, randomUUID } from 'node:crypto';
 import { extname, join } from 'node:path';
+import { AuditService } from '../audit/audit.service.js';
+import type { JwtPayload } from '../auth/auth.service.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { BizException, ERROR_CODES } from '../common/errors.js';
 
@@ -12,15 +14,28 @@ type StoredMedia = {
   fileName: string;
   mimeType: string;
 };
+export type UploadedMediaFile = {
+  buffer: Buffer;
+  originalname: string;
+  mimetype: string;
+  size: number;
+};
 
 @Injectable()
 export class MediaService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly audit: AuditService,
+  ) {}
 
   private readonly storageRoot = join(process.cwd(), 'media_private');
 
   private signingSecret() {
-    return process.env.MEDIA_SIGNING_SECRET ?? process.env.JWT_ACCESS_SECRET ?? 'dev_only_change_me_media';
+    return (
+      process.env.MEDIA_SIGNING_SECRET ??
+      process.env.JWT_ACCESS_SECRET ??
+      'dev_only_change_me_media'
+    );
   }
 
   private signature(id: string, expires: number) {
@@ -29,13 +44,23 @@ export class MediaService {
       .digest('hex');
   }
 
-  private validSignature(id: string, expires: string | undefined, signature: string | undefined) {
+  private validSignature(
+    id: string,
+    expires: string | undefined,
+    signature: string | undefined,
+  ) {
     if (!expires || !signature) return false;
     const expiresAt = Number(expires);
-    if (!Number.isSafeInteger(expiresAt) || expiresAt < Math.floor(Date.now() / 1000)) return false;
+    if (
+      !Number.isSafeInteger(expiresAt) ||
+      expiresAt < Math.floor(Date.now() / 1000)
+    )
+      return false;
     const expected = Buffer.from(this.signature(id, expiresAt), 'utf8');
     const actual = Buffer.from(signature, 'utf8');
-    return expected.length === actual.length && timingSafeEqual(expected, actual);
+    return (
+      expected.length === actual.length && timingSafeEqual(expected, actual)
+    );
   }
 
   async list() {
@@ -56,27 +81,67 @@ export class MediaService {
     }));
   }
 
-  async create(file: any, requestedVisibility?: string) {
-    const visibility = (requestedVisibility ?? 'PUBLIC').toUpperCase() as MediaVisibility;
+  async create(
+    file: UploadedMediaFile,
+    requestedVisibility: string | undefined,
+    actor: JwtPayload,
+    ip?: string,
+  ) {
+    const visibility = (
+      requestedVisibility ?? 'PUBLIC'
+    ).toUpperCase() as MediaVisibility;
     if (!['PUBLIC', 'DEALER_ONLY', 'INTERNAL'].includes(visibility)) {
-      throw new BizException(ERROR_CODES.VALIDATION, 'invalid media visibility', 400);
+      throw new BizException(
+        ERROR_CODES.VALIDATION,
+        'invalid media visibility',
+        400,
+      );
     }
     if (!Buffer.isBuffer(file.buffer)) {
-      throw new BizException(ERROR_CODES.VALIDATION, 'uploaded file buffer is missing', 400);
+      throw new BizException(
+        ERROR_CODES.VALIDATION,
+        'uploaded file buffer is missing',
+        400,
+      );
     }
 
     await mkdir(this.storageRoot, { recursive: true });
-    const extension = extname(String(file.originalname ?? '')).replace(/[^a-zA-Z0-9.]/g, '');
+    const extension = extname(String(file.originalname ?? '')).replace(
+      /[^a-zA-Z0-9.]/g,
+      '',
+    );
     const key = `${randomUUID()}${extension}`;
-    await writeFile(join(this.storageRoot, key), file.buffer);
-    const media = await this.prisma.mediaAsset.create({
-      data: {
-        key,
-        fileName: file.originalname,
-        mimeType: file.mimetype || 'application/octet-stream',
-        sizeBytes: file.size || 0,
+    const storedPath = join(this.storageRoot, key);
+    await writeFile(storedPath, file.buffer);
+    let media;
+    try {
+      media = await this.prisma.mediaAsset.create({
+        data: {
+          key,
+          fileName: file.originalname.slice(0, 255),
+          mimeType: file.mimetype,
+          sizeBytes: file.size,
+          visibility,
+          uploadedById: actor.sub,
+        },
+      });
+    } catch (error) {
+      await unlink(storedPath).catch(() => undefined);
+      throw error;
+    }
+    void this.audit.record({
+      actorKind: 'STAFF',
+      actorStaffId: actor.sub,
+      action: 'media.upload',
+      entityType: 'mediaAsset',
+      entityId: media.id,
+      after: {
+        fileName: media.fileName,
+        mimeType: media.mimeType,
+        sizeBytes: media.sizeBytes,
         visibility,
       },
+      ip,
     });
 
     return {
@@ -97,7 +162,10 @@ export class MediaService {
       throw new BizException(ERROR_CODES.NOT_FOUND, 'media not found', 404);
     }
 
-    const safeExpire = Math.min(Math.max(Number.isFinite(expireSeconds) ? expireSeconds : 60, 1), 86400);
+    const safeExpire = Math.min(
+      Math.max(Number.isFinite(expireSeconds) ? expireSeconds : 60, 1),
+      86400,
+    );
     const expires = Math.floor(Date.now() / 1000) + Math.floor(safeExpire);
     return {
       id: media.id,
@@ -108,13 +176,24 @@ export class MediaService {
     };
   }
 
-  async open(id: string, expires?: string, signature?: string): Promise<StoredMedia> {
+  async open(
+    id: string,
+    expires?: string,
+    signature?: string,
+  ): Promise<StoredMedia> {
     const media = await this.prisma.mediaAsset.findUnique({ where: { id } });
     if (!media) {
       throw new BizException(ERROR_CODES.NOT_FOUND, 'media not found', 404);
     }
-    if (media.visibility !== 'PUBLIC' && !this.validSignature(id, expires, signature)) {
-      throw new BizException(ERROR_CODES.FORBIDDEN, 'signed media URL required', 403);
+    if (
+      media.visibility !== 'PUBLIC' &&
+      !this.validSignature(id, expires, signature)
+    ) {
+      throw new BizException(
+        ERROR_CODES.FORBIDDEN,
+        'signed media URL required',
+        403,
+      );
     }
 
     return {
@@ -124,13 +203,22 @@ export class MediaService {
     };
   }
 
-  async delete(id: string) {
+  async delete(id: string, actor: JwtPayload, ip?: string) {
     const exists = await this.prisma.mediaAsset.findUnique({ where: { id } });
     if (!exists) {
       throw new BizException(ERROR_CODES.NOT_FOUND, 'media not found', 404);
     }
     await this.prisma.mediaAsset.delete({ where: { id } });
     await unlink(join(this.storageRoot, exists.key)).catch(() => undefined);
+    void this.audit.record({
+      actorKind: 'STAFF',
+      actorStaffId: actor.sub,
+      action: 'media.delete',
+      entityType: 'mediaAsset',
+      entityId: id,
+      before: { fileName: exists.fileName, visibility: exists.visibility },
+      ip,
+    });
     return { ok: true };
   }
 }

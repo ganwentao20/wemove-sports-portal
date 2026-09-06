@@ -1,7 +1,21 @@
-import { Body, Controller, Delete, Get, Param, Post, Put, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Ip,
+  Param,
+  Post,
+  Put,
+  UseGuards,
+} from '@nestjs/common';
+import { CurrentUser } from '../auth/current-user.decorator.js';
+import type { JwtPayload } from '../auth/auth.service.js';
 import { ContactService } from './contact.service.js';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard.js';
+import { RequireMfa, RequireMfaGuard } from '../mfa/require-mfa.guard.js';
 import { Roles, RolesGuard } from '../rbac/roles.guard.js';
+import { CreateContactDto, UpdateContactStatusDto } from './dto/contact.dto.js';
 
 @Controller('contacts')
 export class ContactController {
@@ -15,24 +29,32 @@ export class ContactController {
   }
 
   @Post()
-  create(@Body() dto: Record<string, string>) {
-    return this.contact.create(dto);
+  create(@Body() dto: CreateContactDto, @Ip() ip?: string) {
+    return this.contact.create(dto, ip);
   }
 
   @Put(':id/status')
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard, RequireMfaGuard)
   @Roles('SUPER_ADMIN')
-  setStatus(@Param('id') id: string, @Body() dto: { status?: string }) {
-    if (!dto.status) {
-      throw new Error('status is required');
-    }
-    return this.contact.setStatus(id, dto.status as 'NEW' | 'IN_PROGRESS' | 'RESOLVED' | 'CLOSED');
+  @RequireMfa()
+  setStatus(
+    @Param('id') id: string,
+    @Body() dto: UpdateContactStatusDto,
+    @CurrentUser() actor: JwtPayload,
+    @Ip() ip?: string,
+  ) {
+    return this.contact.setStatus(id, dto.status, actor, ip);
   }
 
   @Delete(':id')
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard, RequireMfaGuard)
   @Roles('SUPER_ADMIN')
-  remove(@Param('id') id: string) {
-    return this.contact.remove(id);
+  @RequireMfa()
+  remove(
+    @Param('id') id: string,
+    @CurrentUser() actor: JwtPayload,
+    @Ip() ip?: string,
+  ) {
+    return this.contact.remove(id, actor, ip);
   }
 }

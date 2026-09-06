@@ -3,6 +3,7 @@ import {
   Controller,
   Delete,
   Get,
+  Ip,
   Param,
   Patch,
   Post,
@@ -10,21 +11,17 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { CmsService } from './cms.service.js';
+import { CurrentUser } from '../auth/current-user.decorator.js';
+import type { JwtPayload } from '../auth/auth.service.js';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard.js';
+import { RequireMfa, RequireMfaGuard } from '../mfa/require-mfa.guard.js';
 import { Roles, RolesGuard } from '../rbac/roles.guard.js';
-
-class CmsPageQueryDto {
-  slug?: string;
-  status?: 'DRAFT' | 'PUBLISHED';
-}
-
-class CmsPageDto {
-  slug?: string;
-  title?: string;
-  sections?: unknown;
-  status?: 'DRAFT' | 'PUBLISHED';
-  seo?: unknown;
-}
+import {
+  CmsPageQueryDto,
+  CreateCmsPageDto,
+  SeoConfigDto,
+  UpdateCmsPageDto,
+} from './dto/cms.dto.js';
 
 @Controller()
 export class CmsController {
@@ -32,44 +29,68 @@ export class CmsController {
 
   @Get('cms/pages')
   list(@Query() query: CmsPageQueryDto) {
-    if (query?.slug) {
-      return this.cms.listPages().then((pages: any[]) => pages.filter((page: any) => page.slug === query.slug));
-    }
-    return this.cms.listPages();
+    return this.cms.listPublishedPages(query.slug);
   }
 
   @Get('cms/pages/:id')
   detail(@Param('id') id: string) {
-    return this.cms.getPage(id);
+    return this.cms.getPublishedPage(id);
+  }
+
+  @Get('admin/cms/pages')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('SUPER_ADMIN')
+  adminList() {
+    return this.cms.listPages();
   }
 
   @Post('cms/pages')
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard, RequireMfaGuard)
   @Roles('SUPER_ADMIN')
-  create(@Body() dto: CmsPageDto) {
-    return this.cms.createPage(dto);
+  @RequireMfa()
+  create(
+    @Body() dto: CreateCmsPageDto,
+    @CurrentUser() actor: JwtPayload,
+    @Ip() ip?: string,
+  ) {
+    return this.cms.createPage(dto, actor, ip);
   }
 
   @Patch('cms/pages/:id')
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard, RequireMfaGuard)
   @Roles('SUPER_ADMIN')
-  update(@Param('id') id: string, @Body() dto: CmsPageDto) {
-    return this.cms.updatePage(id, dto);
+  @RequireMfa()
+  update(
+    @Param('id') id: string,
+    @Body() dto: UpdateCmsPageDto,
+    @CurrentUser() actor: JwtPayload,
+    @Ip() ip?: string,
+  ) {
+    return this.cms.updatePage(id, dto, actor, ip);
   }
 
   @Delete('cms/pages/:id')
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard, RequireMfaGuard)
   @Roles('SUPER_ADMIN')
-  remove(@Param('id') id: string) {
-    return this.cms.deletePage(id);
+  @RequireMfa()
+  remove(
+    @Param('id') id: string,
+    @CurrentUser() actor: JwtPayload,
+    @Ip() ip?: string,
+  ) {
+    return this.cms.deletePage(id, actor, ip);
   }
 
   @Get('dashboard/stats')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('SUPER_ADMIN')
   dashboardStats() {
     return this.cms.dashboardStats();
   }
 
   @Get('api/dashboard/stats')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('SUPER_ADMIN')
   legacyDashboardStats() {
     return this.cms.dashboardStats();
   }
@@ -95,16 +116,27 @@ export class CmsController {
   }
 
   @Post('seo')
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard, RequireMfaGuard)
   @Roles('SUPER_ADMIN')
-  createSeo(@Body() dto: Record<string, string>) {
-    return this.cms.createSeo(dto);
+  @RequireMfa()
+  createSeo(
+    @Body() dto: SeoConfigDto,
+    @CurrentUser() actor: JwtPayload,
+    @Ip() ip?: string,
+  ) {
+    return this.cms.createSeo(dto, actor, ip);
   }
 
   @Patch('seo/:id')
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard, RequireMfaGuard)
   @Roles('SUPER_ADMIN')
-  updateSeo(@Param('id') id: string, @Body() dto: Record<string, string>) {
-    return this.cms.updateSeo(id, dto);
+  @RequireMfa()
+  updateSeo(
+    @Param('id') id: string,
+    @Body() dto: SeoConfigDto,
+    @CurrentUser() actor: JwtPayload,
+    @Ip() ip?: string,
+  ) {
+    return this.cms.updateSeo(id, dto, actor, ip);
   }
 }

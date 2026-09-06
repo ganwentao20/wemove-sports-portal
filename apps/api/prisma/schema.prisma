@@ -63,6 +63,14 @@ enum ProductStatus {
   ARCHIVED
 }
 
+/// B2C 订单状态：待确认 → 已确认 → 已履约；待确认/已确认均可取消
+enum OrderStatus {
+  PENDING
+  CONFIRMED
+  FULFILLED
+  CANCELLED
+}
+
 /// 价格规则作用域 —— 引擎优先级由低到高按 scope 顺序：B2B_DEFAULT < TIER_LEVEL < PRICE_TABLE < COMPANY_SPECIFIC
 enum PricingScope {
   COMPANY_SPECIFIC // 企业专属价（最高）
@@ -119,49 +127,50 @@ enum DealerMemberRole {
 
 /// C 端/经销商个人账号（交易面向成年人：注册必须满 18 周岁声明字段 ageConfirmed）
 model User {
-  id            String        @id @default(cuid())
-  email         String        @unique
-  passwordHash  String
-  name          String
-  ageConfirmed  Boolean       @default(false) // 合规：成年人声明（详见合规红线）
-  status        AccountStatus @default(PENDING)
-  dealerMembers DealerMember[]
+  id                 String              @id @default(cuid())
+  email              String              @unique
+  passwordHash       String
+  name               String
+  ageConfirmed       Boolean             @default(false) // 合规：成年人声明（详见合规红线）
+  status             AccountStatus       @default(PENDING)
+  dealerMembers      DealerMember[]
   dealerApplications DealerApplication[] // 本人提交的资质申请（归属判定依据）
-  tokens        UserToken[]
-  auditLogs     AuditLog[] @relation("ActorCustomer")
-  cart          Cart?
-  createdAt     DateTime      @default(now())
-  updatedAt     DateTime      @updatedAt
+  tokens             UserToken[]
+  auditLogs          AuditLog[]          @relation("ActorCustomer")
+  cart               Cart?
+  orders             Order[]
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
 
   @@index([status])
 }
 
 /// 后台员工（与 C 端 User 物理隔离，后台数据不混入用户库）
 model Staff {
-  id           String     @id @default(cuid())
-  email        String     @unique
-  passwordHash String
-  name         String
-  status       StaffStatus @default(ACTIVE)
+  id             String       @id @default(cuid())
+  email          String       @unique
+  passwordHash   String
+  name           String
+  status         StaffStatus  @default(ACTIVE)
   // MFA（TOTP）：敏感写操作二次认证；mfaSecret 为 base32，启用后仅经 TOTP 校验使用
   mfaSecret      String?
-  mfaEnabled     Boolean    @default(false)
+  mfaEnabled     Boolean      @default(false)
   mfaConfirmedAt DateTime?
-  roles        StaffRole[]
-  mediaAssets  MediaAsset[] @relation("Uploader")
-  auditLogs    AuditLog[]  @relation("ActorStaff")
-  createdAt    DateTime   @default(now())
-  updatedAt    DateTime   @updatedAt
+  roles          StaffRole[]
+  mediaAssets    MediaAsset[] @relation("Uploader")
+  auditLogs      AuditLog[]   @relation("ActorStaff")
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
 }
 
 /// 权限点（细粒度权限编码，如 catalog:product:write）
 model Permission {
-  id        String   @id @default(cuid())
-  code      String   @unique
+  id        String           @id @default(cuid())
+  code      String           @unique
   name      String
-  group     String   // 权限分组（如 catalog/order/b2b/cms/system）
+  group     String // 权限分组（如 catalog/order/b2b/cms/system）
   roles     RolePermission[]
-  createdAt DateTime @default(now())
+  createdAt DateTime         @default(now())
 }
 
 /// 角色（RBAC：角色-权限多对多；组员/后台角色在此建模）
@@ -187,43 +196,43 @@ model RolePermission {
 model StaffRole {
   staffId String
   roleId  String
-  staff   Staff @relation(fields: [staffId], references: [id], onDelete: Cascade)
-  role    Role  @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  staff   Staff  @relation(fields: [staffId], references: [id], onDelete: Cascade)
+  role    Role   @relation(fields: [roleId], references: [id], onDelete: Cascade)
 
   @@id([staffId, roleId])
 }
 
 /// 一次性令牌（邮箱验证 / 找回密码 / 后台二次认证），只存哈希
 model UserToken {
-  id        String    @id @default(cuid())
-  type      TokenType
-  tokenHash String    @unique
-  email     String // 目标邮箱/账号（匿名可找回）
-  expiresAt DateTime
+  id         String    @id @default(cuid())
+  type       TokenType
+  tokenHash  String    @unique
+  email      String // 目标邮箱/账号（匿名可找回）
+  expiresAt  DateTime
   consumedAt DateTime?
-  user      User?     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId    String?
-  createdAt DateTime  @default(now())
+  user       User?     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId     String?
+  createdAt  DateTime  @default(now())
 
   @@index([email, type])
 }
 
 /// 操作审计日志（M1）：后台敏感操作与关键业务事件全量留痕
 model AuditLog {
-  id             String         @id @default(cuid())
-  actorKind      AuditActorKind
+  id              String         @id @default(cuid())
+  actorKind       AuditActorKind
   actorCustomerId String? // C 端/经销商成员
-  actorStaffId   String? // 后台员工
-  action         String // 如 staff.login、order.refund.apply
-  entityType     String?
-  entityId       String?
-  before         Json?
-  after          Json?
-  ip             String?
-  userAgent      String?
-  customer       User?  @relation("ActorCustomer", fields: [actorCustomerId], references: [id], onDelete: SetNull)
-  staff          Staff? @relation("ActorStaff", fields: [actorStaffId], references: [id], onDelete: SetNull)
-  createdAt      DateTime @default(now())
+  actorStaffId    String? // 后台员工
+  action          String // 如 staff.login、order.refund.apply
+  entityType      String?
+  entityId        String?
+  before          Json?
+  after           Json?
+  ip              String?
+  userAgent       String?
+  customer        User?          @relation("ActorCustomer", fields: [actorCustomerId], references: [id], onDelete: SetNull)
+  staff           Staff?         @relation("ActorStaff", fields: [actorStaffId], references: [id], onDelete: SetNull)
+  createdAt       DateTime       @default(now())
 
   @@index([actorKind, actorCustomerId, createdAt])
   @@index([actorKind, actorStaffId, createdAt])
@@ -236,30 +245,30 @@ model AuditLog {
 
 /// 经销商等级（价格链 TIER_LEVEL 依据）
 model DealerTier {
-  id        String   @id @default(cuid())
-  code      String   @unique // silver/gold/platinum
-  name      String
-  sortOrder Int      @default(0)
-  companies DealerCompany[]
-  priceRules PricingRule[] @relation("RuleTier")
-  createdAt DateTime @default(now())
+  id         String          @id @default(cuid())
+  code       String          @unique // silver/gold/platinum
+  name       String
+  sortOrder  Int             @default(0)
+  companies  DealerCompany[]
+  priceRules PricingRule[]   @relation("RuleTier")
+  createdAt  DateTime        @default(now())
 }
 
 /// 经销商企业（数据隔离边界：所有 dealer 业务数据都挂 companyId）
 model DealerCompany {
-  id             String        @id @default(cuid())
-  companyName    String
-  legalRegNo     String
-  country        String
-  status         CompanyStatus @default(PENDING)
-  tierId         String?
-  tier           DealerTier?   @relation(fields: [tierId], references: [id], onDelete: SetNull)
-  members        DealerMember[]
-  applications   DealerApplication[]
-  priceRules     PricingRule[] @relation("RuleCompany")
-  approvedAt     DateTime?
-  createdAt      DateTime      @default(now())
-  updatedAt      DateTime      @updatedAt
+  id           String              @id @default(cuid())
+  companyName  String
+  legalRegNo   String
+  country      String
+  status       CompanyStatus       @default(PENDING)
+  tierId       String?
+  tier         DealerTier?         @relation(fields: [tierId], references: [id], onDelete: SetNull)
+  members      DealerMember[]
+  applications DealerApplication[]
+  priceRules   PricingRule[]       @relation("RuleCompany")
+  approvedAt   DateTime?
+  createdAt    DateTime            @default(now())
+  updatedAt    DateTime            @updatedAt
 
   @@unique([legalRegNo, country])
   @@index([status])
@@ -270,9 +279,9 @@ model DealerMember {
   companyId String
   userId    String
   role      DealerMemberRole @default(VIEWER)
-  company   DealerCompany @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  user      User           @relation(fields: [userId], references: [id], onDelete: Cascade)
-  createdAt DateTime       @default(now())
+  company   DealerCompany    @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime         @default(now())
 
   @@id([companyId, userId])
   @@index([userId])
@@ -282,25 +291,25 @@ model DealerMember {
 /// 归属边界：applicantId（登录提交时绑定，唯一强依据）+ companyId（审核通过后回填）；
 /// 禁止用 contactEmail 字符串做归属判定（邮箱可被未验证账号伪造 → 水平越权）。
 model DealerApplication {
-  id          String            @id @default(cuid())
-  companyId   String?
-  company     DealerCompany?    @relation(fields: [companyId], references: [id], onDelete: SetNull)
-  applicantId String? // 提交人（登录提交时绑定；游客提交为 null，跟进需凭企业/后续绑定）
-  applicant   User?            @relation(fields: [applicantId], references: [id], onDelete: SetNull)
-  companyName String // 申请企业名称；审核通过后写入 DealerCompany
-  legalRegNo  String // 企业注册号/统一社会信用代码；与 country 组成企业唯一键
-  contactName String
+  id           String            @id @default(cuid())
+  companyId    String?
+  company      DealerCompany?    @relation(fields: [companyId], references: [id], onDelete: SetNull)
+  applicantId  String? // 提交人（登录提交时绑定；游客提交为 null，跟进需凭企业/后续绑定）
+  applicant    User?             @relation(fields: [applicantId], references: [id], onDelete: SetNull)
+  companyName  String // 申请企业名称；审核通过后写入 DealerCompany
+  legalRegNo   String // 企业注册号/统一社会信用代码；与 country 组成企业唯一键
+  contactName  String
   contactEmail String
-  phone       String
-  country     String
+  phone        String
+  country      String
   businessType String // 零售商/批发商/电商/商超…
-  attachments Json              @default("[]") // [{fileName,key,url,visibility:PRIVATE}]
-  status      ApplicationStatus @default(SUBMITTED)
-  remark      String? // 审核意见/补件要求
-  reviewedBy  String?
-  reviewedAt  DateTime?
-  createdAt   DateTime          @default(now())
-  updatedAt   DateTime          @updatedAt
+  attachments  Json              @default("[]") // [{fileName,key,url,visibility:PRIVATE}]
+  status       ApplicationStatus @default(SUBMITTED)
+  remark       String? // 审核意见/补件要求
+  reviewedBy   String?
+  reviewedAt   DateTime?
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
 
   @@index([status, createdAt])
   @@index([applicantId, status])
@@ -311,15 +320,15 @@ model DealerApplication {
 // ---------------------------------------------------------------------------
 
 model ProductCategory {
-  id       String             @id @default(cuid())
-  code     String             @unique
-  slug     String             @unique
-  name     String
-  parentId String?
-  parent   ProductCategory?   @relation("CategoryTree", fields: [parentId], references: [id], onDelete: SetNull)
-  children ProductCategory[]  @relation("CategoryTree")
-  products Product[]
-  active   Boolean            @default(true)
+  id        String            @id @default(cuid())
+  code      String            @unique
+  slug      String            @unique
+  name      String
+  parentId  String?
+  parent    ProductCategory?  @relation("CategoryTree", fields: [parentId], references: [id], onDelete: SetNull)
+  children  ProductCategory[] @relation("CategoryTree")
+  products  Product[]
+  active    Boolean           @default(true)
   sortOrder Int               @default(0)
   createdAt DateTime          @default(now())
   updatedAt DateTime          @updatedAt
@@ -327,19 +336,19 @@ model ProductCategory {
 
 /// 商品主数据（PIM 概念：Product → Variant(SKU)）
 model Product {
-  id          String        @id @default(cuid())
+  id          String           @id @default(cuid())
   name        String
-  slug        String        @unique // SEO 路由 /products/[slug]
+  slug        String           @unique // SEO 路由 /products/[slug]
   summary     String?
   description String? // 富文本 HTML（CMS 编辑器输出）
   categoryId  String?
   category    ProductCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
-  status      ProductStatus @default(DRAFT)
+  status      ProductStatus    @default(DRAFT)
   variants    ProductVariant[]
-  gallery     Json          @default("[]") // [{mediaId,url,alt,sort}]（媒体中心 MD）
+  gallery     Json             @default("[]") // [{mediaId,url,alt,sort}]（媒体中心 MD）
   seo         Json? // {title,description,keywords,ogImage}
-  createdAt   DateTime      @default(now())
-  updatedAt   DateTime      @updatedAt
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
 
   @@index([categoryId, status])
   @@index([status])
@@ -347,23 +356,24 @@ model Product {
 
 /// 变体 = SKU（可售粒度：库存/价格/下单均落到 variant）
 model ProductVariant {
-  id        String  @id @default(cuid())
-  productId String
-  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
-  sku       String  @unique
-  name      String? // 变体展示名（颜色/尺寸组合）
-  attrs     Json    @default("{}") // {color:'red',size:'S'}
-  msrpCents        Int? // 零售建议价（B2C）
-  salePriceCents   Int? // 零售促销价（B2C：sale 优先于 msrp）
+  id                   String        @id @default(cuid())
+  productId            String
+  product              Product       @relation(fields: [productId], references: [id], onDelete: Cascade)
+  sku                  String        @unique
+  name                 String? // 变体展示名（颜色/尺寸组合）
+  attrs                Json          @default("{}") // {color:'red',size:'S'}
+  msrpCents            Int? // 零售建议价（B2C）
+  salePriceCents       Int? // 零售促销价（B2C：sale 优先于 msrp）
   b2bDefaultPriceCents Int? // 默认 B2B 批发价（链尾兜底）
-  weightGrams      Int?
-  status     Boolean @default(true)
-  stock      Stock?
-  priceRules PricingRule[]
-  cartItems  CartItem[]
-  sortOrder  Int     @default(0)
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  weightGrams          Int?
+  status               Boolean       @default(true)
+  stock                Stock?
+  priceRules           PricingRule[]
+  cartItems            CartItem[]
+  orderItems           OrderItem[]
+  sortOrder            Int           @default(0)
+  createdAt            DateTime      @default(now())
+  updatedAt            DateTime      @updatedAt
 
   @@index([productId, status])
 }
@@ -379,11 +389,11 @@ model Stock {
 
 /// 价格表（PRICE_TABLE 规则载体，授权给经销商公司）
 model PriceBook {
-  id        String   @id @default(cuid())
-  code      String   @unique
+  id        String        @id @default(cuid())
+  code      String        @unique
   label     String
   rules     PricingRule[] @relation("RuleBook")
-  createdAt DateTime @default(now())
+  createdAt DateTime      @default(now())
 }
 
 /// 价格规则（MC + M1 引擎联调）：
@@ -392,23 +402,23 @@ model PriceBook {
 ///   零售用户只取 variant.msrp/sale，永远不读本表（防越权由服务层保证）。
 /// 阶梯价：minQty 阶梯记录多条同 scope 规则，取满足数量最大档（后续由 MC 细化）。
 model PricingRule {
-  id          String       @id @default(cuid())
-  variantId   String
-  variant     ProductVariant @relation(fields: [variantId], references: [id], onDelete: Cascade)
-  scope       PricingScope
-  priority    Int          @default(0) // 同 scope 内更大优先
-  companyId   String?
-  company     DealerCompany? @relation("RuleCompany", fields: [companyId], references: [id], onDelete: Cascade)
-  bookId      String?
-  book        PriceBook?     @relation("RuleBook", fields: [bookId], references: [id], onDelete: Cascade)
-  tierId      String?
-  tier        DealerTier?    @relation("RuleTier", fields: [tierId], references: [id], onDelete: Cascade)
-  priceCents  Int
-  minQty      Int          @default(1)
-  active      Boolean      @default(true)
-  note        String?
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
+  id         String         @id @default(cuid())
+  variantId  String
+  variant    ProductVariant @relation(fields: [variantId], references: [id], onDelete: Cascade)
+  scope      PricingScope
+  priority   Int            @default(0) // 同 scope 内更大优先
+  companyId  String?
+  company    DealerCompany? @relation("RuleCompany", fields: [companyId], references: [id], onDelete: Cascade)
+  bookId     String?
+  book       PriceBook?     @relation("RuleBook", fields: [bookId], references: [id], onDelete: Cascade)
+  tierId     String?
+  tier       DealerTier?    @relation("RuleTier", fields: [tierId], references: [id], onDelete: Cascade)
+  priceCents Int
+  minQty     Int            @default(1)
+  active     Boolean        @default(true)
+  note       String?
+  createdAt  DateTime       @default(now())
+  updatedAt  DateTime       @updatedAt
 
   @@index([variantId, scope, active])
   @@index([companyId, bookId, tierId])
@@ -478,27 +488,64 @@ model Cart {
 
 /// 购物车行：变体维度，同 cart+variant 唯一（加购合并）。unitPriceCents 为加购快照零售价。
 model CartItem {
-  id             String        @id @default(cuid())
+  id             String         @id @default(cuid())
   cartId         String
-  cart           Cart          @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  cart           Cart           @relation(fields: [cartId], references: [id], onDelete: Cascade)
   variantId      String
   variant        ProductVariant @relation(fields: [variantId], references: [id], onDelete: Cascade)
-  quantity       Int           @default(1)
-  unitPriceCents Int           // 加购时快照价（sale ?? msrp）
-  createdAt      DateTime      @default(now())
-  updatedAt      DateTime      @updatedAt
+  quantity       Int            @default(1)
+  unitPriceCents Int // 加购时快照价（sale ?? msrp）
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
 
   @@unique([cartId, variantId])
   @@index([cartId])
 }
 
+/// B2C 订单；金额与商品信息均保存下单快照，不受后续改名/改价影响。
+model Order {
+  id            String      @id @default(cuid())
+  orderNo       String      @unique
+  userId        String
+  user          User        @relation(fields: [userId], references: [id], onDelete: Restrict)
+  status        OrderStatus @default(PENDING)
+  subtotalCents Int
+  totalCents    Int
+  items         OrderItem[]
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  @@index([userId, createdAt])
+  @@index([status, createdAt])
+}
+
+/// 订单行快照；variant 删除后保留历史订单内容。
+model OrderItem {
+  id             String          @id @default(cuid())
+  orderId        String
+  order          Order           @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  variantId      String?
+  variant        ProductVariant? @relation(fields: [variantId], references: [id], onDelete: SetNull)
+  productName    String
+  sku            String
+  variantName    String?
+  quantity       Int
+  unitPriceCents Int
+  lineCents      Int
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+
+  @@index([orderId])
+  @@index([variantId])
+}
+
 /// 全站 301/302 重定向（MD+组长 SEO 基础）
 model RedirectRule {
-  id         String  @id @default(cuid())
-  sourcePath String  @unique // /old-path（不含域名）
+  id         String   @id @default(cuid())
+  sourcePath String   @unique // /old-path（不含域名）
   targetUrl  String
-  statusCode Int     @default(301)
-  active     Boolean @default(true)
+  statusCode Int      @default(301)
+  active     Boolean  @default(true)
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 }

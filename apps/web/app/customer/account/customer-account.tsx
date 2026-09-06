@@ -28,6 +28,28 @@ type Cart = {
   totalCents: number;
   items: CartItem[];
 };
+type OrderStatus = "PENDING" | "CONFIRMED" | "FULFILLED" | "CANCELLED";
+type Order = {
+  id: string;
+  orderNo: string;
+  status: OrderStatus;
+  totalCents: number;
+  createdAt: string;
+  items: Array<{
+    id: string;
+    productName: string;
+    sku: string;
+    variantName: string | null;
+    quantity: number;
+    lineCents: number;
+  }>;
+};
+type OrderPage = {
+  items: Order[];
+  total: number;
+  page: number;
+  pageSize: number;
+};
 
 const money = (cents: number) => `$${(cents / 100).toFixed(2)}`;
 
@@ -35,20 +57,25 @@ export function CustomerAccount() {
   const router = useRouter();
   const [account, setAccount] = useState<Account | null>(null);
   const [cart, setCart] = useState<Cart | null>(null);
+  const [orders, setOrders] = useState<Order[]>([]);
   const [error, setError] = useState("");
+  const [notice, setNotice] = useState("");
   const [loading, setLoading] = useState(true);
   const [busyVariant, setBusyVariant] = useState<string | null>(null);
+  const [placingOrder, setPlacingOrder] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
     setError("");
     try {
-      const [profile, currentCart] = await Promise.all([
+      const [profile, currentCart, currentOrders] = await Promise.all([
         secureApiFetch<Account>("customer", "/auth/me"),
         secureApiFetch<Cart>("customer", "/cart"),
+        secureApiFetch<OrderPage>("customer", "/orders?page=1&pageSize=20"),
       ]);
       setAccount(profile);
       setCart(currentCart);
+      setOrders(currentOrders.items);
     } catch (cause) {
       if (cause instanceof ApiError && cause.status === 401) {
         await sessionLogout("customer").catch(() => undefined);
@@ -124,18 +151,60 @@ export function CustomerAccount() {
     }
   }
 
+  async function checkout() {
+    setPlacingOrder(true);
+    setError("");
+    setNotice("");
+    try {
+      const order = await secureApiFetch<Order>(
+        "customer",
+        "/orders/checkout",
+        {
+          method: "POST",
+        },
+      );
+      setNotice(
+        `Order ${order.orderNo} was created and inventory is reserved.`,
+      );
+      await load();
+    } catch (cause) {
+      setError(
+        cause instanceof ApiError ? cause.message : "Unable to place order.",
+      );
+    } finally {
+      setPlacingOrder(false);
+    }
+  }
+
+  async function cancelOrder(id: string) {
+    setError("");
+    setNotice("");
+    try {
+      await secureApiFetch<Order>("customer", `/orders/${id}/cancel`, {
+        method: "PATCH",
+      });
+      setNotice("Order cancelled and reserved inventory returned.");
+      await load();
+    } catch (cause) {
+      setError(
+        cause instanceof ApiError ? cause.message : "Unable to cancel order.",
+      );
+    }
+  }
+
   async function signOut() {
     await sessionLogout("customer");
     router.replace("/customer/login");
     router.refresh();
   }
 
-  if (loading)
+  if (loading) {
     return (
       <p className="mx-auto max-w-6xl px-4 py-10 text-neutral-500">
         Loading your account…
       </p>
     );
+  }
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-10">
@@ -163,6 +232,15 @@ export function CustomerAccount() {
           {error}
         </p>
       )}
+      {notice && (
+        <p
+          role="status"
+          className="mt-5 rounded-lg bg-emerald-50 p-3 text-sm text-emerald-800"
+        >
+          {notice}
+        </p>
+      )}
+
       <section className="mt-8 rounded-2xl border border-neutral-200 p-6">
         <div className="flex items-center justify-between gap-4">
           <div>
@@ -220,9 +298,8 @@ export function CustomerAccount() {
                         quantity >= 0 &&
                         quantity <= 99 &&
                         quantity !== item.quantity
-                      ) {
+                      )
                         void updateQuantity(item.variantId, quantity);
-                      }
                     }}
                     className="w-20 rounded-lg border px-2 py-1"
                     aria-label={`Quantity for ${item.name || item.sku}`}
@@ -240,18 +317,72 @@ export function CustomerAccount() {
                 </div>
               </div>
             ))}
-            <p className="pt-5 text-right text-xl font-bold">
-              Total {money(cart.totalCents)}
-            </p>
+            <div className="flex flex-wrap items-center justify-end gap-4 pt-5">
+              <p className="text-xl font-bold">
+                Total {money(cart.totalCents)}
+              </p>
+              <button
+                disabled={placingOrder}
+                onClick={() => void checkout()}
+                className="rounded-full bg-[var(--wm-primary)] px-6 py-3 text-sm font-semibold text-white disabled:opacity-50"
+              >
+                {placingOrder ? "Placing order…" : "Checkout"}
+              </button>
+            </div>
           </div>
         )}
       </section>
-      <section className="mt-6 grid gap-4 sm:grid-cols-3">
-        {[
-          "Addresses — next",
-          "Orders — awaiting checkout",
-          "Wishlist — next",
-        ].map((item) => (
+
+      <section className="mt-6 rounded-2xl border border-neutral-200 p-6">
+        <h2 className="text-xl font-semibold">Orders</h2>
+        {orders.length === 0 ? (
+          <p className="mt-4 text-sm text-neutral-500">No orders yet.</p>
+        ) : (
+          <div className="mt-4 space-y-4">
+            {orders.map((order) => (
+              <article key={order.id} className="rounded-xl bg-neutral-50 p-4">
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <div>
+                    <h3 className="font-semibold">{order.orderNo}</h3>
+                    <p className="mt-1 text-xs text-neutral-500">
+                      {new Date(order.createdAt).toLocaleString()} ·{" "}
+                      {order.status}
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <p className="font-bold">{money(order.totalCents)}</p>
+                    {order.status === "PENDING" && (
+                      <button
+                        onClick={() => void cancelOrder(order.id)}
+                        className="mt-1 text-xs text-red-600 underline"
+                      >
+                        Cancel order
+                      </button>
+                    )}
+                  </div>
+                </div>
+                <ul className="mt-3 divide-y text-sm">
+                  {order.items.map((item) => (
+                    <li
+                      key={item.id}
+                      className="flex justify-between gap-4 py-2"
+                    >
+                      <span>
+                        {item.productName} · {item.variantName || item.sku} ×{" "}
+                        {item.quantity}
+                      </span>
+                      <span>{money(item.lineCents)}</span>
+                    </li>
+                  ))}
+                </ul>
+              </article>
+            ))}
+          </div>
+        )}
+      </section>
+
+      <section className="mt-6 grid gap-4 sm:grid-cols-2">
+        {["Addresses — next", "Wishlist — next"].map((item) => (
           <div
             key={item}
             className="rounded-2xl border border-dashed border-neutral-300 p-5 text-center text-sm text-neutral-400"

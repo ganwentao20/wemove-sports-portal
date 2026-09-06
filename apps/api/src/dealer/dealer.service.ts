@@ -8,6 +8,7 @@ import type { PricingRuleCandidate } from '../pricing/pricing-engine.js';
 import type { JwtPayload } from '../auth/auth.service.js';
 import { BizException, ERROR_CODES } from '../common/errors.js';
 import type { CreateDealerApplicationDto } from './dto/dealer-application.dto.js';
+import type { QuickOrderLineDto } from './dto/quick-order.dto.js';
 import type {
   ReviewDealerApplicationDto,
   ReviewStatus,
@@ -434,6 +435,171 @@ export class DealerService {
           .filter((variant) => variant !== null),
       }))
       .filter((product) => product.variants.length > 0);
+  }
+
+  /**
+   * Quick Order preview deliberately stops before persistence: company RFQ/PO ownership and
+   * lifecycle require the team-approved enterprise order schema. Each requested row still gets
+   * an explicit authorization/stock/price result so the flow is demonstrable and safe.
+   */
+  async validateQuickOrder(
+    lines: QuickOrderLineDto[],
+    currentUser: JwtPayload,
+  ) {
+    const company = await this.approvedCompany(currentUser);
+    const normalized = lines.map((line, index) => ({
+      row: index + 1,
+      sku: line.sku.trim().toUpperCase(),
+      quantity: line.quantity,
+    }));
+    const skuSet = new Set<string>();
+    const variants = await this.prisma.productVariant.findMany({
+      where: {
+        sku: { in: [...new Set(normalized.map((line) => line.sku))] },
+        status: true,
+        product: { status: 'ACTIVE' },
+      },
+      select: {
+        id: true,
+        sku: true,
+        name: true,
+        b2bDefaultPriceCents: true,
+        stock: { select: { available: true } },
+        product: { select: { name: true } },
+      },
+    });
+    const bySku = new Map(
+      variants.map((variant) => [variant.sku.toUpperCase(), variant]),
+    );
+    const rules = variants.length
+      ? await this.prisma.pricingRule.findMany({
+          where: {
+            variantId: { in: variants.map((variant) => variant.id) },
+            active: true,
+            OR: [
+              { scope: 'COMPANY_SPECIFIC', companyId: company.id },
+              ...(company.tierId
+                ? [{ scope: 'TIER_LEVEL' as const, tierId: company.tierId }]
+                : []),
+              { scope: 'B2B_DEFAULT' },
+            ],
+          },
+          select: {
+            id: true,
+            variantId: true,
+            scope: true,
+            priority: true,
+            companyId: true,
+            bookId: true,
+            tierId: true,
+            priceCents: true,
+            minQty: true,
+          },
+        })
+      : [];
+    const rulesByVariant = new Map<string, PricingRuleCandidate[]>();
+    for (const { variantId, ...rule } of rules) {
+      const candidates = rulesByVariant.get(variantId) ?? [];
+      candidates.push(rule);
+      rulesByVariant.set(variantId, candidates);
+    }
+
+    const results = normalized.map((line) => {
+      if (skuSet.has(line.sku)) {
+        return {
+          ...line,
+          ok: false as const,
+          code: 'DUPLICATE_SKU',
+          message: 'SKU is duplicated in this upload.',
+        };
+      }
+      skuSet.add(line.sku);
+      const variant = bySku.get(line.sku);
+      if (!variant) {
+        return {
+          ...line,
+          ok: false as const,
+          code: 'SKU_NOT_FOUND_OR_UNAUTHORIZED',
+          message: 'SKU does not exist or is not authorized.',
+        };
+      }
+      const resolved =
+        this.pricing.dealer(rulesByVariant.get(variant.id) ?? [], {
+          companyId: company.id,
+          tierId: company.tierId,
+          quantity: line.quantity,
+        }) ??
+        (variant.b2bDefaultPriceCents == null
+          ? null
+          : {
+              priceCents: variant.b2bDefaultPriceCents,
+              source: 'B2B_DEFAULT' as const,
+            });
+      if (!resolved) {
+        return {
+          ...line,
+          ok: false as const,
+          code: 'NO_AUTHORIZED_PRICE',
+          message: 'No authorized dealer price is available.',
+        };
+      }
+      const available = variant.stock?.available ?? 0;
+      if (available < line.quantity) {
+        return {
+          ...line,
+          ok: false as const,
+          code: 'INSUFFICIENT_STOCK',
+          message: `Only ${available} units are currently available.`,
+        };
+      }
+      return {
+        ...line,
+        ok: true as const,
+        variantId: variant.id,
+        productName: variant.product.name,
+        variantName: variant.name,
+        unitPriceCents: resolved.priceCents,
+        priceSource: resolved.source,
+        lineTotalCents: resolved.priceCents * line.quantity,
+        available,
+      };
+    });
+    const accepted = results.filter((line) => line.ok);
+    return {
+      companyId: company.id,
+      results,
+      valid: results.every((line) => line.ok),
+      totalCents: accepted.reduce(
+        (total, line) => total + line.lineTotalCents,
+        0,
+      ),
+    };
+  }
+
+  private async approvedCompany(currentUser: JwtPayload) {
+    if (
+      !this.pricing.canViewDealerPrice(currentUser) ||
+      currentUser.kind !== 'customer' ||
+      !currentUser.companyId
+    ) {
+      throw new BizException(
+        ERROR_CODES.FORBIDDEN,
+        'approved dealer membership is required',
+        403,
+      );
+    }
+    const company = await this.prisma.dealerCompany.findFirst({
+      where: { id: currentUser.companyId, status: 'APPROVED' },
+      select: { id: true, tierId: true },
+    });
+    if (!company) {
+      throw new BizException(
+        ERROR_CODES.FORBIDDEN,
+        'dealer company is not approved',
+        403,
+      );
+    }
+    return company;
   }
 
   private applicationSelect() {

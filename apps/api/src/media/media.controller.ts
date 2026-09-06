@@ -4,6 +4,7 @@ import {
   Controller,
   Delete,
   Get,
+  Ip,
   Param,
   Post,
   Query,
@@ -15,9 +16,21 @@ import {
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import type { Response } from 'express';
+import { extname } from 'node:path';
+import { CurrentUser } from '../auth/current-user.decorator.js';
+import type { JwtPayload } from '../auth/auth.service.js';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard.js';
+import { RequireMfa, RequireMfaGuard } from '../mfa/require-mfa.guard.js';
 import { Roles, RolesGuard } from '../rbac/roles.guard.js';
 import { MediaService } from './media.service.js';
+import type { UploadedMediaFile } from './media.service.js';
+
+const ALLOWED_UPLOADS: Record<string, string[]> = {
+  'image/jpeg': ['.jpg', '.jpeg'],
+  'image/png': ['.png'],
+  'image/webp': ['.webp'],
+  'application/pdf': ['.pdf'],
+};
 
 @Controller('media')
 export class MediaController {
@@ -31,14 +44,36 @@ export class MediaController {
   }
 
   @Post('upload')
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard, RequireMfaGuard)
   @Roles('SUPER_ADMIN')
-  @UseInterceptors(FileInterceptor('file'))
-  upload(@UploadedFile() file: any, @Body('visibility') visibility?: string) {
+  @RequireMfa()
+  @UseInterceptors(
+    FileInterceptor('file', {
+      limits: { files: 1, fileSize: 5 * 1024 * 1024 },
+      fileFilter: (_request, file, callback) => {
+        const allowedExtensions = ALLOWED_UPLOADS[file.mimetype];
+        const extension = extname(file.originalname).toLowerCase();
+        callback(
+          allowedExtensions?.includes(extension)
+            ? null
+            : new BadRequestException(
+                'only JPG, PNG, WebP, and PDF files are allowed',
+              ),
+          Boolean(allowedExtensions?.includes(extension)),
+        );
+      },
+    }),
+  )
+  upload(
+    @UploadedFile() file: UploadedMediaFile,
+    @Body('visibility') visibility: string | undefined,
+    @CurrentUser() actor: JwtPayload,
+    @Ip() ip?: string,
+  ) {
     if (!file) {
       throw new BadRequestException('file is required');
     }
-    return this.media.create(file, visibility);
+    return this.media.create(file, visibility, actor, ip);
   }
 
   @Get(':id/sign')
@@ -64,9 +99,14 @@ export class MediaController {
   }
 
   @Delete(':id')
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard, RequireMfaGuard)
   @Roles('SUPER_ADMIN')
-  remove(@Param('id') id: string) {
-    return this.media.delete(id);
+  @RequireMfa()
+  remove(
+    @Param('id') id: string,
+    @CurrentUser() actor: JwtPayload,
+    @Ip() ip?: string,
+  ) {
+    return this.media.delete(id, actor, ip);
   }
 }

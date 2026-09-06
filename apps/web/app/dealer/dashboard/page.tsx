@@ -21,8 +21,13 @@ export default function DealerDashboardPage() {
         >
           Authorized catalog &amp; prices
         </a>
+        <a
+          href="/dealer/quick-order"
+          className="rounded-2xl border border-[#2B5F8A] bg-[#F0F5FA] p-6 text-center text-sm font-semibold text-[#2B5F8A]"
+        >
+          Quick Order validation
+        </a>
         {[
-          "Quick Order (awaiting order model)",
           "RFQ (planned)",
           "Purchase Orders (planned)",
           "Downloads (awaiting private media)",

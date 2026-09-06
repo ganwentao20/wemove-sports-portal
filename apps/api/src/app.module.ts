@@ -13,6 +13,7 @@ import { CmsModule } from './cms/cms.module.js';
 import { MediaModule } from './media/media.module.js';
 import { ContactModule } from './contact/contact.module.js';
 import { DealerModule } from './dealer/dealer.module.js';
+import { OrderModule } from './order/order.module.js';
 import { FallbackModule } from './common/fallback.module.js';
 
 /**
@@ -40,6 +41,7 @@ import { FallbackModule } from './common/fallback.module.js';
     MediaModule,
     ContactModule,
     DealerModule,
+    OrderModule,
     FallbackModule,
   ],
 })
