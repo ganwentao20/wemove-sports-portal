@@ -286,6 +286,8 @@ model DealerApplication {
   company     DealerCompany?    @relation(fields: [companyId], references: [id], onDelete: SetNull)
   applicantId String? // 提交人（登录提交时绑定；游客提交为 null，跟进需凭企业/后续绑定）
   applicant   User?            @relation(fields: [applicantId], references: [id], onDelete: SetNull)
+  companyName String // 申请企业名称；审核通过后写入 DealerCompany
+  legalRegNo  String // 企业注册号/统一社会信用代码；与 country 组成企业唯一键
   contactName String
   contactEmail String
   phone       String

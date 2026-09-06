@@ -10,8 +10,12 @@ function fakeRedis(initial = 0): RedisService & { calls: string[] } {
   const calls: string[] = [];
   return {
     calls,
+    async getNumber(key: string) {
+      calls.push(`get:${key}`);
+      return count;
+    },
     async incrWithTtl(key: string) {
-      calls.push(key);
+      calls.push(`incr:${key}`);
       count += 1;
       return count;
     },
@@ -40,14 +44,15 @@ describe('MfaService (otplib v13)', () => {
     expect(await service.verifyCode('abc', secret)).toBe(false);
   });
 
-  it('verifyWithLimit 成功路径返回 true 并完成计数/清除调用', async () => {
+  it('verifyWithLimit 成功路径不增加失败计数并清除旧计数', async () => {
     const redis = fakeRedis();
     const service = new MfaService(redis);
     const secret = generateSecret();
     const code = await generate({ secret });
     const ok = await service.verifyWithLimit('staff-1', code, secret);
     expect(ok).toBe(true);
-    expect(redis.calls).toContain('wm:rl:mfa:staff-1'); // 计数键已使用
+    expect(redis.calls).toContain('get:wm:rl:mfa:staff-1');
+    expect(redis.calls).not.toContain('incr:wm:rl:mfa:staff-1');
   });
 
   it('错误码抛 MFA_INVALID(40301)', async () => {
@@ -70,5 +75,14 @@ describe('MfaService (otplib v13)', () => {
     }
     expect(thrown).toBeInstanceOf(BizException);
     expect((thrown as BizException).getStatus()).toBe(429);
+  });
+
+  it('已有 4 次失败时，正确动态码仍可通过并清零', async () => {
+    const redis = fakeRedis(4);
+    const service = new MfaService(redis);
+    const secret = generateSecret();
+    const code = await generate({ secret });
+    await expect(service.verifyWithLimit('staff-1', code, secret)).resolves.toBe(true);
+    expect(redis.calls).not.toContain('incr:wm:rl:mfa:staff-1');
   });
 });

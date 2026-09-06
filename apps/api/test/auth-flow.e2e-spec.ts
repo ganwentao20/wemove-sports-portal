@@ -107,5 +107,11 @@ describe.skipIf(!runDb)('Auth 集成闭环（需 DB/Redis）', () => {
       lastStatus = res.status;
     }
     expect(lastStatus).toBe(429);
+
+    // 锁定窗口内不能用正确密码绕过失败计数。
+    await request(server)
+      .post('/api/v1/auth/login')
+      .send({ email, password: 'Passw0rd123!' })
+      .expect(429);
   });
 });

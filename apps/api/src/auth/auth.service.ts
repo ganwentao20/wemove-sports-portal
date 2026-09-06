@@ -156,15 +156,17 @@ export class AuthService {
   // ---------------------------------------------------------------- 登录（C 端/经销商）
   async login(dto: LoginDto, ip?: string) {
     const email = normalizeEmail(dto.email);
+    const failureKey = `wm:rl:login:fail:${email}`;
 
     if (await this.exceeded(`wm:rl:login:ip:${ip ?? 'anon'}`, RL.loginIp)) {
       throw new BizException(ERROR_CODES.RATE_LIMIT, 'too many attempts, slow down', 429);
     }
+    await this.assertNotLocked(failureKey, RL.loginFailEmail);
 
     const user = await this.prisma.user.findUnique({ where: { email } });
     if (!user || !(await verifyPassword(dto.password, user.passwordHash))) {
       // 失败计数：第 max 次起锁定
-      await this.countFailure(`wm:rl:login:fail:${email}`, RL.loginFailEmail);
+      await this.countFailure(failureKey, RL.loginFailEmail);
       throw new BizException(ERROR_CODES.UNAUTHORIZED, 'invalid email or password', 401);
     }
     if (user.status === 'PENDING') {
@@ -174,7 +176,7 @@ export class AuthService {
       throw new BizException(ERROR_CODES.FORBIDDEN, 'account suspended', 403);
     }
 
-    await this.redis.del(`wm:rl:login:fail:${email}`); // 成功后清零
+    await this.redis.del(failureKey); // 成功后清零
     const company = await this.companyBoundaryOf(user.id);
     const payload: JwtPayload = {
       sub: user.id,
@@ -200,24 +202,26 @@ export class AuthService {
   // ---------------------------------------------------------------- 员工登录（Admin）
   async staffLogin(dto: StaffLoginDto, ip?: string) {
     const email = normalizeEmail(dto.email);
+    const failureKey = `wm:rl:staff:fail:${email}`;
 
     if (await this.exceeded(`wm:rl:staff:ip:${ip ?? 'anon'}`, RL.staffLoginIp)) {
       throw new BizException(ERROR_CODES.RATE_LIMIT, 'too many attempts, slow down', 429);
     }
+    await this.assertNotLocked(failureKey, RL.staffLoginFailEmail);
 
     const staff = await this.prisma.staff.findUnique({
       where: { email },
       include: { roles: { include: { role: true } } },
     });
     if (!staff || !(await verifyPassword(dto.password, staff.passwordHash))) {
-      await this.countFailure(`wm:rl:staff:fail:${email}`, RL.staffLoginFailEmail);
+      await this.countFailure(failureKey, RL.staffLoginFailEmail);
       throw new BizException(ERROR_CODES.UNAUTHORIZED, 'invalid email or password', 401);
     }
     if (staff.status !== 'ACTIVE') {
       throw new BizException(ERROR_CODES.FORBIDDEN, 'account disabled', 403);
     }
 
-    await this.redis.del(`wm:rl:staff:fail:${email}`);
+    await this.redis.del(failureKey);
     const roles = staff.roles.map((r) => r.role.code);
     void this.audit.record({
       actorKind: 'STAFF',
@@ -343,6 +347,14 @@ export class AuthService {
   /** 失败计数：超出后抛 429（防止继续试探密码） */
   private async countFailure(key: string, limit: { max: number; windowSec: number }) {
     const count = await this.redis.incrWithTtl(key, limit.windowSec);
+    if (count !== null && count >= limit.max) {
+      throw new BizException(ERROR_CODES.RATE_LIMIT, 'too many failed attempts, try again later', 429);
+    }
+  }
+
+  /** 锁定窗口内即使密码正确也不放行，避免失败计数被绕过。 */
+  private async assertNotLocked(key: string, limit: { max: number; windowSec: number }) {
+    const count = await this.redis.getNumber(key);
     if (count !== null && count >= limit.max) {
       throw new BizException(ERROR_CODES.RATE_LIMIT, 'too many failed attempts, try again later', 429);
     }

@@ -36,8 +36,9 @@ export class MfaService {
    * 错误码 → MFA_INVALID(40301)；连续失败达上限 → 429；Redis 不可用时仅做校验。
    */
   async verifyWithLimit(staffId: string, code: string, secret: string): Promise<boolean> {
-    const count = await this.redis.incrWithTtl(`wm:rl:mfa:${staffId}`, 900);
-    if (count !== null && count >= 5) {
+    const key = `wm:rl:mfa:${staffId}`;
+    const previousFailures = await this.redis.getNumber(key);
+    if (previousFailures !== null && previousFailures >= 5) {
       throw new BizException(
         ERROR_CODES.RATE_LIMIT,
         'too many MFA attempts, try again in 15 minutes',
@@ -46,9 +47,17 @@ export class MfaService {
     }
     const ok = await this.verifyCode(code, secret);
     if (!ok) {
+      const failures = await this.redis.incrWithTtl(key, 900);
+      if (failures !== null && failures >= 5) {
+        throw new BizException(
+          ERROR_CODES.RATE_LIMIT,
+          'too many MFA attempts, try again in 15 minutes',
+          429,
+        );
+      }
       throw new BizException(ERROR_CODES.MFA_INVALID, 'invalid MFA code', 403);
     }
-    await this.redis.del(`wm:rl:mfa:${staffId}`);
+    await this.redis.del(key);
     return true;
   }
 }

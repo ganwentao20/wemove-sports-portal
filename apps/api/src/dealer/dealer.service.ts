@@ -15,6 +15,15 @@ import type {
 
 const APPLICATION_RATE_LIMIT = { max: 5, windowSec: 60 } as const;
 
+interface ApprovalApplication {
+  id: string;
+  companyId: string | null;
+  applicantId: string | null;
+  companyName: string;
+  legalRegNo: string;
+  country: string;
+}
+
 /**
  * MB：经销商申请服务。
  * 归属边界（安全红线）：applicantId（登录提交时绑定的外键）或 companyId（已关联企业）；
@@ -98,6 +107,8 @@ export class DealerService {
 
     const application = await this.prisma.dealerApplication.create({
       data: {
+        companyName: dto.companyName.trim(),
+        legalRegNo: dto.legalRegNo.trim(),
         contactName: dto.contactName.trim(),
         contactEmail,
         phone: dto.phone.trim(),
@@ -165,6 +176,9 @@ export class DealerService {
     actor: JwtPayload,
     ip?: string,
   ) {
+    if (actor.kind !== 'staff') {
+      throw new BizException(ERROR_CODES.FORBIDDEN, 'staff only', 403);
+    }
     const application = await this.prisma.dealerApplication.findUnique({
       where: { id },
       select: this.applicationSelect(),
@@ -202,16 +216,22 @@ export class DealerService {
       );
     }
 
-    const reviewed = await this.prisma.dealerApplication.update({
-      where: { id },
-      data: {
-        status: dto.status,
-        remark: dto.remark?.trim() || null,
-        reviewedBy: actor.sub,
-        reviewedAt: new Date(),
-      },
-      select: this.applicationSelect(),
-    });
+    const reviewedAt = new Date();
+    const reviewData = {
+      status: dto.status,
+      remark: dto.remark?.trim() || null,
+      reviewedBy: actor.sub,
+      reviewedAt,
+    } as const;
+
+    const reviewed =
+      dto.status === 'APPROVED'
+        ? await this.approveApplication(application, reviewData)
+        : await this.prisma.dealerApplication.update({
+            where: { id },
+            data: reviewData,
+            select: this.applicationSelect(),
+          });
     await this.audit.record({
       actorKind: 'STAFF',
       actorStaffId: actor.sub,
@@ -223,6 +243,77 @@ export class DealerService {
       ip,
     });
     return reviewed;
+  }
+
+  /** 审核通过必须原子化创建/批准企业、绑定申请人 OWNER，并回填 companyId。 */
+  private async approveApplication(
+    application: ApprovalApplication,
+    reviewData: {
+      status: ReviewStatus;
+      remark: string | null;
+      reviewedBy: string;
+      reviewedAt: Date;
+    },
+  ) {
+    if (!application.companyId && !application.applicantId) {
+      throw new BizException(
+        ERROR_CODES.VALIDATION,
+        'bind the application to a customer account before approval',
+        400,
+      );
+    }
+    if (!application.companyName.trim() || !application.legalRegNo.trim()) {
+      throw new BizException(
+        ERROR_CODES.VALIDATION,
+        'company name and legal registration number are required before approval',
+        400,
+      );
+    }
+
+    return this.prisma.$transaction(async (tx) => {
+      let companyId = application.companyId;
+      if (companyId) {
+        await tx.dealerCompany.update({
+          where: { id: companyId },
+          data: { status: 'APPROVED', approvedAt: reviewData.reviewedAt },
+        });
+      } else {
+        const company = await tx.dealerCompany.create({
+          data: {
+            companyName: application.companyName.trim(),
+            legalRegNo: application.legalRegNo.trim(),
+            country: application.country.trim(),
+            status: 'APPROVED',
+            approvedAt: reviewData.reviewedAt,
+          },
+          select: { id: true },
+        });
+        companyId = company.id;
+      }
+
+      if (application.applicantId) {
+        await tx.dealerMember.upsert({
+          where: {
+            companyId_userId: {
+              companyId,
+              userId: application.applicantId,
+            },
+          },
+          create: {
+            companyId,
+            userId: application.applicantId,
+            role: 'OWNER',
+          },
+          update: { role: 'OWNER' },
+        });
+      }
+
+      return tx.dealerApplication.update({
+        where: { id: application.id },
+        data: { ...reviewData, companyId },
+        select: this.applicationSelect(),
+      });
+    });
   }
 
   /**
@@ -350,6 +441,8 @@ export class DealerService {
       id: true,
       companyId: true,
       applicantId: true,
+      companyName: true,
+      legalRegNo: true,
       contactName: true,
       contactEmail: true,
       phone: true,

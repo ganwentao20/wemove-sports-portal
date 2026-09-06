@@ -9,12 +9,12 @@ const logger = new Logger('HTTP');
  */
 export function requestLogMiddleware(req: Request, res: Response, next: NextFunction) {
   const startedAt = Date.now();
-  const { method, originalUrl, ip } = req;
+  const { method, path, ip } = req;
 
   res.on('finish', () => {
-    if (originalUrl.startsWith('/api/v1/health')) return;
+    if (path.startsWith('/api/v1/health')) return;
     logger.log(
-      `${method} ${originalUrl} ${res.statusCode} ${Date.now() - startedAt}ms ip=${ip ?? '-'} trace=${req.traceId ?? '-'}`,
+      `${method} ${path} ${res.statusCode} ${Date.now() - startedAt}ms ip=${ip ?? '-'} trace=${req.traceId ?? '-'}`,
     );
   });
   next();

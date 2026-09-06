@@ -7,25 +7,46 @@ import type { ApplicationStatus } from '@prisma/client';
 import { DealerService } from './dealer.service.js';
 
 /** 归属按 applicantId（提交人外键）/ companyId（企业），邮箱字符串不再参与判定 */
-const application = {
+interface ApplicationFixture {
+  id: string;
+  companyId: string | null;
+  applicantId: string | null;
+  companyName: string;
+  legalRegNo: string;
+  contactName: string;
+  contactEmail: string;
+  phone: string;
+  country: string;
+  businessType: string;
+  attachments: never[];
+  status: ApplicationStatus;
+  remark: string | null;
+  reviewedAt: Date | null;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+const application: ApplicationFixture = {
   id: 'app-owner',
   companyId: 'company-a',
   applicantId: 'user-a',
+  companyName: 'WEMOVE Dealer Ltd.',
+  legalRegNo: 'CN-DEMO-001',
   contactName: 'Buyer',
   contactEmail: 'owner@example.com',
   phone: '13800000000',
   country: 'CN',
   businessType: 'Retailer',
   attachments: [],
-  status: 'SUBMITTED' as ApplicationStatus,
+  status: 'SUBMITTED',
   remark: null,
   reviewedAt: null,
   createdAt: new Date(),
   updatedAt: new Date(),
-} as const;
+};
 
-function setup(found: typeof application | null = application) {
-  const prisma = {
+function setup(found: ApplicationFixture | null = application) {
+  const prismaMock = {
     dealerApplication: {
       findUnique: vi.fn().mockResolvedValue(found),
       findFirst: vi.fn().mockResolvedValue(null),
@@ -39,10 +60,16 @@ function setup(found: typeof application | null = application) {
     },
     dealerCompany: {
       findFirst: vi.fn().mockResolvedValue({ id: 'company-a', tierId: 'gold' }),
+      create: vi.fn().mockResolvedValue({ id: 'company-new' }),
+      update: vi.fn().mockResolvedValue({ id: 'company-a' }),
     },
+    dealerMember: { upsert: vi.fn().mockResolvedValue({}) },
     product: { findMany: vi.fn().mockResolvedValue([]) },
     pricingRule: { findMany: vi.fn().mockResolvedValue([]) },
-  } as unknown as PrismaService;
+    $transaction: vi.fn(),
+  };
+  prismaMock.$transaction.mockImplementation(async (callback) => callback(prismaMock));
+  const prisma = prismaMock as unknown as PrismaService;
   const redis = {
     incrWithTtl: vi.fn().mockResolvedValue(1),
   } as unknown as RedisService;
@@ -73,6 +100,8 @@ describe('DealerService', () => {
     const { service, prisma } = setup();
     await service.createApplication(
       {
+        companyName: ' WEMOVE Dealer Ltd. ',
+        legalRegNo: ' CN-DEMO-001 ',
         contactName: ' Buyer ',
         contactEmail: 'OWNER@EXAMPLE.COM',
         phone: '13800000000',
@@ -87,6 +116,8 @@ describe('DealerService', () => {
     expect(prisma.dealerApplication.create).toHaveBeenCalledWith(
       expect.objectContaining({
         data: expect.objectContaining({
+          companyName: 'WEMOVE Dealer Ltd.',
+          legalRegNo: 'CN-DEMO-001',
           contactEmail: 'owner@example.com',
           applicantId: null, // 未登录提交不绑定
           attachments: [
@@ -105,6 +136,8 @@ describe('DealerService', () => {
     const { service, prisma } = setup();
     await service.createApplication(
       {
+        companyName: 'WEMOVE Dealer Ltd.',
+        legalRegNo: 'CN-DEMO-002',
         contactName: 'Buyer',
         contactEmail: 'someone@example.com',
         phone: '13800000000',
@@ -171,6 +204,8 @@ describe('DealerService', () => {
     vi.mocked(redis.incrWithTtl).mockResolvedValue(6);
     await expect(
       service.createApplication({
+        companyName: 'WEMOVE Dealer Ltd.',
+        legalRegNo: 'CN-DEMO-001',
         contactName: 'Buyer',
         contactEmail: 'owner@example.com',
         phone: '13800000000',
@@ -225,6 +260,59 @@ describe('DealerService', () => {
         },
       ),
     ).rejects.toMatchObject({ status: 409 });
+  });
+
+  it('审核通过时原子创建企业、绑定申请人 OWNER 并回填 companyId', async () => {
+    const pending = { ...application, companyId: null };
+    const { service, prisma } = setup(pending);
+    await expect(
+      service.reviewApplication(
+        pending.id,
+        { status: 'APPROVED' },
+        {
+          sub: 'staff-1',
+          kind: 'staff',
+          email: 'admin@example.com',
+          name: 'Admin',
+        },
+      ),
+    ).resolves.toMatchObject({ status: 'APPROVED', companyId: 'company-new' });
+    expect(prisma.dealerCompany.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          companyName: 'WEMOVE Dealer Ltd.',
+          legalRegNo: 'CN-DEMO-001',
+          status: 'APPROVED',
+        }),
+      }),
+    );
+    expect(prisma.dealerMember.upsert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        create: expect.objectContaining({
+          companyId: 'company-new',
+          userId: 'user-a',
+          role: 'OWNER',
+        }),
+      }),
+    );
+  });
+
+  it('匿名且未绑定企业的申请不能直接批准', async () => {
+    const pending = { ...application, companyId: null, applicantId: null };
+    const { service, prisma } = setup(pending);
+    await expect(
+      service.reviewApplication(
+        pending.id,
+        { status: 'APPROVED' },
+        {
+          sub: 'staff-1',
+          kind: 'staff',
+          email: 'admin@example.com',
+          name: 'Admin',
+        },
+      ),
+    ).rejects.toMatchObject({ status: 400 });
+    expect(prisma.dealerCompany.create).not.toHaveBeenCalled();
   });
 
   it('拒绝无企业身份的零售用户查看经销商价', async () => {

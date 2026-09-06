@@ -12,6 +12,8 @@ type ApplicationResponse = {
 };
 
 type FormData = {
+  companyName: string;
+  legalRegNo: string;
   contactName: string;
   contactEmail: string;
   phone: string;
@@ -22,6 +24,8 @@ type FormData = {
 };
 
 const initialForm: FormData = {
+  companyName: "",
+  legalRegNo: "",
   contactName: "",
   contactEmail: "",
   phone: "",
@@ -63,8 +67,14 @@ export function DealerApplicationForm() {
     ) {
       return "Please complete all contact fields.";
     }
-    if (step === 1 && (!form.country.trim() || !form.businessType)) {
-      return "Please provide your country and business type.";
+    if (
+      step === 1 &&
+      (!form.companyName.trim() ||
+        !form.legalRegNo.trim() ||
+        !form.country.trim() ||
+        !form.businessType)
+    ) {
+      return "Please provide the company name, registration number, country and business type.";
     }
     if (form.documentUrl && !/^https?:\/\//i.test(form.documentUrl)) {
       return "The qualification document link must start with http:// or https://.";
@@ -110,6 +120,8 @@ export function DealerApplicationForm() {
         {
           method: "POST",
           body: JSON.stringify({
+            companyName: form.companyName.trim(),
+            legalRegNo: form.legalRegNo.trim(),
             contactName: form.contactName.trim(),
             contactEmail: form.contactEmail.trim(),
             phone: form.phone.trim(),
@@ -229,6 +241,23 @@ export function DealerApplicationForm() {
               provided as a secure link.
             </p>
             <div className="mt-6 grid gap-5 sm:grid-cols-2">
+              <Field label="Company name" required>
+                <input
+                  className={inputClass}
+                  value={form.companyName}
+                  onChange={(event) => update("companyName", event.target.value)}
+                  autoComplete="organization"
+                  required
+                />
+              </Field>
+              <Field label="Registration number" required>
+                <input
+                  className={inputClass}
+                  value={form.legalRegNo}
+                  onChange={(event) => update("legalRegNo", event.target.value)}
+                  required
+                />
+              </Field>
               <Field label="Country or region" required>
                 <input
                   className={inputClass}
@@ -289,6 +318,8 @@ export function DealerApplicationForm() {
               review.
             </p>
             <dl className="mt-6 grid gap-x-8 gap-y-5 rounded-xl bg-neutral-50 p-5 sm:grid-cols-2">
+              <Review label="Company" value={form.companyName} />
+              <Review label="Registration number" value={form.legalRegNo} />
               <Review label="Contact" value={form.contactName} />
               <Review label="Email" value={form.contactEmail} />
               <Review label="Phone" value={form.phone} />
