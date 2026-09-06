@@ -1,5 +1,12 @@
 import type { Metadata } from 'next';
+import { Manrope } from 'next/font/google';
 import './globals.css';
+
+const manrope = Manrope({
+  subsets: ['latin'],
+  display: 'swap',
+  variable: '--font-body',
+});
 
 /**
  * 根布局：仅承载 <html>/<body> 与全站元信息。
@@ -9,11 +16,11 @@ import './globals.css';
 export const metadata: Metadata = {
   metadataBase: new URL('https://www.wemovetoy.com'),
   title: {
-    default: 'WEMOVE SPORTS — Active Play Toys & Games for Kids',
+    default: 'WEMOVE SPORTS: Active Play Toys & Games for Kids',
     template: '%s | WEMOVE SPORTS',
   },
   description:
-    'WEMOVE SPORTS designs active play toys — bowling sets, balance boards and more — for homes, schools and retailers worldwide.',
+    'WEMOVE SPORTS designs active play toys, bowling sets, balance boards and more, for homes, schools and retailers worldwide.',
   keywords: ['WEMOVE', 'active play', 'kids sports toys', 'bowling set', 'balance board', 'toy wholesale'],
   openGraph: {
     siteName: 'WEMOVE SPORTS',
@@ -28,7 +35,7 @@ export default function RootLayout({
 }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en-US">
-      <body>{children}</body>
+      <body className={manrope.variable}>{children}</body>
     </html>
   );
 }

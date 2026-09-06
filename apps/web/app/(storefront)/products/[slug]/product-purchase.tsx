@@ -67,35 +67,35 @@ export function ProductPurchase({
 
   if (variants.length === 0)
     return (
-      <p className="mt-6 rounded-xl bg-neutral-50 p-4 text-sm text-neutral-500">
+      <p className="mt-6 rounded-2xl border border-[var(--wm-border)] bg-[var(--wm-surface)] p-5 text-sm text-[var(--wm-muted)]">
         This product is not currently available.
       </p>
     );
 
   return (
-    <div className="mt-6 space-y-4 rounded-2xl border border-neutral-200 p-5">
+    <div className="mt-7 space-y-5 rounded-2xl border border-[var(--wm-border)] bg-[var(--wm-surface)] p-5 shadow-[0_18px_50px_rgba(var(--wm-shadow)/0.07)] sm:p-6">
       <label className="block text-sm font-medium">
         Variant
         <select
           value={variantId}
           onChange={(event) => setVariantId(event.target.value)}
-          className="mt-2 w-full rounded-xl border border-neutral-300 bg-white px-3 py-3"
+          className="mt-2 w-full rounded-xl border border-[var(--wm-border)] bg-[var(--wm-bg)] px-3 py-3 text-[var(--wm-text)] focus:border-[var(--wm-primary)]"
         >
           {variants.map((variant) => (
             <option key={variant.id} value={variant.id}>
               {variant.name || variant.sku}
               {variant.price
-                ? ` — $${(variant.price.priceCents / 100).toFixed(2)}`
-                : " — unavailable"}
+                ? `, $${(variant.price.priceCents / 100).toFixed(2)}`
+                : ", unavailable"}
             </option>
           ))}
         </select>
       </label>
       {attributes.length > 0 && (
-        <dl className="grid grid-cols-2 gap-x-4 gap-y-2 rounded-xl bg-neutral-50 p-4 text-sm">
+        <dl className="grid grid-cols-2 gap-x-4 gap-y-3 rounded-xl bg-[var(--wm-surface-soft)] p-4 text-sm">
           {attributes.map(([key, value]) => (
             <div key={key}>
-              <dt className="text-neutral-500">{key}</dt>
+              <dt className="text-[var(--wm-muted)]">{key}</dt>
               <dd className="font-medium">{value}</dd>
             </div>
           ))}
@@ -113,13 +113,13 @@ export function ProductPurchase({
               Math.max(1, Math.min(99, Number(event.target.value) || 1)),
             )
           }
-          className="mt-2 w-28 rounded-xl border border-neutral-300 px-3 py-3"
+          className="mt-2 w-28 rounded-xl border border-[var(--wm-border)] bg-[var(--wm-bg)] px-3 py-3 text-[var(--wm-text)] focus:border-[var(--wm-primary)]"
         />
       </label>
       {error && (
         <p
           role="alert"
-          className="rounded-lg bg-red-50 p-3 text-sm text-red-700"
+          className="rounded-xl border border-red-300 bg-red-50 p-3 text-sm text-red-800"
         >
           {error}
         </p>
@@ -127,7 +127,7 @@ export function ProductPurchase({
       {message && (
         <p
           role="status"
-          className="rounded-lg bg-emerald-50 p-3 text-sm text-emerald-800"
+          className="rounded-xl border border-emerald-300 bg-emerald-50 p-3 text-sm text-emerald-900"
         >
           {message}{" "}
           <a href="/customer/account" className="font-semibold underline">
@@ -138,12 +138,12 @@ export function ProductPurchase({
       <button
         onClick={() => void addToCart()}
         disabled={!selected?.price || submitting}
-        className="w-full rounded-full bg-[var(--wm-primary)] py-3 text-sm font-semibold text-white disabled:opacity-50"
+        className="w-full rounded-xl bg-[var(--wm-primary)] py-3.5 text-sm font-bold text-white transition hover:bg-[var(--wm-primary-strong)] active:translate-y-px disabled:cursor-not-allowed disabled:opacity-50"
       >
         {submitting
-          ? "Adding…"
+          ? "Adding..."
           : selected?.price
-            ? `Add to cart · $${((selected.price.priceCents * quantity) / 100).toFixed(2)}`
+            ? `Add to cart, $${((selected.price.priceCents * quantity) / 100).toFixed(2)}`
             : "Unavailable"}
       </button>
     </div>

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { Metadata } from "next";
+import { CatalogVisual } from "../../../components/catalog-visual";
 import { serverApiGet } from "../../../lib/server-api";
 
 export const metadata: Metadata = {
@@ -53,7 +54,6 @@ export default async function ProductsPage({
     serverApiGet<Category[]>("/categories"),
   ]);
   const products = productsResult.ok ? productsResult.data : null;
-  const productsError = productsResult.ok ? null : productsResult.message;
   const categories = categoriesResult.ok ? categoriesResult.data : [];
   const totalPages = products
     ? Math.ceil(products.total / products.pageSize)
@@ -67,31 +67,36 @@ export default async function ProductsPage({
   }
 
   return (
-    <div className="mx-auto max-w-6xl px-4 py-10">
-      <div>
-        <h1 className="text-3xl font-bold">All Products</h1>
-        <p className="mt-1 text-sm text-neutral-500">
+    <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:py-16">
+      <div className="wm-reveal max-w-2xl">
+        <p className="mb-4 text-xs font-bold uppercase tracking-[0.2em] text-[var(--wm-primary)]">The active play catalog</p>
+        <h1 className="text-4xl font-extrabold tracking-[-0.05em] text-[var(--wm-dark)] sm:text-6xl">Choose the next move.</h1>
+        <p className="mt-4 text-base leading-7 text-[var(--wm-muted)]">
           {products
-            ? `${products.total} active products`
-            : "Live catalog unavailable"}
+            ? `${products.total} active products, made for everyday play.`
+            : "Browse by activity, age and the way your family likes to play."}
         </p>
       </div>
 
       <form
         action="/products"
-        className="mt-6 grid gap-3 rounded-2xl bg-neutral-50 p-4 sm:grid-cols-[1fr_220px_auto]"
+        className="mt-10 grid gap-3 rounded-2xl border border-[var(--wm-border)] bg-[var(--wm-surface)] p-4 shadow-[0_18px_50px_rgba(var(--wm-shadow)/0.07)] md:grid-cols-[1fr_220px_auto]"
       >
+        <label className="sr-only" htmlFor="product-search">Search products</label>
         <input
+          id="product-search"
           name="search"
           defaultValue={search}
           maxLength={64}
           placeholder="Search products"
-          className="rounded-xl border border-neutral-300 bg-white px-4 py-3 text-sm outline-none focus:border-[var(--wm-primary)]"
+          className="rounded-xl border border-[var(--wm-border)] bg-[var(--wm-bg)] px-4 py-3 text-sm text-[var(--wm-text)] outline-none placeholder:text-[var(--wm-muted)] focus:border-[var(--wm-primary)]"
         />
+        <label className="sr-only" htmlFor="product-category">Product category</label>
         <select
+          id="product-category"
           name="category"
           defaultValue={category}
-          className="rounded-xl border border-neutral-300 bg-white px-4 py-3 text-sm"
+          className="rounded-xl border border-[var(--wm-border)] bg-[var(--wm-bg)] px-4 py-3 text-sm text-[var(--wm-text)] focus:border-[var(--wm-primary)]"
         >
           <option value="">All categories</option>
           {categories.map((item) => (
@@ -100,47 +105,52 @@ export default async function ProductsPage({
             </option>
           ))}
         </select>
-        <button className="rounded-xl bg-[var(--wm-dark)] px-5 py-3 text-sm font-semibold text-white">
-          Apply
+        <button className="whitespace-nowrap rounded-xl bg-[var(--wm-primary)] px-6 py-3 text-sm font-bold text-white transition hover:bg-[var(--wm-primary-strong)] active:translate-y-px">
+          Show results
         </button>
       </form>
 
       {!products ? (
-        <p
-          role="alert"
-          className="mt-8 rounded-xl border border-amber-200 bg-amber-50 p-5 text-sm text-amber-900"
-        >
-          {productsError} Please try again shortly.
-        </p>
+        <div role="status" className="mt-10 grid overflow-hidden rounded-2xl border border-[var(--wm-border)] bg-[var(--wm-surface)] md:grid-cols-[0.72fr_1.28fr]">
+          <CatalogVisual name="WEMOVE catalog preview" priority className="min-h-64 md:min-h-80" />
+          <div className="flex flex-col justify-center p-7 sm:p-10">
+            <h2 className="text-2xl font-extrabold tracking-[-0.035em]">The live catalog is taking a timeout.</h2>
+            <p className="mt-3 max-w-lg text-sm leading-6 text-[var(--wm-muted)]">The storefront is ready, but product data is not reachable right now. Try again shortly or contact our team for the current range.</p>
+            <div className="mt-6 flex flex-wrap gap-3">
+              <Link href="/products" className="rounded-xl bg-[var(--wm-dark)] px-5 py-3 text-sm font-bold text-[var(--wm-surface)]">Try again</Link>
+              <Link href="/contact" className="rounded-xl border border-[var(--wm-border)] px-5 py-3 text-sm font-bold hover:border-[var(--wm-primary)] hover:text-[var(--wm-primary)]">Contact us</Link>
+            </div>
+          </div>
+        </div>
       ) : products.items.length === 0 ? (
-        <div className="mt-8 rounded-xl border border-dashed p-8 text-center text-sm text-neutral-500">
-          No products match these filters.
+        <div className="mt-10 rounded-2xl border border-dashed border-[var(--wm-border)] bg-[var(--wm-surface)] p-10 text-center">
+          <h2 className="text-xl font-bold">No exact match yet</h2>
+          <p className="mt-2 text-sm text-[var(--wm-muted)]">Clear a filter or try a broader product name.</p>
+          <Link href="/products" className="mt-5 inline-flex text-sm font-bold text-[var(--wm-primary)]">Clear filters</Link>
         </div>
       ) : (
-        <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="mt-10 grid gap-x-5 gap-y-10 sm:grid-cols-2 lg:grid-cols-3">
           {products.items.map((product) => (
             <Link
               key={product.id}
               href={`/products/${product.slug}`}
-              className="group rounded-2xl border border-neutral-200 p-4 transition-shadow hover:shadow-md"
+              className="group"
             >
-              <div className="mb-3 flex aspect-square items-center justify-center rounded-xl bg-neutral-100 text-5xl transition-transform group-hover:scale-[1.01]">
-                ⚽
-              </div>
+              <CatalogVisual name={product.name} className="aspect-[4/5] rounded-2xl" />
               {product.categorySlug && (
-                <p className="text-xs uppercase tracking-wide text-neutral-400">
+                <p className="mt-4 text-xs font-bold uppercase tracking-[0.14em] text-[var(--wm-muted)]">
                   {product.categorySlug}
                 </p>
               )}
-              <h2 className="mt-1 font-semibold group-hover:text-[var(--wm-primary)]">
+              <h2 className={`${product.categorySlug ? "mt-1.5" : "mt-4"} text-lg font-bold tracking-[-0.025em] group-hover:text-[var(--wm-primary)]`}>
                 {product.name}
               </h2>
               {product.summary && (
-                <p className="mt-1 line-clamp-2 text-sm text-neutral-500">
+                <p className="mt-1.5 line-clamp-2 text-sm leading-6 text-[var(--wm-muted)]">
                   {product.summary}
                 </p>
               )}
-              <p className="mt-3 text-sm font-bold text-[var(--wm-primary)]">
+              <p className="mt-3 text-sm font-extrabold text-[var(--wm-primary)]">
                 {product.priceCents === null
                   ? "Contact us"
                   : `From $${(product.priceCents / 100).toFixed(2)}`}
@@ -152,23 +162,23 @@ export default async function ProductsPage({
 
       {products && totalPages > 1 && (
         <nav
-          className="mt-8 flex justify-center gap-3 text-sm"
+          className="mt-12 flex items-center justify-center gap-3 text-sm"
           aria-label="Product pagination"
         >
           {products.page > 1 && (
             <Link
-              className="rounded-lg border px-4 py-2"
+              className="rounded-xl border border-[var(--wm-border)] bg-[var(--wm-surface)] px-4 py-2.5 font-semibold hover:border-[var(--wm-primary)]"
               href={pageHref(products.page - 1)}
             >
               Previous
             </Link>
           )}
-          <span className="px-2 py-2 text-neutral-500">
+          <span className="px-2 py-2 text-[var(--wm-muted)]">
             Page {products.page} of {totalPages}
           </span>
           {products.page < totalPages && (
             <Link
-              className="rounded-lg border px-4 py-2"
+              className="rounded-xl border border-[var(--wm-border)] bg-[var(--wm-surface)] px-4 py-2.5 font-semibold hover:border-[var(--wm-primary)]"
               href={pageHref(products.page + 1)}
             >
               Next

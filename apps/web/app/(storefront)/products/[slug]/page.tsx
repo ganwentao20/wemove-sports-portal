@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import { CatalogVisual } from "../../../../components/catalog-visual";
 import { serverApiGet } from "../../../../lib/server-api";
 import { ProductPurchase } from "./product-purchase";
 
@@ -93,9 +94,11 @@ export default async function ProductDetailPage({ params }: PageProps) {
   if (!result.ok && result.status === 404) notFound();
   if (!result.ok) {
     return (
-      <div className="mx-auto max-w-4xl px-4 py-16">
-        <h1 className="text-2xl font-bold">Product unavailable</h1>
-        <p className="mt-3 text-neutral-600">{result.message}</p>
+      <div className="mx-auto max-w-4xl px-4 py-20 sm:px-6">
+        <p className="text-xs font-bold uppercase tracking-[0.2em] text-[var(--wm-primary)]">Catalog update</p>
+        <h1 className="mt-4 text-4xl font-extrabold tracking-[-0.045em]">Product unavailable</h1>
+        <p className="mt-3 text-[var(--wm-muted)]">{result.message}</p>
+        <Link href="/products" className="mt-7 inline-flex rounded-xl bg-[var(--wm-dark)] px-5 py-3 text-sm font-bold text-[var(--wm-surface)]">Back to products</Link>
       </div>
     );
   }
@@ -104,41 +107,27 @@ export default async function ProductDetailPage({ params }: PageProps) {
   const resources = publicResources(product.resources);
 
   return (
-    <div className="mx-auto grid max-w-6xl gap-10 px-4 py-10 md:grid-cols-2">
-      <div className="flex aspect-square items-center justify-center overflow-hidden rounded-2xl bg-neutral-100 text-8xl">
-        {imageUrl ? (
-          // Product media URLs are managed by the catalog CMS and may be API-relative.
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={imageUrl}
-            alt={product.name}
-            className="h-full w-full object-cover"
-          />
-        ) : (
-          <span aria-label="Product image placeholder" role="img">
-            ⚽
-          </span>
-        )}
-      </div>
+    <div className="mx-auto grid max-w-7xl gap-10 px-4 py-12 sm:px-6 lg:grid-cols-[1.1fr_0.9fr] lg:gap-16 lg:py-16">
+      <CatalogVisual name={product.name} imageUrl={imageUrl} priority className="aspect-square rounded-2xl shadow-[0_24px_70px_rgba(var(--wm-shadow)/0.12)]" />
       <div>
-        <nav className="text-xs text-neutral-400">
-          <Link href="/products" className="hover:text-neutral-600">
+        <nav className="text-xs font-semibold text-[var(--wm-muted)]">
+          <Link href="/products" className="hover:text-[var(--wm-primary)]">
             Products
           </Link>
           {product.category ? ` / ${product.category.name}` : ""} /{" "}
           {product.name}
         </nav>
-        <h1 className="mt-3 text-3xl font-bold">{product.name}</h1>
+        <h1 className="mt-5 text-4xl font-extrabold leading-tight tracking-[-0.05em] text-[var(--wm-dark)] sm:text-5xl">{product.name}</h1>
         {product.summary && (
-          <p className="mt-3 text-neutral-600">{product.summary}</p>
+          <p className="mt-4 text-lg leading-7 text-[var(--wm-muted)]">{product.summary}</p>
         )}
         {product.description && (
-          <div className="mt-5 whitespace-pre-line text-sm leading-6 text-neutral-700">
+          <div className="mt-6 whitespace-pre-line border-t border-[var(--wm-border)] pt-6 text-sm leading-7 text-[var(--wm-text)]">
             {product.description}
           </div>
         )}
         {product.ageGuidance && (
-          <aside className="mt-5 rounded-xl bg-amber-50 p-4 text-sm text-amber-950">
+          <aside className="mt-6 rounded-2xl border border-[var(--wm-border)] bg-[var(--wm-surface-soft)] p-5 text-sm leading-6 text-[var(--wm-text)]">
             <strong>Age &amp; supervision guidance:</strong>{" "}
             {product.ageGuidance}
           </aside>
@@ -149,23 +138,23 @@ export default async function ProductDetailPage({ params }: PageProps) {
         />
         <Link
           href={`/compare?ids=${encodeURIComponent(product.slug)}`}
-          className="mt-3 inline-flex rounded-full border border-neutral-300 px-5 py-2 text-sm font-semibold hover:border-[#2B5F8A]"
+          className="mt-3 inline-flex rounded-xl border border-[var(--wm-border)] bg-[var(--wm-surface)] px-5 py-2.5 text-sm font-bold hover:border-[var(--wm-primary)] hover:text-[var(--wm-primary)]"
         >
           Add to comparison
         </Link>
         {resources.length > 0 && (
           <section className="mt-6">
-            <h2 className="font-semibold">Product resources</h2>
+            <h2 className="font-bold">Product resources</h2>
             <ul className="mt-3 space-y-2 text-sm">
               {resources.map((resource) => (
                 <li key={`${resource.url}-${resource.label}`}>
                   <a
                     href={resource.url}
-                    className="font-medium text-[#2B5F8A] underline underline-offset-4"
+                    className="font-semibold text-[var(--wm-primary)] underline underline-offset-4"
                   >
                     {resource.label}
                   </a>{" "}
-                  <span className="text-neutral-400">({resource.type})</span>
+                  <span className="text-[var(--wm-muted)]">({resource.type})</span>
                 </li>
               ))}
             </ul>
