@@ -1,5 +1,6 @@
-# FastAPI experimental backup for member D
+# 组员 D 的 FastAPI 实验备份
 
-This folder contains the local FastAPI prototype that was validated on this machine.
-It is intentionally kept separate from the official NestJS project structure.
-Use this only for experiments and reference; do not merge into the main app without rework.
+这个目录保留了你在本机上验证过的 FastAPI 原型代码。
+它被故意放在正式的 NestJS 项目结构之外，避免污染主仓库。
+
+这里仅用于实验、调试和参考，不要直接合并进正式应用主分支，除非后续重新改造成正式架构。
