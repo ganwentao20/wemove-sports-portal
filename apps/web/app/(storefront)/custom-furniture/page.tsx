@@ -1,6 +1,48 @@
-import { SectionLanding } from '../../../components/section-landing';
-import { getSiteSection } from '../../../lib/site-sections';
+import Image from 'next/image';
+import Link from 'next/link';
+import { furnitureCases } from '../../../lib/furniture-cases';
 
 export default function CustomFurniturePage() {
-  return <SectionLanding section={getSiteSection('/custom-furniture')!} />;
+  return (
+    <main className="furniture-page">
+      <section className="furniture-hero">
+        <div>
+          <p className="eyebrow">Custom Furniture</p>
+          <h1>家具定制</h1>
+          <p>
+            这里已接入原网站家具定制素材。当前先展示案例、材质和场景说明，
+            后续成员接口完成后可替换为真实案例列表、报价、预约和咨询提交。
+          </p>
+          <Link className="primary-link" href="/contact">预约定制咨询</Link>
+        </div>
+        <Image src={furnitureCases[0].image} alt={furnitureCases[0].title} width={900} height={900} priority={false} />
+      </section>
+
+      <section className="furniture-cases" aria-label="家具定制案例">
+        {furnitureCases.map((item) => (
+          <article key={item.slug}>
+            <Image src={item.image} alt={item.title} width={640} height={520} />
+            <div>
+              <span>{item.scene}</span>
+              <h2>{item.title}</h2>
+              <p>{item.summary}</p>
+              <dl>
+                <div><dt>材质</dt><dd>{item.material}</dd></div>
+                <div><dt>标签</dt><dd>{item.tags.join(' / ')}</dd></div>
+              </dl>
+            </div>
+          </article>
+        ))}
+      </section>
+
+      <section className="furniture-flow">
+        <h2>接口接入预留流程</h2>
+        <div>
+          <article><span>01</span><strong>提交需求</strong><p>收集尺寸、空间、预算和联系方式，后续对接定制咨询接口。</p></article>
+          <article><span>02</span><strong>生成报价</strong><p>由成员接口返回材料、工艺、周期与报价区间。</p></article>
+          <article><span>03</span><strong>预约沟通</strong><p>保存沟通记录并进入订单或项目跟进流程。</p></article>
+        </div>
+      </section>
+    </main>
+  );
 }
