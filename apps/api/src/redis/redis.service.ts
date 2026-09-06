@@ -89,6 +89,19 @@ export class RedisService implements OnModuleDestroy {
     }
   }
 
+  /** 就绪检查：仅在 Redis 可连接且 PING 成功时返回 true。 */
+  async ping(): Promise<boolean> {
+    const client = this.ensure();
+    if (!client) return false;
+    try {
+      return (await client.ping()) === 'PONG';
+    } catch (err) {
+      this.logger.warn(`redis ping failed: ${err instanceof Error ? err.message : String(err)}`);
+      this.reset();
+      return false;
+    }
+  }
+
   /** 删除键（登录成功清除失败计数）。false = Redis 不可用 */
   async del(key: string): Promise<boolean> {
     const client = this.ensure();

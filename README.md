@@ -58,7 +58,7 @@ npm run db:seed                     # 6) 写入本地演示数据（幂等）
 npm run dev                         # 7) 前台 3000 / API 8080
 ```
 
-验证：浏览器打开 http://localhost:3000（首页/商品列表），API 探活 http://localhost:8080/api/v1/health/live。
+验证：浏览器打开 http://localhost:3000；API 存活探针为 http://localhost:8080/api/v1/health/live，就绪探针为 http://localhost:8080/api/v1/health/ready（PostgreSQL 与 Redis 任一不可用时返回 503）。
 
 开发收件箱：http://localhost:8025。演示账号和密码仅用于本地/测试环境，见 seed 与 `.env.example`，严禁部署到生产。
 

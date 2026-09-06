@@ -10,11 +10,11 @@
 
 | 责任 | 分支/PR | 审计状态 | 本次处理 |
 |---|---|---|---|
-| A 陈婧琳 | `origin/feature/storefront-a` | 有较完整前台页面改动，尚未进入 main | 不覆盖，后续单独评审/合并 |
-| B 朱容杰 | PR #1 / `feature/dealer-app-b` | PR 开放，已含一次 P0 修复 | 不覆盖，等待 CI/评审 |
+| A 陈婧琳 | `origin/feature/storefront-a` | 继续提交客户购物流程，尚未进入 main | 不覆盖，后续单独评审/合并 |
+| B 朱容杰 | PR #1 / `feature/dealer-app-b`；PR #3 / `feature/dealer-apply-b` | 后端申请 API 与前端分步申请分别评审中 | 不覆盖，按依赖顺序评审 |
 | C 周慧莹 | `origin/feature/pricing-crud-c` | 相对 main 仅见 lockfile 变化 | 不代写其业务模块，需继续提交 C1 |
 | D 倪依玲 | `origin/wip/member-d-python-cms` | WIP 保留；对应旧改动未进入当前 main | 不删除、不改写；需按现架构重新评审 |
-| E 龙祖怡 | PR #2 / `feature/ci-mailpit-e` | 已合入 main：CI 与 Mailpit | 不修改其工作流/Compose |
+| E 龙祖怡 | PR #2 已合并；PR #5 / `feature/smoke-e2e-e` | CI/Mailpit 已在 main；目录冒烟与压测计划评审中 | 不修改其工作流/Compose/测试分支 |
 | 组长 甘文韬 | 本分支 | 共享代码安全修复、文档重构 | 独立分支提交，PR 合入 |
 
 ## 质量验证
@@ -24,7 +24,7 @@
 | `npm run prisma:generate` | 通过 | Prisma Client 6.19.3 生成成功 |
 | `npm run lint` | 通过 | API/Web 工作区无 lint 错误 |
 | `npm run typecheck` | 通过 | API/Web TypeScript 检查通过 |
-| `npm test` | 通过 | 25 个单元测试通过 |
+| `npm test` | 通过 | 29 个单元测试通过 |
 | `npm run build` | 通过 | Next.js 22 个静态路由生成成功；NestJS 构建成功 |
 | `npm run test:e2e -w api` | 通过（离线部分） | 12 个无数据库 e2e 通过；2 个 DB/Redis 用例按环境门控跳过 |
 | DB e2e | 本机未执行 | Docker Desktop 服务未运行；CI 已配置 PostgreSQL/Redis 环境，应由 PR CI 复核 |
@@ -39,14 +39,15 @@
 6. Web 请求头用 `Headers` 合并；GET 不再无条件声明 JSON，FormData 不再被错误覆盖。
 7. 全仓脚本移除废弃的 `-ws` 写法，新增 `typecheck` 和 `verify`。
 8. 快速开始统一使用 `npm ci`、`db:deploy`，补充 Mailpit；修正课程邮件/压缩包命名。
+9. 就绪探针同时验证 PostgreSQL 与 Redis，依赖故障时返回 503；生产 CORS 只接受显式 HTTPS 来源。
 
 ## 未替组员越界处理的待办
 
 - A：评审 storefront 的响应式、可访问性和 API 接线后合并。
-- B：完成 PR #1 的 CI、权限边界与状态机评审。
+- B：先完成 PR #1 后端评审，再处理以其为基线的 PR #3 前端申请流程。
 - C：实现商品/SKU CRUD、迁移、价格/库存/订单纵向切片并补测试。
 - D：在当前 Next/Nest 架构内提交 Admin/CMS 切片，避免直接引入第二套后端。
-- E：补测试报告、Mailpit 邮件闭环、越权用例和可复核性能测试。
+- E：推进 PR #5 目录冒烟与压测计划，随后补 Mailpit 邮件闭环、越权用例和可复核性能结果。
 - 组长：在仓库设置中确认 `main` 分支保护；结项时依据证据填写工作量比例。
 
 ## 已知风险

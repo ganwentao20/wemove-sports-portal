@@ -1,4 +1,4 @@
-# apps/api — WEMOVE 后端（NestJS 12 · Prisma 6 · PostgreSQL 16 · Redis 预留）
+# apps/api — WEMOVE 后端（NestJS 12 · Prisma 6 · PostgreSQL 16 · Redis 7）
 
 全局前缀 `api/v1`；所有响应统一 `{ code, message, data, traceId }`（code=0 成功）。
 异常经全局过滤器归一（42200 参数 / 40100 未登录 / 40300 无权限 / 40400 不存在 / 40900 冲突 / 50000 内部）。
@@ -32,7 +32,7 @@
 ## 数据库（Prisma 6）
 
 ```bash
-npm run db:up        # 根目录：docker compose 起 PG16+Redis7
+npm run db:up        # 根目录：docker compose 起 PG16 + Redis7 + Mailpit
 cd apps/api
 copy .env.example .env            # Windows；或手动复制 infra/.env.example 同值
 npx prisma migrate dev --name init # 生成迁移并建表
@@ -49,7 +49,7 @@ Schema 单一事实源：`prisma/schema.prisma`（归属注释 M1/MA/MB/MC/MD/ME
 
 | 方法 | 路径 | 说明 |
 |---|---|---|
-| GET | `/health/live` `/health/ready` | 探活（ready 需 DB） |
+| GET | `/health/live` `/health/ready` | live 仅检查进程；ready 同时检查 DB/Redis，故障时返回 503 |
 | POST | `/auth/register` | C 端注册（18+ 声明必填；EMAIL_VERIFY_REQUIRED=true 时注册为 PENDING） |
 | POST | `/auth/verify-email` | 邮箱验证（一次性令牌，24h 有效） |
 | POST | `/auth/resend-verification` | 重发验证邮件（防枚举：统一返回 ok） |

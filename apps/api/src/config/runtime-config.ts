@@ -29,6 +29,7 @@ export function assertRuntimeConfig(env: RuntimeEnv = process.env): void {
     requireValue(env, 'REDIS_URL', errors);
     requireValue(env, 'SMTP_HOST', errors);
     requireValue(env, 'APP_BASE_URL', errors);
+    requireValue(env, 'CORS_ORIGINS', errors);
 
     const jwtSecret = env.JWT_ACCESS_SECRET?.trim() ?? '';
     if (jwtSecret.length < 32 || jwtSecret === DEVELOPMENT_JWT_SECRET) {
@@ -38,6 +39,14 @@ export function assertRuntimeConfig(env: RuntimeEnv = process.env): void {
     const appBaseUrl = env.APP_BASE_URL?.trim();
     if (appBaseUrl && !appBaseUrl.startsWith('https://')) {
       errors.push('APP_BASE_URL must use https:// in production');
+    }
+
+    const corsOrigins = (env.CORS_ORIGINS ?? '')
+      .split(',')
+      .map((value) => value.trim())
+      .filter(Boolean);
+    if (corsOrigins.some((origin) => origin === '*' || !origin.startsWith('https://'))) {
+      errors.push('CORS_ORIGINS must contain only explicit https:// origins in production');
     }
   }
 
