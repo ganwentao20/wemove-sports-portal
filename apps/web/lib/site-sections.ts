@@ -28,6 +28,15 @@ export const siteSections: SiteSection[] = [
     ctaLabel: '浏览玩具品类',
   },
   {
+    href: '/play',
+    label: '内容列表',
+    eyebrow: 'Play & Stories',
+    title: '内容列表',
+    summary: '文章、玩法、家庭活动与品牌故事的前台展示入口，后续可接入 CMS 内容接口。',
+    bullets: ['文章列表', '活动展示', 'CMS 接口预留'],
+    ctaLabel: '查看内容列表',
+  },
+  {
     href: '/custom-furniture',
     label: '家具定制',
     eyebrow: 'Custom Furniture',
@@ -82,13 +91,13 @@ export const siteSections: SiteSection[] = [
     ctaLabel: '了解品牌故事',
   },
   {
-    href: '/manuals',
-    label: '电子说明书',
-    eyebrow: 'Manuals',
-    title: '电子说明书',
+    href: '/support/downloads',
+    label: '下载中心',
+    eyebrow: 'Downloads',
+    title: '下载中心',
     summary: '为产品说明书、安装视频、玩法指南和下载资料预留统一入口。',
-    bullets: ['说明书列表', '玩法视频', '下载接口预留'],
-    ctaLabel: '查看说明书',
+    bullets: ['电子说明书', '玩法视频', '下载接口预留'],
+    ctaLabel: '查看下载中心',
   },
 ];
 
