@@ -1,0 +1,4 @@
+ALTER TABLE "PurchaseOrder" ADD COLUMN "paymentStatus" TEXT NOT NULL DEFAULT 'UNPAID';
+CREATE TABLE "PurchaseOrderPayment"("id" TEXT PRIMARY KEY,"orderId" TEXT NOT NULL REFERENCES "PurchaseOrder"("id") ON DELETE CASCADE,"idempotencyKey" TEXT NOT NULL UNIQUE,"amountCents" INTEGER NOT NULL,"currency" TEXT NOT NULL,"mode" TEXT NOT NULL,"status" TEXT NOT NULL DEFAULT 'PENDING',"providerReference" TEXT,"checkoutUrl" TEXT,"createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,"updatedAt" TIMESTAMP(3) NOT NULL);
+CREATE INDEX "PurchaseOrderPayment_orderId_idx" ON "PurchaseOrderPayment"("orderId");
+CREATE TABLE "PurchaseOrderPaymentEvent"("eventId" TEXT PRIMARY KEY,"paymentId" TEXT NOT NULL REFERENCES "PurchaseOrderPayment"("id") ON DELETE CASCADE,"payloadHash" TEXT NOT NULL,"status" TEXT NOT NULL,"createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP);

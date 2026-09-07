@@ -39,14 +39,17 @@ export function VerifyEmailForm({ token }: { token: string }) {
     }
   }
 
-  if (verified) return <div className="mt-8 rounded-xl bg-emerald-50 p-4 text-sm text-emerald-800">Email verified. <Link href="/customer/login" className="font-semibold underline">Sign in</Link></div>;
+  if (verified) return <div role="status" className="mt-8 rounded-xl bg-emerald-50 p-4 text-sm text-emerald-800">Email verified. <Link href="/customer/login" className="font-semibold underline">Sign in</Link></div>;
 
   return (
     <div className="mt-8 space-y-6">
       <button type="button" onClick={() => void verify()} disabled={busy || !token} className="w-full rounded-full bg-[var(--wm-dark)] py-3 text-sm font-semibold text-white disabled:opacity-50">{busy ? "Verifying…" : "Verify email"}</button>
       <form onSubmit={resend} className="space-y-3 border-t border-neutral-200 pt-6">
         <p className="text-sm text-neutral-600">Need a fresh link?</p>
-        <input required type="email" name="email" maxLength={160} placeholder="Email" className="w-full rounded-xl border border-neutral-300 px-4 py-3 text-sm" />
+        <div className="space-y-2">
+          <label htmlFor="verify-email-address" className="block text-sm font-medium">Email</label>
+          <input id="verify-email-address" required type="email" name="email" autoComplete="email" maxLength={160} placeholder="Email" className="w-full rounded-xl border border-neutral-300 px-4 py-3 text-sm" />
+        </div>
         <button disabled={busy} className="text-sm font-semibold text-[var(--wm-primary)] underline">Resend verification email</button>
         {resent && <p role="status" className="text-sm text-emerald-700">If the account is awaiting verification, a new link is on the way.</p>}
       </form>

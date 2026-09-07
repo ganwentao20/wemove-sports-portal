@@ -1,4 +1,4 @@
-# WEMOVE SPORTS · CI（lint + 单测 + 构建 + DB 集成 e2e）
+# Validate the final merged version, including its database and browser flows.
 name: CI
 
 on:
@@ -6,6 +6,10 @@ on:
     branches: [main]
   pull_request:
     branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
 
 concurrency:
   group: ci-${{ github.ref }}
@@ -14,6 +18,7 @@ concurrency:
 jobs:
   check:
     runs-on: ubuntu-latest
+    timeout-minutes: 40
     strategy:
       matrix:
         node-version: [22]
@@ -53,10 +58,13 @@ jobs:
     env:
       DATABASE_URL: postgresql://wemove:wemove_dev@localhost:5432/wemove?schema=public
       REDIS_URL: redis://localhost:6379/0
-      E2E_DB: '1'
+      E2E_DB: "1"
       JWT_ACCESS_SECRET: ci_dev_only_change_me
+      NOTIFICATION_WORKER: "false"
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Use Node.js ${{ matrix.node-version }}
         uses: actions/setup-node@v4
@@ -67,8 +75,26 @@ jobs:
       - name: Install dependencies (npm workspaces)
         run: npm ci
 
+      - name: Record and verify the integrated source revision
+        run: node scripts/record-acceptance-revision.mjs
+        env:
+          ACCEPTANCE_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+          ACCEPTANCE_BASE_SHA: ${{ github.event.pull_request.base.sha || '' }}
+
       - name: Prisma generate
         run: npm run prisma:generate
+
+      - name: Typecheck all workspaces
+        run: npm run typecheck
+
+      - name: Audit production dependencies
+        run: npm audit --omit=dev --audit-level=high
+
+      - name: Validate production Compose and backup/scanner contracts
+        run: |
+          node scripts/ops-config-check.mjs
+          node --test scripts/ops-backup.test.mjs scripts/ops-scanner.test.mjs
+          node --experimental-strip-types --test apps/web/lib/safe-redirect.test.mjs
 
       - name: Lint (workspaces, if present)
         run: npm run lint
@@ -82,10 +108,10 @@ jobs:
       - name: E2E tests with PostgreSQL, Redis and Mailpit
         run: npm run test:e2e -w api
         env:
-          E2E_MAIL: '1'
+          E2E_MAIL: "1"
           E2E_MAILPIT_URL: http://localhost:8025
           E2E_SMTP_HOST: localhost
-          E2E_SMTP_PORT: '1025'
+          E2E_SMTP_PORT: "1025"
 
       - name: Build api
         run: npm run build:api
@@ -93,4 +119,51 @@ jobs:
       - name: Build web
         run: npm run build:web
         env:
-          NEXT_PUBLIC_API_BASE_URL: http://localhost:8080/api/v1
+          NEXT_PUBLIC_API_BASE_URL: /api/v1
+
+      - name: Seed browser acceptance data
+        run: npm run db:seed
+
+      - name: Restore encrypted backup into a new isolated database
+        run: node scripts/ops-restore-drill.mjs --container "${{ job.services.postgres.id }}" --database wemove --user wemove
+
+      - name: Install browser engines
+        run: npx playwright install --with-deps chromium firefox webkit
+
+      - name: Browser and accessibility acceptance
+        run: npm run test:browser
+
+      - name: Validate production packaging
+        run: |
+          docker build -f infra/production/Dockerfile --target api -t wemove-api:ci .
+          docker build -f infra/production/Dockerfile --target migrate -t wemove-migrate:ci .
+          docker build -f infra/production/Dockerfile --target web --build-arg NEXT_PUBLIC_SITE_URL=https://example.invalid -t wemove-web:ci .
+          docker build -f infra/production/Dockerfile --target postgres -t wemove-postgres:ci .
+          docker build -f infra/production/Dockerfile --target scanner -t wemove-scanner:ci .
+          docker run --rm -e DOMAIN=example.invalid -e TLS_EMAIL=ops@example.invalid -v "$PWD/infra/production/Caddyfile:/etc/caddy/Caddyfile:ro" caddy:2-alpine caddy validate --config /etc/caddy/Caddyfile --adapter caddyfile
+          docker run --rm --entrypoint /bin/promtool -v "$PWD/infra/production/monitoring:/etc/prometheus:ro" prom/prometheus:v3.5.0 check config /etc/prometheus/prometheus.yml
+
+      - name: Verify production runtime and encrypted database/media restore
+        run: node scripts/ops-runtime-drill.mjs --release ci
+
+      - name: Verify real antivirus and point-in-time recovery on isolated resources
+        run: |
+          node scripts/ops-scanner-drill.mjs --image wemove-scanner:ci
+          node scripts/ops-pitr-drill.mjs --image wemove-postgres:ci
+
+      - name: Keep acceptance evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: integrated-acceptance-${{ github.sha }}
+          path: |
+            playwright-report/
+            test-results/
+            .local/ops-restore-report.json
+            .local/ops-scanner-report.json
+            .local/ops-pitr-report.json
+            .local/ops-runtime-report.json
+            .local/acceptance-revision.json
+            .local/lighthouse/
+          include-hidden-files: true
+          retention-days: 14

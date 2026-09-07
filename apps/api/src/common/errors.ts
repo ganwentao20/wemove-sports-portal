@@ -9,6 +9,7 @@ export const ERROR_CODES = {
   UNAUTHORIZED: 40100, // 未登录/凭证无效
   TOKEN_EXPIRED: 40101, // 令牌过期（前端据此刷新/重登）
   FORBIDDEN: 40300, // 已登录但无权限（越权兜底）
+  DEALER_TERMS_REQUIRED: 40303, // Dealer business requires explicit current terms acceptance
   MFA_INVALID: 40301, // MFA 校验码错误
   MFA_REQUIRED: 40302, // 敏感操作需二次认证：未启用 MFA 或缺 x-mfa-code
   NOT_FOUND: 40400,
@@ -31,4 +32,5 @@ export class BizException extends HttpException {
 }
 
 export const isBizCode = (value: unknown): value is ErrorCode =>
-  typeof value === 'number' && Object.values(ERROR_CODES).includes(value as ErrorCode);
+  typeof value === 'number' &&
+  Object.values(ERROR_CODES).includes(value as ErrorCode);

@@ -1,0 +1,8 @@
+[Unit]
+Description=WEMOVE daily encrypted full backup
+[Timer]
+OnCalendar=*-*-* 02:00:00 UTC
+Persistent=true
+Unit=wemove-backup@full.service
+[Install]
+WantedBy=timers.target

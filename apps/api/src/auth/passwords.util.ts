@@ -6,7 +6,10 @@ export async function hashPassword(plain: string): Promise<string> {
   return hash(plain, 12);
 }
 
-export async function verifyPassword(plain: string, hash: string): Promise<boolean> {
+export async function verifyPassword(
+  plain: string,
+  hash: string,
+): Promise<boolean> {
   const { compare } = await import('bcryptjs');
   return compare(plain, hash);
 }
@@ -18,7 +21,8 @@ export function normalizeEmail(email: string): string {
 
 /** 一次性令牌（邮箱验证/找回密码/二次认证）：库中只存哈希 */
 export function newOpaqueToken(): { token: string; tokenHash: string } {
-  const token = randomUUID().replaceAll('-', '') + randomUUID().replaceAll('-', '');
+  const token =
+    randomUUID().replaceAll('-', '') + randomUUID().replaceAll('-', '');
   return { token, tokenHash: sha256(token) };
 }
 

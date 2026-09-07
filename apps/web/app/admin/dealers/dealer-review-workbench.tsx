@@ -131,12 +131,15 @@ export function DealerReviewWorkbench() {
     router.refresh();
   }
 
-  async function openQualification(attachment: Qualification) {
+  async function openQualification(
+    applicationId: string,
+    attachment: Qualification,
+  ) {
     setError("");
     try {
       const signed = await secureApiFetch<{ url: string }>(
         "staff",
-        `/media/${encodeURIComponent(attachment.mediaId)}/sign?expire=300`,
+        `/admin/dealer/applications/${encodeURIComponent(applicationId)}/attachments/${encodeURIComponent(attachment.mediaId)}/access`,
       );
       const opened = window.open(
         `/api/v1${signed.url}`,
@@ -154,7 +157,11 @@ export function DealerReviewWorkbench() {
   }
 
   return (
-    <main className="mx-auto max-w-7xl px-4 py-10">
+    <main
+      id="main-content"
+      tabIndex={-1}
+      className="mx-auto max-w-7xl px-4 py-10"
+    >
       <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
         <div>
           <p className="text-sm font-semibold text-[#2B5F8A]">WEMOVE ADMIN</p>
@@ -254,7 +261,9 @@ export function DealerReviewWorkbench() {
                         <button
                           key={attachment.mediaId}
                           type="button"
-                          onClick={() => void openQualification(attachment)}
+                          onClick={() =>
+                            void openQualification(item.id, attachment)
+                          }
                           className="rounded-lg border bg-white px-3 py-2 text-left text-sm hover:border-[#2B5F8A]"
                         >
                           {attachment.fileName} ·{" "}

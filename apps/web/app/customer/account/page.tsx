@@ -7,5 +7,9 @@ export const metadata: Metadata = {
 };
 
 export default function AccountPage() {
-  return <CustomerAccount />;
+  return (
+    <main id="main-content" tabIndex={-1}>
+      <CustomerAccount />
+    </main>
+  );
 }

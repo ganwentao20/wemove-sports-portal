@@ -5,6 +5,7 @@ import {
   Get,
   Ip,
   Param,
+  ParseIntPipe,
   Patch,
   Post,
   Query,
@@ -18,6 +19,7 @@ import { RequireMfa, RequireMfaGuard } from '../mfa/require-mfa.guard.js';
 import { Roles, RolesGuard } from '../rbac/roles.guard.js';
 import {
   CmsPageQueryDto,
+  CmsProductQueryDto,
   CreateCmsPageDto,
   SeoConfigDto,
   UpdateCmsPageDto,
@@ -27,14 +29,54 @@ import {
 export class CmsController {
   constructor(private readonly cms: CmsService) {}
 
+  @Get('admin/cms/products')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('SUPER_ADMIN')
+  productReferences(@Query() query: CmsProductQueryDto) {
+    return this.cms.productReferences(query.search, query.ids);
+  }
+
   @Get('cms/pages')
   list(@Query() query: CmsPageQueryDto) {
-    return this.cms.listPublishedPages(query.slug);
+    return this.cms.listPublishedPages(
+      query.slug,
+      query.locale,
+      query.market,
+      query.kind,
+      query.productId,
+    );
   }
 
   @Get('cms/pages/:id')
-  detail(@Param('id') id: string) {
-    return this.cms.getPublishedPage(id);
+  detail(@Param('id') id: string, @Query() query: CmsPageQueryDto) {
+    return this.cms.getPublishedPage(id, query.locale, query.market);
+  }
+
+  @Get('admin/cms/pages/:id/preview')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('SUPER_ADMIN')
+  preview(@Param('id') id: string) {
+    return this.cms.preview(id);
+  }
+
+  @Get('admin/cms/pages/:id/versions')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('SUPER_ADMIN')
+  versions(@Param('id') id: string) {
+    return this.cms.versions(id);
+  }
+
+  @Post('admin/cms/pages/:id/restore/:revision')
+  @UseGuards(JwtAuthGuard, RolesGuard, RequireMfaGuard)
+  @Roles('SUPER_ADMIN')
+  @RequireMfa()
+  restore(
+    @Param('id') id: string,
+    @Param('revision', ParseIntPipe) revision: number,
+    @CurrentUser() actor: JwtPayload,
+    @Ip() ip?: string,
+  ) {
+    return this.cms.restore(id, revision, actor, ip);
   }
 
   @Get('admin/cms/pages')

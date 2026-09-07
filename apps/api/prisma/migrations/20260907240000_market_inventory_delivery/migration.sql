@@ -1,0 +1,15 @@
+CREATE UNIQUE INDEX "ProductVariant_barcode_key" ON "ProductVariant"("barcode");
+ALTER TABLE "ProductVariant" ADD COLUMN "availabilityPolicy" TEXT NOT NULL DEFAULT 'IN_STOCK_ONLY', ADD COLUMN "backorderLimit" INTEGER NOT NULL DEFAULT 0, ADD COLUMN "leadTimeDays" INTEGER;
+ALTER TABLE "RetailMarket" ADD COLUMN "inventoryDisplay" TEXT NOT NULL DEFAULT 'STATUS', ADD COLUMN "allowPreorder" BOOLEAN NOT NULL DEFAULT false, ADD COLUMN "allowBackorder" BOOLEAN NOT NULL DEFAULT false, ADD COLUMN "defaultSort" TEXT NOT NULL DEFAULT 'featured', ADD COLUMN "shippingRules" JSONB NOT NULL DEFAULT '[]', ADD COLUMN "taxRegionRates" JSONB NOT NULL DEFAULT '{}', ADD COLUMN "taxMode" TEXT NOT NULL DEFAULT 'CONFIGURED', ADD COLUMN "shippingMode" TEXT NOT NULL DEFAULT 'CONFIGURED';
+CREATE TABLE "MarketInventory" (
+ "variantId" TEXT NOT NULL REFERENCES "ProductVariant"("id") ON DELETE CASCADE ON UPDATE CASCADE,
+ "market" TEXT NOT NULL,
+ "available" INTEGER NOT NULL DEFAULT 0,
+ "reserved" INTEGER NOT NULL DEFAULT 0,
+ "lowThreshold" INTEGER NOT NULL DEFAULT 5,
+ "source" TEXT NOT NULL DEFAULT 'MANUAL',
+ "syncError" TEXT,
+ "sourceUpdatedAt" TIMESTAMP(3),
+ "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+ PRIMARY KEY ("variantId","market")
+);

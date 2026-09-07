@@ -6,6 +6,8 @@ import { randomUUID } from 'node:crypto';
 import request from 'supertest';
 import { AppModule } from './../src/app.module.js';
 import { setupApp } from './../src/bootstrap-app.js';
+import { JwtService } from '@nestjs/jwt';
+import { authenticatedFixture } from './auth-session.js';
 
 const runDb = process.env.E2E_DB === '1';
 
@@ -65,16 +67,20 @@ describe.skipIf(!runDb)('Order stock transaction flow (DB)', () => {
         },
       },
     });
-    const login = await request(app.getHttpServer())
-      .post('/api/v1/auth/login')
-      .send({ email, password })
-      .expect(200);
-    accessToken = login.body.data.accessToken as string;
+    accessToken = await authenticatedFixture(
+      prisma,
+      app.get(JwtService),
+      user,
+      'customer',
+    );
   });
 
   afterAll(async () => {
     await app?.close();
     if (userId) {
+      await prisma.authenticationSession.deleteMany({
+        where: { ownerId: userId },
+      });
       await prisma.order
         .deleteMany({ where: { userId } })
         .catch(() => undefined);
@@ -98,7 +104,17 @@ describe.skipIf(!runDb)('Order stock transaction flow (DB)', () => {
     const checkout = await request(server)
       .post('/api/v1/orders/checkout')
       .set('Authorization', `Bearer ${accessToken}`)
-      .send({})
+      .send({
+        shippingAddress: {
+          recipient: 'Order Tester',
+          phone: '123456789',
+          country: 'US',
+          region: 'CA',
+          city: 'San Francisco',
+          postalCode: '94107',
+          line1: '1 Test Street',
+        },
+      })
       .expect(201);
     const order = checkout.body.data as {
       id: string;

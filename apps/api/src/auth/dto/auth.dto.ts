@@ -1,4 +1,14 @@
-import { IsBoolean, IsEmail, IsNotEmpty, IsString, Matches, MaxLength, MinLength } from 'class-validator';
+import {
+  Equals,
+  IsBoolean,
+  IsOptional,
+  IsEmail,
+  IsNotEmpty,
+  IsString,
+  Matches,
+  MaxLength,
+  MinLength,
+} from 'class-validator';
 
 /** 密码强度规则（注册/重置共用；72 为 bcrypt 输入上限） */
 export const PASSWORD_RULES = {
@@ -10,6 +20,10 @@ export const PASSWORD_RULES = {
 
 /** B2C/经销商成员注册（合规：必须成年人声明 ageConfirmed=true） */
 export class RegisterDto {
+  @IsBoolean() @Equals(true) termsAccepted!: boolean;
+  @IsOptional() @IsBoolean() marketingEmail?: boolean;
+  @IsOptional() @IsBoolean() productUpdates?: boolean;
+
   @IsString()
   @MinLength(2)
   @MaxLength(60)
@@ -20,7 +34,9 @@ export class RegisterDto {
   email!: string;
 
   @IsString()
-  @MinLength(PASSWORD_RULES.min, { message: 'password must be at least 8 characters' })
+  @MinLength(PASSWORD_RULES.min, {
+    message: 'password must be at least 8 characters',
+  })
   @MaxLength(PASSWORD_RULES.max)
   @Matches(PASSWORD_RULES.pattern, { message: PASSWORD_RULES.patternMessage })
   password!: string;
@@ -30,6 +46,11 @@ export class RegisterDto {
 }
 
 export class LoginDto {
+  @IsOptional()
+  @IsString()
+  @Matches(/^\d{6}$/)
+  code?: string;
+
   @IsEmail({}, { message: 'email format invalid' })
   email!: string;
 
@@ -73,8 +94,15 @@ export class ResetPasswordDto {
   token!: string;
 
   @IsString()
-  @MinLength(PASSWORD_RULES.min, { message: 'password must be at least 8 characters' })
+  @MinLength(PASSWORD_RULES.min, {
+    message: 'password must be at least 8 characters',
+  })
   @MaxLength(PASSWORD_RULES.max)
   @Matches(PASSWORD_RULES.pattern, { message: PASSWORD_RULES.patternMessage })
   password!: string;
+}
+
+export class StaffMfaLoginDto {
+  @IsString() @MinLength(20) @MaxLength(128) challengeToken!: string;
+  @IsString() @Matches(/^\d{6}$/) code!: string;
 }

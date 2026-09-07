@@ -1,4 +1,7 @@
 import { Module } from '@nestjs/common';
+import { NotificationsModule } from './notifications/notifications.module.js';
+import { PlatformModule } from './platform/platform.module.js';
+import { AccountModule } from './account/account.module.js';
 import { PrismaModule } from './prisma/prisma.module.js';
 import { RedisModule } from './redis/redis.module.js';
 import { EmailModule } from './email/email.module.js';
@@ -28,6 +31,9 @@ import { FallbackModule } from './common/fallback.module.js';
 @Module({
   imports: [
     PrismaModule,
+    NotificationsModule,
+    PlatformModule,
+    AccountModule,
     RedisModule,
     EmailModule,
     HealthModule,

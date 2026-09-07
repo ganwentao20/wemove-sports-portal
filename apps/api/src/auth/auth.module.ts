@@ -1,3 +1,4 @@
+import { MfaModule } from '../mfa/mfa.module.js';
 import { Module } from '@nestjs/common';
 import { JwtModule } from '@nestjs/jwt';
 import { AuthService } from './auth.service.js';
@@ -13,7 +14,13 @@ import { EmailModule } from '../email/email.module.js';
  * RedisModule：登录限流 + 登出黑名单；EmailModule：验证/找回邮件。
  */
 @Module({
-  imports: [JwtModule.register({ global: true }), AuditModule, RedisModule, EmailModule],
+  imports: [
+    MfaModule,
+    JwtModule.register({ global: true }),
+    AuditModule,
+    RedisModule,
+    EmailModule,
+  ],
   controllers: [AuthController],
   providers: [AuthService, JwtAuthGuard, OptionalJwtAuthGuard],
   exports: [AuthService, JwtAuthGuard, OptionalJwtAuthGuard],

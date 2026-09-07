@@ -1,3 +1,4 @@
+import Link from "next/link";
 import type { Metadata } from "next";
 import { serverApiGet } from "../../../lib/server-api";
 
@@ -60,6 +61,17 @@ export default async function SupportPage() {
         Manuals, certificates and FAQs. Dealers can access restricted documents
         after sign-in.
       </p>
+      <nav className="mt-5 flex gap-5">
+        <Link href="/support/faq" className="underline">
+          Search FAQs
+        </Link>
+        <Link href="/support/downloads" className="underline">
+          Browse downloads
+        </Link>
+        <Link href="/contact" className="underline">
+          Contact support
+        </Link>
+      </nav>
       <section className="mt-10">
         <h2 className="text-xl font-semibold">Downloads</h2>
         {downloads.length ? (

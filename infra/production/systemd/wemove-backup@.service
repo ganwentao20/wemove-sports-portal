@@ -1,0 +1,14 @@
+[Unit]
+Description=WEMOVE encrypted PostgreSQL %i backup
+Requires=docker.service
+After=docker.service
+
+[Service]
+Type=oneshot
+WorkingDirectory=/opt/wemove
+EnvironmentFile=/etc/wemove/ops.env
+ExecStart=/usr/bin/node scripts/ops-pgbackrest.mjs --action %i --env-file ${WEMOVE_ENV_FILE} --project ${WEMOVE_PROJECT} --repos ${WEMOVE_BACKUP_REPOS}
+TimeoutStartSec=2h
+Nice=10
+IOSchedulingClass=best-effort
+IOSchedulingPriority=7

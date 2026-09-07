@@ -1,3 +1,4 @@
+import { ProductRatingDto } from './dto/product-rating.dto.js';
 import {
   Body,
   Controller,
@@ -22,12 +23,47 @@ import {
   UpdateProductDto,
   UpdateVariantDto,
 } from './dto/catalog-admin.dto.js';
+import {
+  CatalogImportDto,
+  CategoryTemplateDto,
+  CopyProductDto,
+} from './dto/catalog-admin.dto.js';
 
 @Controller('admin/catalog')
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Roles('SUPER_ADMIN', 'CATALOG_OPERATOR')
 export class CatalogAdminController {
   constructor(private readonly catalog: CatalogAdminService) {}
+
+  @Get('export') export() {
+    return this.catalog.exportProducts();
+  }
+  @Post('import') @UseGuards(RequireMfaGuard) @RequireMfa() import(
+    @Body() dto: CatalogImportDto,
+    @CurrentUser() actor: JwtPayload,
+  ) {
+    return this.catalog.importProducts(dto, actor);
+  }
+  @Get('variants/:id/price-history') history(@Param('id') id: string) {
+    return this.catalog.priceHistory(id);
+  }
+  @Patch('categories/:id/template')
+  @UseGuards(RequireMfaGuard)
+  @RequireMfa()
+  template(
+    @Param('id') id: string,
+    @Body() dto: CategoryTemplateDto,
+    @CurrentUser() actor: JwtPayload,
+  ) {
+    return this.catalog.categoryTemplate(id, dto, actor);
+  }
+  @Post('products/:id/copy') @UseGuards(RequireMfaGuard) @RequireMfa() copy(
+    @Param('id') id: string,
+    @Body() dto: CopyProductDto,
+    @CurrentUser() actor: JwtPayload,
+  ) {
+    return this.catalog.copyProduct(id, dto.slug, dto.skuPrefix, actor);
+  }
 
   @Get('products')
   products(@Query() query: AdminProductQueryDto) {
@@ -49,6 +85,17 @@ export class CatalogAdminController {
     return this.catalog.createCategory(dto, actor);
   }
 
+  @Patch('categories/:id')
+  @UseGuards(RequireMfaGuard)
+  @RequireMfa()
+  updateCategory(
+    @Param('id') id: string,
+    @Body() dto: CreateCategoryDto,
+    @CurrentUser() actor: JwtPayload,
+  ) {
+    return this.catalog.updateCategory(id, dto, actor);
+  }
+
   @Post('products')
   @UseGuards(RequireMfaGuard)
   @RequireMfa()
@@ -57,6 +104,17 @@ export class CatalogAdminController {
     @CurrentUser() actor: JwtPayload,
   ) {
     return this.catalog.createProduct(dto, actor);
+  }
+
+  @Patch('products/:id/reviews')
+  @UseGuards(RequireMfaGuard)
+  @RequireMfa()
+  rating(
+    @Param('id') id: string,
+    @Body() dto: ProductRatingDto,
+    @CurrentUser() actor: JwtPayload,
+  ) {
+    return this.catalog.updateRating(id, dto, actor);
   }
 
   @Patch('products/:id')

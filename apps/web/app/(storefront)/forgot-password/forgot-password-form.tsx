@@ -30,7 +30,10 @@ export function ForgotPasswordForm() {
 
   return (
     <form onSubmit={submit} className="mt-8 space-y-4">
-      <input required type="email" name="email" autoComplete="email" maxLength={160} placeholder="Email" className="w-full rounded-xl border border-neutral-300 px-4 py-3 text-sm" />
+      <div className="space-y-2">
+        <label htmlFor="forgot-password-email" className="block text-sm font-medium">Email</label>
+        <input id="forgot-password-email" required type="email" name="email" autoComplete="email" maxLength={160} placeholder="Email" className="w-full rounded-xl border border-neutral-300 px-4 py-3 text-sm" />
+      </div>
       {error && <p role="alert" className="rounded-lg bg-red-50 p-3 text-sm text-red-700">{error}</p>}
       <button disabled={busy} className="w-full rounded-full bg-[var(--wm-dark)] py-3 text-sm font-semibold text-white disabled:opacity-50">{busy ? "Sending…" : "Send reset instructions"}</button>
     </form>

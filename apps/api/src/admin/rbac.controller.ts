@@ -1,4 +1,12 @@
-import { Body, Controller, Get, Param, Post, Put, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  Post,
+  Put,
+  UseGuards,
+} from '@nestjs/common';
 import { AdminService } from './admin.service.js';
 import { Roles, RolesGuard } from '../rbac/roles.guard.js';
 import { RequireMfa, RequireMfaGuard } from '../mfa/require-mfa.guard.js';
@@ -11,7 +19,6 @@ import { RoleCreateDto, RolePermissionsDto } from './dto/admin.dto.js';
 @Controller('admin')
 @UseGuards(JwtAuthGuard, RolesGuard, RequireMfaGuard)
 @Roles('SUPER_ADMIN')
-@RequireMfa()
 export class RbacAdminController {
   constructor(private readonly admin: AdminService) {}
 
@@ -20,11 +27,13 @@ export class RbacAdminController {
     return this.admin.listRoles();
   }
 
+  @RequireMfa()
   @Post('roles')
   createRole(@Body() dto: RoleCreateDto, @CurrentUser() actor: JwtPayload) {
     return this.admin.createRole(dto, actor);
   }
 
+  @RequireMfa()
   @Put('roles/:id/permissions')
   setRolePermissions(
     @Param('id') id: string,

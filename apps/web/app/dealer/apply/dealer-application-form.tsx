@@ -1,10 +1,12 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { recordEvent } from "../../../components/consent-analytics";
+import { useEffect, useMemo, useState } from "react";
 import type { FormEvent, ReactNode } from "react";
 import { useRouter } from "next/navigation";
 
 import { ApiError, apiFetch } from "../../../lib/api";
+import { secureApiFetch } from "../../../lib/secure-api";
 
 type ApplicationResponse = {
   id: string;
@@ -47,14 +49,51 @@ const inputClass =
 
 const steps = ["Contact", "Business", "Review"];
 
-export function DealerApplicationForm() {
+export function DealerApplicationForm({
+  applicationId,
+  initialFields,
+}: { applicationId?: string; initialFields?: ApplicationFields } = {}) {
   const router = useRouter();
   const [step, setStep] = useState(0);
-  const [form, setForm] = useState(initialForm);
+  const [form, setForm] = useState(initialFields ?? initialForm);
   const [documentFile, setDocumentFile] = useState<File | null>(null);
   const [confirmed, setConfirmed] = useState(false);
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [draftReady, setDraftReady] = useState(false);
+  useEffect(() => {
+    if (applicationId) {
+      setDraftReady(true);
+      return;
+    }
+    try {
+      const stored = localStorage.getItem("wemove-dealer-application-draft");
+      if (stored) setForm({ ...initialForm, ...JSON.parse(stored) });
+    } catch {}
+    void secureApiFetch<{ data: ApplicationFields } | null>(
+      "customer",
+      "/dealer/application-draft",
+    )
+      .then((d) => {
+        if (d?.data) setForm({ ...initialForm, ...d.data });
+      })
+      .catch(() => undefined)
+      .finally(() => setDraftReady(true));
+  }, [applicationId]);
+  useEffect(() => {
+    if (!draftReady || applicationId) return;
+    const timer = setTimeout(() => {
+      localStorage.setItem(
+        "wemove-dealer-application-draft",
+        JSON.stringify(form),
+      );
+      void secureApiFetch("customer", "/dealer/application-draft", {
+        method: "PUT",
+        body: JSON.stringify({ data: form }),
+      }).catch(() => undefined);
+    }, 600);
+    return () => clearTimeout(timer);
+  }, [form, draftReady, applicationId]);
 
   const progress = useMemo(
     () => `${((step + 1) / steps.length) * 100}%`,
@@ -101,6 +140,8 @@ export function DealerApplicationForm() {
       setError(message);
       return;
     }
+    if (step === 0)
+      recordEvent("dealer_apply_start", { country: form.country });
     setStep((current) => Math.min(current + 1, steps.length - 1));
   }
 
@@ -127,22 +168,59 @@ export function DealerApplicationForm() {
         attachments = [attachment];
       }
 
-      const application = await apiFetch<ApplicationResponse>(
-        "/dealer/applications",
-        {
-          method: "POST",
-          body: JSON.stringify({
-            companyName: form.companyName.trim(),
-            legalRegNo: form.legalRegNo.trim(),
-            contactName: form.contactName.trim(),
-            contactEmail: form.contactEmail.trim(),
-            phone: form.phone.trim(),
-            country: form.country.trim(),
-            businessType: form.businessType,
-            attachments,
-          }),
-        },
-      );
+      const options = {
+        method: "POST",
+        body: JSON.stringify({
+          ...form,
+          agreementVersion: "dealer-2026-09",
+          agreementsAccepted: confirmed,
+          attachments,
+        }),
+      };
+      let application: ApplicationResponse;
+      if (applicationId)
+        application = await secureApiFetch<ApplicationResponse>(
+          "customer",
+          `/dealer/applications/${applicationId}/resubmit`,
+          options,
+        );
+      else
+        try {
+          application = await secureApiFetch<ApplicationResponse>(
+            "customer",
+            "/dealer/applications",
+            options,
+          );
+        } catch (cause) {
+          if (!(cause instanceof ApiError) || cause.status !== 401) throw cause;
+          application = await apiFetch<ApplicationResponse>(
+            "/dealer/applications",
+            {
+              method: "POST",
+              body: JSON.stringify({
+                companyName: form.companyName.trim(),
+                legalRegNo: form.legalRegNo.trim(),
+                contactName: form.contactName.trim(),
+                contactEmail: form.contactEmail.trim(),
+                phone: form.phone.trim(),
+                country: form.country.trim(),
+                businessType: form.businessType,
+                agreementVersion: "dealer-2026-09",
+                agreementsAccepted: confirmed,
+                attachments,
+              }),
+            },
+          );
+        }
+      recordEvent("dealer_apply_submit", {
+        application_id: application.id,
+        country: form.country,
+      });
+      localStorage.removeItem("wemove-dealer-application-draft");
+      setDraftReady(false);
+      await secureApiFetch("customer", "/dealer/application-draft", {
+        method: "DELETE",
+      }).catch(() => undefined);
 
       const query = new URLSearchParams({
         id: application.id,
@@ -156,16 +234,29 @@ export function DealerApplicationForm() {
   }
 
   return (
-    <main className="mx-auto max-w-3xl px-4 py-10 sm:py-14">
+    <main
+      id="main-content"
+      tabIndex={-1}
+      className="mx-auto max-w-3xl px-4 py-10 sm:py-14"
+    >
       <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[#2B5F8A]">
         WEMOVE Sports B2B
       </p>
       <h1 className="mt-2 text-3xl font-bold tracking-tight sm:text-4xl">
-        Become a WEMOVE Dealer
+        {applicationId
+          ? "Update your dealer application"
+          : "Become a WEMOVE Dealer"}
       </h1>
       <p className="mt-3 max-w-2xl text-neutral-600">
         Apply for verified dealer access. Our team will review the submitted
         business details before approval.
+      </p>
+      <p className="mt-3 text-sm">
+        Your draft is saved on this device and, when signed in, to your account.{" "}
+        <a href="/dealer/application" className="underline">
+          Track or claim an application
+        </a>
+        . Agreement version: dealer-2026-09.
       </p>
 
       <ol
@@ -349,7 +440,16 @@ export function DealerApplicationForm() {
               />
               <span>
                 I confirm that the information is accurate and that I am
-                authorized to apply for this business.
+                authorized to apply for this business. I agree to the{" "}
+                <a
+                  href="/privacy"
+                  className="underline"
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  privacy policy
+                </a>{" "}
+                and dealer application declaration (version dealer-2026-09).
               </span>
             </label>
           </section>

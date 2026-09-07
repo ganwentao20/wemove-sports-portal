@@ -5,7 +5,11 @@ export const metadata: Metadata = { title: "Sign in" };
 
 export default function LoginPage() {
   return (
-    <div className="mx-auto flex min-h-[60vh] max-w-md flex-col justify-center px-4">
+    <main
+      id="main-content"
+      tabIndex={-1}
+      className="mx-auto flex min-h-[60vh] max-w-md flex-col justify-center px-4"
+    >
       <h1 className="text-3xl font-bold">Welcome back</h1>
       <p className="mt-1 text-sm text-neutral-500">
         Sign in to manage your account and shopping cart.
@@ -17,6 +21,6 @@ export default function LoginPage() {
           Create account
         </a>
       </p>
-    </div>
+    </main>
   );
 }

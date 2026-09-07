@@ -1,81 +1,136 @@
+import { ui } from "../lib/ui-strings";
 import Link from "next/link";
-
-const NAV = [
+import Image from "next/image";
+import { cookies } from "next/headers";
+import { serverApiGet } from "../lib/server-api";
+import { getLocale, getMarket } from "../lib/locale";
+import { publicUrl } from "../lib/public-url";
+import type { NavigationItem } from "../lib/navigation";
+import { SitePreferences } from "./site-preferences";
+import { AnnouncementBanner } from "./announcement-banner";
+import {
+  HeaderBar,
+  DesktopNavigation,
+  MobileNavigation,
+} from "./site-navigation";
+const NAV: NavigationItem[] = [
   { href: "/products", label: "Products" },
   { href: "/play-learn", label: "Play & Learn" },
   { href: "/support", label: "Support" },
   { href: "/contact", label: "Contact" },
 ];
-
-const PORTAL_LINKS = [
-  { href: "/customer/account", label: "Account & Cart" },
-  { href: "/dealer/login", label: "Dealer" },
-  { href: "/admin/login", label: "Admin" },
-];
-
-/** 全站响应式 Header；移动端使用原生 details 菜单，无脚本也可访问。 */
-export function SiteHeader() {
+export async function SiteHeader() {
+  const locale = await getLocale(),
+    market = await getMarket(),
+    jar = await cookies();
+  const [config, markets] = await Promise.all([
+    serverApiGet<{
+      locale: { languages: string[] };
+      brand: { name: string; logo?: string };
+      navigation: { items: NavigationItem[] };
+    }>("/site/config"),
+    serverApiGet<Array<{ code: string; label: string; currency: string }>>(
+      "/commerce/markets",
+    ),
+  ]);
+  const brand = config.ok ? config.data.brand : { name: "WEMOVE SPORTS" };
+  const localized = (items: NavigationItem[]): NavigationItem[] =>
+    items
+      .filter((item) => !item.markets?.length || item.markets.includes(market))
+      .map((item) => ({
+        ...item,
+        href: publicUrl(item.href, locale, market),
+        label:
+          item.labels?.[locale] ||
+          item.labels?.[locale.split("-")[0]] ||
+          (locale.split("-")[0] === "zh" && item.zh) ||
+          ui(locale, item.label),
+        children: item.children ? localized(item.children) : undefined,
+      }));
+  const nav = localized(config.ok ? config.data.navigation.items : NAV);
+  const announcements = await serverApiGet<
+    Array<{
+      id: string;
+      title: string;
+      sections: Array<{ props?: { href?: string; dismissible?: boolean } }>;
+    }>
+  >(`/cms/pages?kind=BANNER&locale=${locale}&market=${market}`);
+  const banner = announcements.ok ? announcements.data[0] : undefined;
+  const dealer = jar.has("wm_dealer_session");
+  const portals: NavigationItem[] = [
+    {
+      href: dealer ? "/dealer/dashboard" : "/customer/account",
+      label: ui(locale, dealer ? "Dealer Portal" : "Account"),
+    },
+    ...(!dealer
+      ? [{ href: "/dealer/login", label: ui(locale, "Dealer Sign in") }]
+      : []),
+    { href: "/cart", label: ui(locale, "Cart") },
+    { href: `/${locale}/search?market=${market}`, label: ui(locale, "Search") },
+  ];
+  const preferences = () => (
+    <SitePreferences
+      languages={config.ok ? config.data.locale.languages : undefined}
+      locale={locale}
+      market={market}
+      markets={
+        markets.ok
+          ? markets.data
+          : [{ code: "US", label: "United States", currency: "USD" }]
+      }
+    />
+  );
   return (
     <header className="sticky top-0 z-40 border-b border-[var(--wm-border)] bg-[color:color-mix(in_srgb,var(--wm-surface)_92%,transparent)] backdrop-blur-xl">
-      <div className="mx-auto flex h-[72px] max-w-7xl items-center justify-between gap-6 px-4 sm:px-6">
+      {banner && (
+        <AnnouncementBanner
+          id={banner.id}
+          title={banner.title}
+          href={banner.sections?.[0]?.props?.href}
+          dismissible={banner.sections?.[0]?.props?.dismissible !== false}
+          locale={locale}
+        />
+      )}
+      <HeaderBar>
         <Link
-          href="/"
+          href={`/${locale}`}
           className="flex shrink-0 items-baseline gap-1.5 text-[17px] font-extrabold tracking-[-0.04em]"
-          aria-label="WEMOVE SPORTS home"
+          aria-label={brand.name}
         >
-          <span className="text-[var(--wm-primary)]">WEMOVE</span>
-          <span className="text-[var(--wm-dark)]">SPORTS</span>
+          {brand.logo ? (
+            <Image
+              src={brand.logo}
+              width={180}
+              height={48}
+              alt={brand.name}
+              unoptimized={brand.logo.startsWith("https:")}
+              className="max-h-12 w-auto max-w-44 object-contain"
+            />
+          ) : (
+            <span className="max-w-48 truncate text-[var(--wm-dark)]">
+              {brand.name}
+            </span>
+          )}
         </Link>
-
-        <nav className="hidden items-center gap-6 text-sm font-medium text-[var(--wm-muted)] lg:flex" aria-label="Primary navigation">
-          {NAV.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              className="whitespace-nowrap transition-colors hover:text-[var(--wm-primary)]"
-            >
-              {item.label}
-            </Link>
-          ))}
-        </nav>
-
-        <div className="hidden items-center gap-3 text-sm lg:flex">
-          {PORTAL_LINKS.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={
-                item.label === "Account & Cart"
-                  ? "whitespace-nowrap text-[var(--wm-muted)] hover:text-[var(--wm-primary)]"
-                  : item.label === "Dealer"
-                    ? "whitespace-nowrap rounded-xl bg-[var(--wm-dark)] px-4 py-2.5 font-semibold text-[var(--wm-surface)] transition-transform hover:-translate-y-0.5 active:translate-y-0"
-                    : "whitespace-nowrap text-[var(--wm-muted)] hover:text-[var(--wm-primary)]"
-              }
-            >
-              {item.label}
-            </Link>
-          ))}
+        <DesktopNavigation items={nav} locale={locale} />
+        <div className="hidden items-center gap-3 text-sm xl:flex">
+          {portals
+            .filter((item) => item.href !== "/dealer/login")
+            .map((item) => (
+              <Link
+                key={item.href}
+                href={item.href}
+                className="whitespace-nowrap text-[var(--wm-muted)] hover:text-[var(--wm-primary)]"
+              >
+                {item.label}
+              </Link>
+            ))}
         </div>
-
-        <details className="relative lg:hidden">
-          <summary className="cursor-pointer list-none rounded-xl border border-[var(--wm-border)] bg-[var(--wm-surface)] px-4 py-2 text-sm font-semibold text-[var(--wm-text)] [&::-webkit-details-marker]:hidden">
-            Menu
-          </summary>
-          <div className="absolute right-0 top-12 w-64 rounded-2xl border border-[var(--wm-border)] bg-[var(--wm-surface)] p-3 shadow-[0_24px_60px_rgba(var(--wm-shadow)/0.18)]">
-            <nav className="grid gap-1" aria-label="Mobile navigation">
-              {[...NAV, ...PORTAL_LINKS].map((item) => (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className="rounded-xl px-3 py-2.5 text-sm font-medium text-[var(--wm-muted)] hover:bg-[var(--wm-surface-soft)] hover:text-[var(--wm-primary)]"
-                >
-                  {item.label}
-                </Link>
-              ))}
-            </nav>
-          </div>
-        </details>
-      </div>
+        <div className="hidden xl:block">{preferences()}</div>
+        <MobileNavigation items={nav} portals={portals} locale={locale}>
+          {preferences()}
+        </MobileNavigation>
+      </HeaderBar>
     </header>
   );
 }

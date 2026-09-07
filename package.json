@@ -30,14 +30,21 @@
     "db:deploy": "npm run prisma:deploy -w api",
     "db:seed": "npm run prisma:seed -w api",
     "db:studio": "npm run prisma:studio -w api",
-    "prisma:generate": "npm run prisma:generate -w api"
+    "prisma:generate": "npm run prisma:generate -w api",
+    "test:browser": "playwright test"
   },
   "devDependencies": {
-    "concurrently": "^9.1.2"
+    "@axe-core/playwright": "^4.13.0",
+    "@playwright/test": "^1.63.0",
+    "concurrently": "^9.1.2",
+    "lighthouse": "^13.4.1"
   },
   "allowScripts": {
     "@prisma/client@6.19.3": true,
     "@prisma/engines@6.19.3": true,
     "prisma@6.19.3": true
+  },
+  "overrides": {
+    "deepmerge-ts": "8.0.0"
   }
 }

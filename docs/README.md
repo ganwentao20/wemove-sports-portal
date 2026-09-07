@@ -31,6 +31,10 @@
 | `delivery-readiness.md` | 最终交付物现状、责任人与停止线 | 组长统筹 |
 | `deliverables/下午班-08组-WEMOVE-SPORTS-项目需求文档-v0.4.docx` | 已排版的 Word 需求文档（提交候选件） | 组长统筹 |
 | `plans/project-status.md` | 仓库、分支、质量与风险审计快照 | 组长维护 |
+| [`plans/final-requirements-verification-20260907.md`](plans/final-requirements-verification-20260907.md) | 原始完整规格逐项实现、整合验收证据与真实外部前提 | 组长统筹 |
+| [`production-operations.md`](production-operations.md) | 生产镜像、配置、加密备份、PITR、扫描与监控演练 | 组长/E |
+| [`commerce/retail-completion-20260907.md`](commerce/retail-completion-20260907.md) | 商品、零售交易、履约与数据库变更 | 组长/C |
+| [`operations/b2b-media-notifications-20260907.md`](operations/b2b-media-notifications-20260907.md) | 企业采购、售后、媒体与通知操作补充 | 组长/D |
 | `plans/workload-current.md` | 当前分工与计划工作量（五人） | 甘文韬 |
 | `b2b-state-machines.md` | B2B 审批、询报价与采购订单规范 | 甘文韬 |
 | `plans/schedule-current.md` | 第 8 组当前进度计划（动态更新） | 组长统筹 |
@@ -51,8 +55,10 @@
 | ④ | 项目需求文档（最终整合版） | 组长（甘文韬）牵头 | 版本管理与评审记录 |
 | ⑤ | 测试报告（环境/功能/安全/性能） | 组员 E（龙祖怡）牵头 | 与 CI 结果一致可复核 |
 | ⑥ | 答辩 PPT + 现场主讲 | 组长（甘文韬）主讲 | 组员 C（周慧莹）协助技术架构/数据库章节 |
-| ⑦ | 系统操作手册（加分项） | 组员 D（倪依玲） | —— |
+| ⑦ | 源代码 | 组长整合、全员提供本人代码，E 验证 | 冻结版本、迁移、依赖锁与干净环境复现 |
 | ⑧ | 分组成员工作量占比统计表 | 组长 | 与 ② 进度/例会纪要对得上 |
+
+操作手册另列为选题建议交付，由倪依玲维护，不能替代课程⑦源代码。计划工作量保持甘文韬 25%，其余四人各 18.75%；实际贡献结项按证据确认。
 
 ### 邮件提交规范（不可随意命名）—— 已按班级与组号 8 定稿
 

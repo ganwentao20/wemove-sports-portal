@@ -20,6 +20,7 @@ function setup(options?: { empty?: boolean; stockUpdateCount?: number }) {
       sku: 'WM-TEST-1',
       name: 'Blue',
       status: true,
+      msrpCents: 1299,
       product: { name: 'Test Product', status: 'ACTIVE' },
       stock: { available: 5, reserved: 0 },
     },

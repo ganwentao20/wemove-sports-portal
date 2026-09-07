@@ -1,3 +1,4 @@
+import { seedContent } from './seed-content.ts';
 /**
  * WEMOVE SPORTS · 基础 Seed（幂等，可重复执行）
  *
@@ -356,6 +357,7 @@ async function main() {
   await seedDemoAccounts();
   await seedCatalog();
   await seedDemoCompany();
+  await seedContent(prisma);
   console.log('Seed completed ✓');
 }
 

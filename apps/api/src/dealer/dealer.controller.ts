@@ -43,6 +43,13 @@ export class DealerController {
     private readonly media: MediaService,
   ) {}
 
+  @Get('directory') directory() {
+    return this.dealer.directory();
+  }
+  @Get('directory/:id') directoryDetail(@Param('id') id: string) {
+    return this.dealer.directory(id);
+  }
+
   @Post('application-attachments')
   @UseInterceptors(
     FileInterceptor('file', {
@@ -94,7 +101,7 @@ export class DealerController {
     @Query() query: DealerCatalogQueryDto,
     @CurrentUser() user: JwtPayload,
   ) {
-    return this.dealer.listDealerCatalog(query.quantity, user);
+    return this.dealer.listDealerCatalog(query.quantity, user, query.productId);
   }
 
   /** DLR-04：批量 SKU/数量逐行校验和企业价格预览，不创建业务单据。 */

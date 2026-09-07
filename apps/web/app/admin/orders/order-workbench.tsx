@@ -11,6 +11,7 @@ type Order = {
   orderNo: string;
   status: OrderStatus;
   totalCents: number;
+  currency: string;
   createdAt: string;
   user: { id: string; email: string; name: string };
   items: Array<{
@@ -24,13 +25,15 @@ type Order = {
 };
 type OrderPage = { items: Order[]; total: number };
 
-const money = (cents: number) => `$${(cents / 100).toFixed(2)}`;
+const money = (cents: number, currency = "USD") =>
+  `${currency} ${(cents / 100).toFixed(2)}`;
 
 export function OrderWorkbench() {
   const router = useRouter();
   const [orders, setOrders] = useState<Order[]>([]);
   const [status, setStatus] = useState("");
   const [mfaCode, setMfaCode] = useState("");
+  const [changeReason, setChangeReason] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState<string | null>(null);
@@ -68,6 +71,10 @@ export function OrderWorkbench() {
       setError("Enter the current 6-digit MFA code before updating an order.");
       return;
     }
+    if (changeReason.trim().length < 3) {
+      setError("Enter the reason for this order status change.");
+      return;
+    }
     if (
       !window.confirm(`Move ${order.orderNo} from ${order.status} to ${next}?`)
     )
@@ -78,7 +85,7 @@ export function OrderWorkbench() {
       await secureApiFetch("staff", `/admin/orders/${order.id}/status`, {
         method: "PATCH",
         headers: { "x-mfa-code": mfaCode },
-        body: JSON.stringify({ status: next }),
+        body: JSON.stringify({ status: next, reason: changeReason.trim() }),
       });
       setMfaCode("");
       await load();
@@ -96,16 +103,39 @@ export function OrderWorkbench() {
     router.replace("/admin/login");
     router.refresh();
   }
+  async function exportOrders() {
+    setError("");
+    try {
+      const data = await secureApiFetch<{ csv: string; fileName: string }>(
+        "staff",
+        `/admin/orders/export${status ? `?status=${status}` : ""}`,
+      );
+      const url = URL.createObjectURL(
+        new Blob([data.csv], { type: "text/csv;charset=utf-8" }),
+      );
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = data.fileName;
+      link.click();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    } catch (e) {
+      setError((e as Error).message);
+    }
+  }
 
   return (
-    <main className="mx-auto max-w-7xl px-4 py-10">
+    <main
+      id="main-content"
+      tabIndex={-1}
+      className="mx-auto max-w-7xl px-4 py-10"
+    >
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <p className="text-sm font-semibold text-[#2B5F8A]">WEMOVE ADMIN</p>
           <h1 className="mt-1 text-3xl font-bold">Order fulfillment</h1>
           <p className="mt-2 text-sm text-neutral-500">
-            Confirm, fulfill or cancel orders with transactional inventory
-            handling.
+            Track payment, partial shipments, returns and inventory
+            reservations.
           </p>
         </div>
         <div className="flex flex-wrap items-end gap-3">
@@ -123,6 +153,15 @@ export function OrderWorkbench() {
             />
           </label>
           <label className="text-sm">
+            Change reason
+            <input
+              className="ml-2 rounded-lg border px-3 py-2"
+              value={changeReason}
+              onChange={(e) => setChangeReason(e.target.value)}
+              maxLength={500}
+            />
+          </label>
+          <label className="text-sm">
             Status{" "}
             <select
               value={status}
@@ -137,6 +176,12 @@ export function OrderWorkbench() {
               ))}
             </select>
           </label>
+          <button
+            onClick={() => void exportOrders()}
+            className="rounded-lg border px-4 py-2 text-sm font-semibold"
+          >
+            Export filtered orders
+          </button>
           <button
             onClick={() => void signOut()}
             className="pb-2 text-sm text-neutral-500 underline"
@@ -168,7 +213,11 @@ export function OrderWorkbench() {
             >
               <div className="flex flex-wrap justify-between gap-4">
                 <div>
-                  <h2 className="font-semibold">{order.orderNo}</h2>
+                  <h2 className="font-semibold">
+                    <a className="underline" href={`/admin/orders/${order.id}`}>
+                      {order.orderNo}
+                    </a>
+                  </h2>
                   <p className="mt-1 text-sm text-neutral-500">
                     {order.user.name} · {order.user.email}
                   </p>
@@ -181,7 +230,7 @@ export function OrderWorkbench() {
                     {order.status}
                   </span>
                   <p className="mt-2 text-lg font-bold">
-                    {money(order.totalCents)}
+                    {money(order.totalCents, order.currency)}
                   </p>
                 </div>
               </div>
@@ -192,30 +241,18 @@ export function OrderWorkbench() {
                       {item.productName} · {item.variantName || item.sku} ×{" "}
                       {item.quantity}
                     </span>
-                    <span>{money(item.lineCents)}</span>
+                    <span>{money(item.lineCents, order.currency)}</span>
                   </li>
                 ))}
               </ul>
               {(order.status === "PENDING" || order.status === "CONFIRMED") && (
                 <div className="mt-4 flex flex-wrap justify-end gap-2">
-                  {order.status === "PENDING" && (
-                    <button
-                      disabled={busy === order.id}
-                      onClick={() => void transition(order, "CONFIRMED")}
-                      className="rounded-lg bg-blue-700 px-4 py-2 text-sm text-white disabled:opacity-50"
-                    >
-                      Confirm
-                    </button>
-                  )}
-                  {order.status === "CONFIRMED" && (
-                    <button
-                      disabled={busy === order.id}
-                      onClick={() => void transition(order, "FULFILLED")}
-                      className="rounded-lg bg-emerald-700 px-4 py-2 text-sm text-white disabled:opacity-50"
-                    >
-                      Fulfill
-                    </button>
-                  )}
+                  <a
+                    className="rounded-full border px-4 py-2 font-semibold"
+                    href={`/admin/orders/${order.id}`}
+                  >
+                    Payments, shipments & returns
+                  </a>
                   <button
                     disabled={busy === order.id}
                     onClick={() => void transition(order, "CANCELLED")}

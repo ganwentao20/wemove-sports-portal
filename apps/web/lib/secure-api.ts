@@ -11,6 +11,8 @@ async function readEnvelope<T>(response: Response): Promise<T> {
       body?.message ?? `Request failed with HTTP ${response.status}`,
       response.status,
       body?.code ?? -1,
+      body?.field_errors ?? {},
+      body?.request_id ?? body?.traceId,
     );
   }
   return body.data as T;
@@ -29,7 +31,9 @@ function secureHeaders(init?: RequestInit): Headers {
 /** 登录响应由同源 Route Handler 处理，JWT 不会暴露给浏览器 JavaScript。 */
 export async function sessionLogin<T>(
   kind: SessionKind,
-  credentials: { email: string; password: string },
+  credentials:
+    | { email: string; password: string; code?: string }
+    | { challengeToken: string; code: string },
 ): Promise<T> {
   const response = await fetch(`/api/session/${kind}/login`, {
     method: "POST",
@@ -52,7 +56,19 @@ export async function secureApiFetch<T>(
     headers: secureHeaders(init),
     cache: init?.cache ?? "no-store",
   });
-  return readEnvelope<T>(response);
+  try {
+    return await readEnvelope<T>(response);
+  } catch (error) {
+    if (
+      kind === "dealer" &&
+      error instanceof ApiError &&
+      error.code === 40303 &&
+      typeof window !== "undefined" &&
+      !window.location.pathname.endsWith("/dealer/terms")
+    )
+      window.location.assign("/dealer/terms");
+    throw error;
+  }
 }
 
 export async function sessionLogout(kind: SessionKind): Promise<void> {

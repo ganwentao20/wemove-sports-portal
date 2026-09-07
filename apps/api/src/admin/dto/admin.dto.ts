@@ -29,7 +29,9 @@ export class CreateStaffDto {
   email!: string;
 
   @IsString()
-  @MinLength(PASSWORD_RULES.min, { message: 'password must be at least 8 characters' })
+  @MinLength(PASSWORD_RULES.min, {
+    message: 'password must be at least 8 characters',
+  })
   @MaxLength(PASSWORD_RULES.max)
   @Matches(PASSWORD_RULES.pattern, { message: PASSWORD_RULES.patternMessage })
   password!: string;
@@ -60,7 +62,9 @@ export class UpdateStaffDto {
 
 export class SetStaffPasswordDto {
   @IsString()
-  @MinLength(PASSWORD_RULES.min, { message: 'password must be at least 8 characters' })
+  @MinLength(PASSWORD_RULES.min, {
+    message: 'password must be at least 8 characters',
+  })
   @MaxLength(PASSWORD_RULES.max)
   @Matches(PASSWORD_RULES.pattern, { message: PASSWORD_RULES.patternMessage })
   password!: string;
@@ -72,7 +76,9 @@ export class ChangeMyPasswordDto {
   oldPassword!: string;
 
   @IsString()
-  @MinLength(PASSWORD_RULES.min, { message: 'password must be at least 8 characters' })
+  @MinLength(PASSWORD_RULES.min, {
+    message: 'password must be at least 8 characters',
+  })
   @MaxLength(PASSWORD_RULES.max)
   @Matches(PASSWORD_RULES.pattern, { message: PASSWORD_RULES.patternMessage })
   newPassword!: string;
@@ -109,7 +115,8 @@ export class StaffQueryDto {
 export class RoleCreateDto {
   @IsString()
   @Matches(/^[A-Z][A-Z0-9_]{1,31}$/, {
-    message: 'role code must be uppercase letters/digits/underscore, e.g. SUPER_ADMIN',
+    message:
+      'role code must be uppercase letters/digits/underscore, e.g. SUPER_ADMIN',
   })
   code!: string;
 
@@ -202,4 +209,9 @@ export class MfaCodeDto {
   @IsString()
   @Matches(/^\d{6}$/, { message: 'code must be exactly 6 digits' })
   code!: string;
+}
+
+export class StaffPermissionsDto {
+  @IsArray() @IsString({ each: true }) grant!: string[];
+  @IsArray() @IsString({ each: true }) deny!: string[];
 }

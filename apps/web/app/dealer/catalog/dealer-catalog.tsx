@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { ApiError } from "../../../lib/api";
 import { secureApiFetch, sessionLogout } from "../../../lib/secure-api";
 
@@ -18,7 +19,24 @@ type CatalogProduct = {
     name: string | null;
     attrs: unknown;
     quantity: number;
-    price: { priceCents: number; source: PriceSource };
+    price: {
+      priceCents: number;
+      source: PriceSource;
+      currency: string;
+      validUntil?: string;
+    };
+    msrpCents: number | null;
+    salePriceCents: number | null;
+    weightGrams: number | null;
+    available: number | null;
+    availability: "IN_STOCK" | "LEAD_TIME" | "CHECK_AVAILABILITY";
+    purchaseRules: {
+      moq: number;
+      multiple: number;
+      caseSize: number;
+      caseWeightGrams?: number;
+      leadTimeDays: number;
+    };
   }>;
 };
 const sourceLabels: Record<PriceSource, string> = {
@@ -34,6 +52,37 @@ export function DealerCatalog() {
   const [products, setProducts] = useState<CatalogProduct[]>([]);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
+  const [selected, setSelected] = useState<string[]>([]);
+  const [saving, setSaving] = useState(false);
+  const [notice, setNotice] = useState("");
+
+  async function addSelected() {
+    setSaving(true);
+    setError("");
+    setNotice("");
+    try {
+      const current = await secureApiFetch<{
+        lines: Array<{ sku: string; quantity: number }>;
+      }>("dealer", "/dealer/cart");
+      const merged = new Map(
+        current.lines.map((line) => [line.sku, line.quantity]),
+      );
+      for (const sku of selected)
+        merged.set(sku, (merged.get(sku) ?? 0) + quantity);
+      await secureApiFetch("dealer", "/dealer/cart", {
+        method: "PUT",
+        body: JSON.stringify({
+          lines: [...merged].map(([sku, quantity]) => ({ sku, quantity })),
+        }),
+      });
+      setSelected([]);
+      setNotice("Selected variants were added to your procurement cart.");
+    } catch (cause) {
+      setError((cause as Error).message);
+    } finally {
+      setSaving(false);
+    }
+  }
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -71,12 +120,19 @@ export function DealerCatalog() {
   }, [load]);
 
   return (
-    <main className="mx-auto max-w-6xl px-4 py-10">
+    <main
+      id="main-content"
+      tabIndex={-1}
+      className="mx-auto max-w-6xl px-4 py-10"
+    >
       <div className="flex items-center justify-between gap-4">
         <p className="text-sm font-semibold text-[#2B5F8A]">
           APPROVED DEALER CATALOG
         </p>
-        <button onClick={() => void signOut()} className="text-sm text-neutral-500 underline">
+        <button
+          onClick={() => void signOut()}
+          className="text-sm text-neutral-500 underline"
+        >
           Sign out
         </button>
       </div>
@@ -99,6 +155,19 @@ export function DealerCatalog() {
           className="mt-2 w-full rounded-lg border border-neutral-300 px-3 py-2"
         />
       </label>
+      <div className="mt-4 flex flex-wrap items-center gap-4">
+        <button
+          disabled={saving || !selected.length}
+          onClick={() => void addSelected()}
+          className="rounded bg-neutral-900 px-4 py-2 text-white disabled:opacity-50"
+        >
+          Add selected variants ({selected.length})
+        </button>
+        <Link href="/dealer/quick-order" className="underline">
+          Review procurement cart
+        </Link>
+        <span role="status">{notice}</span>
+      </div>
       {error && (
         <p
           role="alert"
@@ -134,14 +203,73 @@ export function DealerCatalog() {
                   >
                     <div>
                       <p className="font-medium">
+                        <input
+                          aria-label={`Select ${variant.sku}`}
+                          type="checkbox"
+                          className="mr-2"
+                          checked={selected.includes(variant.sku)}
+                          onChange={(event) =>
+                            setSelected((items) =>
+                              event.target.checked
+                                ? [...items, variant.sku]
+                                : items.filter((sku) => sku !== variant.sku),
+                            )
+                          }
+                        />
                         {variant.name || variant.sku}
                       </p>
                       <p className="text-xs text-neutral-500">
                         SKU {variant.sku} · {sourceLabels[variant.price.source]}
                       </p>
+                      <p className="mt-1 text-xs">
+                        MOQ {variant.purchaseRules.moq} · multiple{" "}
+                        {variant.purchaseRules.multiple} · case{" "}
+                        {variant.purchaseRules.caseSize}
+                        {variant.purchaseRules.caseWeightGrams
+                          ? " · case gross weight " +
+                            variant.purchaseRules.caseWeightGrams +
+                            " g"
+                          : ""}{" "}
+                        · lead time {variant.purchaseRules.leadTimeDays} days
+                        {variant.weightGrams
+                          ? ` · ${variant.weightGrams} g each`
+                          : ""}
+                      </p>
+                      {variant.msrpCents != null && (
+                        <p className="text-xs">
+                          MSRP USD {(variant.msrpCents / 100).toFixed(2)}
+                          {variant.salePriceCents != null
+                            ? ` · Retail sale USD ${(variant.salePriceCents / 100).toFixed(2)}`
+                            : ""}
+                        </p>
+                      )}
+                      {variant.quantity > quantity && (
+                        <p className="text-xs">
+                          Price shown for {variant.quantity}+ units; lower
+                          quantities have no current company price.
+                        </p>
+                      )}
+                      {variant.price.validUntil && (
+                        <p className="text-xs">
+                          Price valid until{" "}
+                          {new Date(
+                            variant.price.validUntil,
+                          ).toLocaleDateString()}
+                        </p>
+                      )}
+                      <p className="text-xs">
+                        {variant.availability === "CHECK_AVAILABILITY"
+                          ? "Contact sales to confirm inventory"
+                          : variant.available != null
+                            ? `${variant.available} units available`
+                            : variant.availability === "IN_STOCK"
+                              ? "In stock"
+                              : "Contact sales for lead time"}
+                      </p>
                     </div>
                     <p className="whitespace-nowrap text-lg font-bold">
-                      ${(variant.price.priceCents / 100).toFixed(2)}
+                      {variant.price.currency}{" "}
+                      {(variant.price.priceCents / 100).toFixed(2)}
                     </p>
                   </div>
                 ))}

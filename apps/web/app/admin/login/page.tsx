@@ -1,15 +1,19 @@
-import type { Metadata } from 'next';
-import { AdminLoginForm } from './admin-login-form';
+import type { Metadata } from "next";
+import { AdminLoginForm } from "./admin-login-form";
 
 export const metadata: Metadata = {
-  title: 'Admin Sign in',
+  title: "Admin Sign in",
   robots: { index: false, follow: false },
 };
 
 /** 后台员工登录；访问令牌仅保存在服务端签发的 HttpOnly Cookie 中。 */
 export default function AdminLoginPage() {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-[var(--wm-dark)] px-4">
+    <main
+      id="main-content"
+      tabIndex={-1}
+      className="flex min-h-screen items-center justify-center bg-[var(--wm-dark)] px-4"
+    >
       <div className="w-full max-w-sm rounded-2xl bg-white p-8">
         <h1 className="text-2xl font-bold">WEMOVE Admin</h1>
         <p className="mt-1 text-sm text-neutral-500">
@@ -20,6 +24,6 @@ export default function AdminLoginPage() {
           RBAC and MFA are enforced by the API.
         </p>
       </div>
-    </div>
+    </main>
   );
 }

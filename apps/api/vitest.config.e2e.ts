@@ -14,5 +14,8 @@ export default defineConfig({
     root: './',
     include: ['**/*.e2e-spec.ts'],
     hookTimeout: 20000,
+    // These suites exercise singleton site settings and the Mailpit inbox.
+    // Serial files keep test fixtures independent of other suites' settings.
+    fileParallelism: false,
   },
 });

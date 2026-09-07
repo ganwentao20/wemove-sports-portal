@@ -1,4 +1,5 @@
 "use client";
+import { useHydrated } from "../../../lib/use-hydrated";
 
 import { useState, type FormEvent } from "react";
 import Link from "next/link";
@@ -11,6 +12,7 @@ type RegisterResult = {
 };
 
 export function CustomerRegisterForm() {
+  const hydrated = useHydrated();
   const [error, setError] = useState("");
   const [result, setResult] = useState<RegisterResult | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -28,6 +30,9 @@ export function CustomerRegisterForm() {
           email: String(form.get("email") ?? "").trim(),
           password: String(form.get("password") ?? ""),
           ageConfirmed: form.get("ageConfirmed") === "on",
+          termsAccepted: form.get("termsAccepted") === "on",
+          marketingEmail: form.get("marketingEmail") === "on",
+          productUpdates: form.get("productUpdates") === "on",
         }),
       });
       setResult(created);
@@ -59,57 +64,101 @@ export function CustomerRegisterForm() {
   }
 
   return (
-    <form className="mt-8 space-y-4" onSubmit={submit}>
-      <input
-        name="name"
-        autoComplete="name"
-        required
-        minLength={2}
-        maxLength={60}
-        placeholder="Full name"
-        className="w-full rounded-xl border border-neutral-300 px-4 py-3 text-sm outline-none focus:border-[var(--wm-primary)]"
-      />
-      <input
-        name="email"
-        type="email"
-        autoComplete="email"
-        required
-        placeholder="Email"
-        className="w-full rounded-xl border border-neutral-300 px-4 py-3 text-sm outline-none focus:border-[var(--wm-primary)]"
-      />
-      <input
-        name="password"
-        type="password"
-        autoComplete="new-password"
-        required
-        minLength={8}
-        maxLength={72}
-        pattern="(?=.*[A-Za-z])(?=.*\d).+"
-        title="Use 8–72 characters with at least one letter and one number."
-        placeholder="Password (8+ chars, letters & numbers)"
-        className="w-full rounded-xl border border-neutral-300 px-4 py-3 text-sm outline-none focus:border-[var(--wm-primary)]"
-      />
-      <label className="flex items-start gap-2 text-sm text-neutral-600">
-        <input name="ageConfirmed" type="checkbox" required className="mt-1" />
-        <span>
-          I confirm I am 18 or older and agree to the Terms &amp; Privacy
-          Policy.
-        </span>
-      </label>
-      {error && (
-        <p
-          role="alert"
-          className="rounded-lg bg-red-50 p-3 text-sm text-red-700"
-        >
-          {error}
-        </p>
-      )}
-      <button
-        disabled={submitting}
-        className="w-full rounded-full bg-[var(--wm-dark)] py-3 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-50"
+    <form method="POST" className="mt-8 space-y-4" onSubmit={submit}>
+      <fieldset
+        disabled={!hydrated}
+        className="space-y-4"
+        aria-busy={!hydrated}
       >
-        {submitting ? "Creating account…" : "Create account"}
-      </button>
+        <label className="block text-sm">
+          Full name
+          <input
+            name="name"
+            autoComplete="name"
+            required
+            minLength={2}
+            maxLength={60}
+            placeholder="Full name"
+            className="w-full rounded-xl border border-neutral-300 px-4 py-3 text-sm outline-none focus:border-[var(--wm-primary)]"
+          />
+        </label>
+        <label className="block text-sm">
+          Email
+          <input
+            name="email"
+            type="email"
+            autoComplete="email"
+            required
+            placeholder="Email"
+            className="w-full rounded-xl border border-neutral-300 px-4 py-3 text-sm outline-none focus:border-[var(--wm-primary)]"
+          />
+        </label>
+        <label className="block text-sm">
+          Password
+          <input
+            name="password"
+            type="password"
+            autoComplete="new-password"
+            required
+            minLength={8}
+            maxLength={72}
+            pattern="(?=.*[A-Za-z])(?=.*\d).+"
+            title="Use 8–72 characters with at least one letter and one number."
+            placeholder="Password (8+ chars, letters & numbers)"
+            className="w-full rounded-xl border border-neutral-300 px-4 py-3 text-sm outline-none focus:border-[var(--wm-primary)]"
+          />
+        </label>
+        <label className="flex items-start gap-2 text-sm text-neutral-600">
+          <input
+            name="ageConfirmed"
+            type="checkbox"
+            required
+            className="mt-1"
+          />
+          <span>I confirm I am 18 or older.</span>
+        </label>
+        <label className="flex gap-2 items-start text-sm">
+          <input
+            name="termsAccepted"
+            type="checkbox"
+            required
+            className="mt-1"
+          />
+          <span>
+            I agree to the{" "}
+            <Link href="/terms" className="underline">
+              Terms
+            </Link>{" "}
+            and{" "}
+            <Link href="/privacy" className="underline">
+              Privacy Policy
+            </Link>
+            .
+          </span>
+        </label>
+        <label className="flex gap-2 text-sm">
+          <input name="marketingEmail" type="checkbox" /> Email me offers and
+          news (optional)
+        </label>
+        <label className="flex gap-2 text-sm">
+          <input name="productUpdates" type="checkbox" /> Email me product
+          updates (optional)
+        </label>
+        {error && (
+          <p
+            role="alert"
+            className="rounded-lg bg-red-50 p-3 text-sm text-red-700"
+          >
+            {error}
+          </p>
+        )}
+        <button
+          disabled={submitting}
+          className="w-full rounded-full bg-[var(--wm-dark)] py-3 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-50"
+        >
+          {submitting ? "Creating account…" : "Create account"}
+        </button>
+      </fieldset>
     </form>
   );
 }

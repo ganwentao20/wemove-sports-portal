@@ -1,8 +1,17 @@
-@import 'tailwindcss';
+@import "tailwindcss";
+
+/* Small screens use the platform font without a font download competing with
+   the first product image. This choice is made before paint, without a swap. */
+@media (max-width: 640px) {
+  body[class] {
+    --font-body:
+      system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  }
+}
 
 :root {
   color-scheme: light;
-  --wm-primary: #d9342b;
+  --wm-primary: #b7251e;
   --wm-primary-strong: #b7251e;
   --wm-bg: #f4f7f8;
   --wm-surface: #ffffff;
@@ -21,8 +30,16 @@ html {
 
 body {
   overflow-x: hidden;
-  font-family: var(--font-body), ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto,
-    'Helvetica Neue', Arial, sans-serif;
+  font-family:
+    var(--font-body),
+    ui-sans-serif,
+    system-ui,
+    -apple-system,
+    "Segoe UI",
+    Roboto,
+    "Helvetica Neue",
+    Arial,
+    sans-serif;
   color: var(--wm-text);
   background: var(--wm-bg);
   text-rendering: optimizeLegibility;
@@ -65,20 +82,6 @@ textarea {
   to {
     opacity: 1;
     transform: translateY(0);
-  }
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    color-scheme: dark;
-    --wm-bg: #0e151b;
-    --wm-surface: #151f27;
-    --wm-surface-soft: #1b2933;
-    --wm-text: #f1f5f6;
-    --wm-dark: #f1f5f6;
-    --wm-muted: #aab5bd;
-    --wm-border: #2b3a45;
-    --wm-shadow: 0 0 0;
   }
 }
 

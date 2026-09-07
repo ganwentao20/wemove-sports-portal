@@ -1,4 +1,13 @@
-import { Body, Controller, Get, HttpCode, Ip, Post, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Headers,
+  HttpCode,
+  Ip,
+  Post,
+  UseGuards,
+} from '@nestjs/common';
 import { AuthService } from './auth.service.js';
 import type { JwtPayload } from './auth.service.js';
 import { JwtAuthGuard } from './jwt-auth.guard.js';
@@ -10,6 +19,7 @@ import {
   ResetPasswordDto,
   ResendVerificationDto,
   StaffLoginDto,
+  StaffMfaLoginDto,
   VerifyEmailDto,
 } from './dto/auth.dto.js';
 
@@ -41,14 +51,28 @@ export class AuthController {
 
   @HttpCode(200)
   @Post('login')
-  login(@Body() dto: LoginDto, @Ip() ip?: string) {
-    return this.auth.login(dto, ip);
+  login(
+    @Body() dto: LoginDto,
+    @Ip() ip?: string,
+    @Headers('user-agent') userAgent?: string,
+  ) {
+    return this.auth.login(dto, ip, userAgent);
   }
 
   @HttpCode(200)
   @Post('staff/login')
   staffLogin(@Body() dto: StaffLoginDto, @Ip() ip?: string) {
     return this.auth.staffLogin(dto, ip);
+  }
+
+  @HttpCode(200)
+  @Post('staff/mfa')
+  staffMfa(
+    @Body() dto: StaffMfaLoginDto,
+    @Ip() ip?: string,
+    @Headers('user-agent') userAgent?: string,
+  ) {
+    return this.auth.staffMfaLogin(dto, ip, userAgent);
   }
 
   @HttpCode(200)

@@ -9,6 +9,8 @@ import {
   MaxLength,
   Min,
   ValidateIf,
+  Matches,
+  IsDateString,
 } from 'class-validator';
 import type { PricingScopeCode } from '../pricing-engine.js';
 
@@ -29,7 +31,13 @@ function parseBooleanQuery({ value }: { value: unknown }): unknown {
   return value;
 }
 
-export class CreatePricingRuleDto {
+export class PricingValidityDto {
+  @IsOptional() @Matches(/^[A-Z]{2}$/) market?: string | null;
+  @IsOptional() @Matches(/^[A-Z]{3}$/) currency?: string;
+  @IsOptional() @IsDateString() startsAt?: string | null;
+  @IsOptional() @IsDateString() endsAt?: string | null;
+}
+export class CreatePricingRuleDto extends PricingValidityDto {
   @IsString()
   variantId!: string;
 
@@ -87,7 +95,7 @@ export class CreatePricingRuleDto {
   note?: string;
 }
 
-export class UpdatePricingRuleDto {
+export class UpdatePricingRuleDto extends PricingValidityDto {
   @IsOptional()
   @IsEnum(SCOPES)
   scope?: PricingScopeLiteral;
@@ -185,6 +193,8 @@ export class PricingRuleQueryDto {
 }
 
 export class ResolvePriceQueryDto {
+  @IsOptional() @Matches(/^[A-Z]{2}$/) market?: string;
+  @IsOptional() @Matches(/^[A-Z]{3}$/) currency?: string;
   @IsString()
   variantId!: string;
 

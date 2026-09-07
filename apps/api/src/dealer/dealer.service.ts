@@ -1,4 +1,13 @@
-import { Injectable } from '@nestjs/common';
+import { publicDirectoryRow } from './directory-policy.js';
+import { Injectable, Optional } from '@nestjs/common';
+import { createHash, randomBytes } from 'node:crypto';
+import { NotificationsService } from '../notifications/notifications.service.js';
+import { inventoryAvailability } from '../order/inventory.service.js';
+import {
+  catalogWhere,
+  catalogVariantWhere,
+  purchaseRule,
+} from './catalog-policy.js';
 import type { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { RedisService } from '../redis/redis.service.js';
@@ -38,6 +47,7 @@ export class DealerService {
     private readonly redis: RedisService,
     private readonly audit: AuditService,
     private readonly pricing: PricingEngine,
+    @Optional() private readonly notifications?: NotificationsService,
   ) {}
 
   async assertAttachmentUploadAllowed(ip?: string) {
@@ -54,6 +64,89 @@ export class DealerService {
     }
   }
 
+  async directory(id?: string) {
+    const companies = await this.prisma.dealerCompany.findMany({
+      where: {
+        status: 'APPROVED',
+        profile: {
+          path: ['directoryPublished', 'publicListing'],
+          equals: true,
+        },
+        ...(id ? { id } : {}),
+      },
+      select: {
+        id: true,
+        companyName: true,
+        country: true,
+        profile: true,
+        catalogPolicy: true,
+      },
+      orderBy: { companyName: 'asc' },
+    });
+    const rows = (
+      await Promise.all(
+        companies.map(async (company) => {
+          const categories = await this.prisma.productCategory.findMany({
+            where: {
+              active: true,
+              products: {
+                some: {
+                  AND: [
+                    catalogWhere(company.catalogPolicy, company.country),
+                    {
+                      variants: {
+                        some: {
+                          status: true,
+                          ...catalogVariantWhere(company.catalogPolicy),
+                        },
+                      },
+                    },
+                  ],
+                },
+              },
+            },
+            select: { id: true, name: true },
+            orderBy: { name: 'asc' },
+          });
+          return publicDirectoryRow(company, categories);
+        }),
+      )
+    ).filter((row) => row !== null);
+    if (id) {
+      const detail = rows.find((row) => row.detailPath);
+      if (!detail)
+        throw new BizException(
+          ERROR_CODES.NOT_FOUND,
+          'Public dealer detail not found',
+          404,
+        );
+      return detail;
+    }
+    return rows;
+  }
+  async assertQualificationBelongs(applicationId: string, mediaId: string) {
+    const application = await this.prisma.dealerApplication.findUnique({
+      where: { id: applicationId },
+      select: { attachments: true },
+    });
+    if (
+      !application ||
+      !Array.isArray(application.attachments) ||
+      !application.attachments.some(
+        (a) =>
+          a &&
+          typeof a === 'object' &&
+          !Array.isArray(a) &&
+          a.mediaId === mediaId,
+      )
+    )
+      throw new BizException(
+        ERROR_CODES.NOT_FOUND,
+        'application attachment not found',
+        404,
+      );
+  }
+
   /**
    * 提交申请（公开可提交；携带登录态（customer）时绑定 applicantId 便于本人跟进）。
    * @param applicant 可选登录用户（仅 customer 会绑定；staff 不绑定）
@@ -67,6 +160,12 @@ export class DealerService {
       `wm:rl:dealer-application:ip:${ip ?? 'anon'}`,
       APPLICATION_RATE_LIMIT.windowSec,
     );
+    if (dto.agreementsAccepted !== true)
+      throw new BizException(
+        ERROR_CODES.VALIDATION,
+        'privacy policy and dealer declaration agreement is required',
+        422,
+      );
     if (count !== null && count > APPLICATION_RATE_LIMIT.max) {
       throw new BizException(
         ERROR_CODES.RATE_LIMIT,
@@ -76,11 +175,16 @@ export class DealerService {
     }
 
     const contactEmail = dto.contactEmail.trim().toLowerCase();
+    const claimToken =
+      applicant?.kind === 'customer' ? null : randomBytes(32).toString('hex');
 
     // 同一联系邮箱已有在途申请 → 409（防重复刷单）
     const duplicateByEmail = await this.prisma.dealerApplication.findFirst({
       where: {
-        contactEmail,
+        OR: [
+          { contactEmail },
+          { legalRegNo: dto.legalRegNo.trim(), country: dto.country.trim() },
+        ],
         status: { in: ['SUBMITTED', 'UNDER_REVIEW', 'MORE_INFO_REQUIRED'] },
       },
       select: { id: true },
@@ -115,7 +219,17 @@ export class DealerService {
     const mediaIds = [...new Set(dto.attachments.map((item) => item.mediaId))];
     const storedMedia = mediaIds.length
       ? await this.prisma.mediaAsset.findMany({
-          where: { id: { in: mediaIds }, visibility: 'DEALER_ONLY' },
+          where: {
+            id: { in: mediaIds },
+            visibility: 'DEALER_ONLY',
+            qualification: true,
+            scanStatus: {
+              in:
+                process.env.MEDIA_SCAN_REQUIRED === 'true'
+                  ? ['CLEAN']
+                  : ['CLEAN', 'SIGNATURE_CHECKED', 'LEGACY_UNSCANNED'],
+            },
+          },
           select: {
             id: true,
             key: true,
@@ -165,8 +279,22 @@ export class DealerService {
         businessType: dto.businessType.trim(),
         attachments,
         applicantId: applicant?.kind === 'customer' ? applicant.sub : null,
+        agreementVersion: dto.agreementVersion ?? 'dealer-2026-09',
+        agreedAt: new Date(),
+        consentIp: ip,
+        claimTokenHash: claimToken
+          ? createHash('sha256').update(claimToken).digest('hex')
+          : null,
+        claimExpiresAt: claimToken ? new Date(Date.now() + 7 * 86400000) : null,
       },
       select: this.applicationSelect(),
+    });
+    await this.notifications?.enqueue({
+      kind: 'dealer.application.confirmation',
+      to: contactEmail,
+      subject: 'Dealer application received',
+      text: `Application ${application.id} received. ${claimToken ? `Register and verify this email, then claim your application: ${process.env.APP_BASE_URL ?? process.env.WEB_URL ?? 'http://localhost:3000'}/dealer/application?application=${application.id}#claim=${claimToken}` : `Track your application: ${process.env.APP_BASE_URL ?? process.env.WEB_URL ?? 'http://localhost:3000'}/dealer/application?application=${application.id}`}`,
+      dedupeKey: `application:${application.id}:received`,
     });
     return application;
   }
@@ -291,6 +419,13 @@ export class DealerService {
       after: { status: reviewed.status, remark: reviewed.remark },
       ip,
     });
+    await this.notifications?.enqueue({
+      kind: 'dealer.application.review',
+      to: application.contactEmail,
+      subject: `Dealer application ${reviewed.status}`,
+      text: `Application ${id}: ${reviewed.status}. ${reviewed.remark ?? ''} ${reviewed.status === 'APPROVED' ? 'Your company is active. Sign in at /dealer/login.' : `Review and resubmit at /dealer/application?application=${id}`}`,
+      dedupeKey: `application:${id}:${reviewedAt.toISOString()}`,
+    });
     return reviewed;
   }
 
@@ -369,12 +504,25 @@ export class DealerService {
    * F-B04 经销商授权目录：在服务层验证企业状态并装配价格候选，
    * 返回值仅包含最终成交价，不暴露其他企业规则或内部优先级。
    */
-  async listDealerCatalog(quantity: number, currentUser: JwtPayload) {
+  async listDealerCatalog(
+    quantity: number,
+    currentUser: JwtPayload,
+    productId?: string,
+  ) {
     const company = await this.approvedCompany(currentUser);
-    const authorizedBookIds = company.priceBooks.map(item => item.bookId);
+    const authorizedBookIds = company.priceBooks.map((item) => item.bookId);
+    const currency = String(
+      (company.purchaseSettings as Record<string, unknown> | undefined)
+        ?.currency ?? 'USD',
+    );
 
     const products = await this.prisma.product.findMany({
-      where: { status: 'ACTIVE' },
+      where: {
+        AND: [
+          catalogWhere(company.catalogPolicy, company.country),
+          ...(productId ? [{ id: productId }] : []),
+        ],
+      },
       select: {
         id: true,
         slug: true,
@@ -382,13 +530,24 @@ export class DealerService {
         summary: true,
         gallery: true,
         variants: {
-          where: { status: true },
+          where: {
+            status: true,
+            ...catalogVariantWhere(company.catalogPolicy),
+          },
           select: {
             id: true,
             sku: true,
             name: true,
             attrs: true,
             b2bDefaultPriceCents: true,
+            msrpCents: true,
+            salePriceCents: true,
+            weightGrams: true,
+            stock: { select: { available: true, syncError: true } },
+            marketInventory: {
+              where: { market: company.country },
+              select: { available: true, syncError: true },
+            },
           },
           orderBy: { sortOrder: 'asc' },
         },
@@ -412,7 +571,7 @@ export class DealerService {
           where: {
             variantId: { in: variantIds },
             active: true,
-            minQty: { lte: quantity },
+            minQty: { lte: 10000 },
             OR: scopeFilters,
           },
           select: {
@@ -425,6 +584,10 @@ export class DealerService {
             tierId: true,
             priceCents: true,
             minQty: true,
+            market: true,
+            currency: true,
+            startsAt: true,
+            endsAt: true,
           },
         })
       : [];
@@ -447,19 +610,114 @@ export class DealerService {
                 tierId: company.tierId,
                 authorizedBookIds,
                 quantity,
+                market: company.country,
+                currency,
               },
             );
-            const price =
+            let effectiveQuantity = quantity;
+            let price =
               resolved ??
-              (variant.b2bDefaultPriceCents == null
+              (variant.b2bDefaultPriceCents == null || currency !== 'USD'
                 ? null
                 : {
                     priceCents: variant.b2bDefaultPriceCents,
                     source: 'B2B_DEFAULT' as const,
                   });
+            if (!price) {
+              for (const minQty of [
+                ...new Set(
+                  (rulesByVariant.get(variant.id) ?? []).map(
+                    (rule) => rule.minQty,
+                  ),
+                ),
+              ].sort((a, b) => a - b)) {
+                const candidate = this.pricing.dealer(
+                  rulesByVariant.get(variant.id) ?? [],
+                  {
+                    companyId: company.id,
+                    tierId: company.tierId,
+                    authorizedBookIds,
+                    quantity: minQty,
+                    market: company.country,
+                    currency,
+                  },
+                );
+                if (candidate) {
+                  price = candidate;
+                  effectiveQuantity = minQty;
+                  break;
+                }
+              }
+            }
             if (!price) return null;
-            const { b2bDefaultPriceCents: _hidden, ...safeVariant } = variant;
-            return { ...safeVariant, quantity, price };
+            const {
+              b2bDefaultPriceCents: _hidden,
+              stock,
+              marketInventory,
+              ...safeVariant
+            } = variant;
+            const available = Math.min(
+              stock?.available ?? 0,
+              marketInventory?.[0]?.available ?? Infinity,
+            );
+            const stale = stock?.syncError || marketInventory?.[0]?.syncError;
+            const rule = purchaseRule(company.purchaseSettings, variant.sku);
+            const priceBreaks = [
+              ...new Set([
+                1,
+                ...(rulesByVariant.get(variant.id) ?? []).map((r) => r.minQty),
+              ]),
+            ]
+              .sort((a, b) => a - b)
+              .flatMap((minQty) => {
+                const tier =
+                  this.pricing.dealer(rulesByVariant.get(variant.id) ?? [], {
+                    companyId: company.id,
+                    tierId: company.tierId,
+                    authorizedBookIds,
+                    quantity: minQty,
+                    market: company.country,
+                    currency,
+                  }) ??
+                  (variant.b2bDefaultPriceCents != null && currency === 'USD'
+                    ? {
+                        priceCents: variant.b2bDefaultPriceCents,
+                        source: 'B2B_DEFAULT',
+                      }
+                    : null);
+                return tier
+                  ? [{ minQty, priceCents: tier.priceCents, currency }]
+                  : [];
+              })
+              .filter(
+                (tier, index, all) =>
+                  index === 0 || tier.priceCents !== all[index - 1].priceCents,
+              );
+            return {
+              ...safeVariant,
+              available:
+                stale ||
+                ['HIDDEN', 'STATUS'].includes(String(rule.inventoryDisplay))
+                  ? null
+                  : available,
+              availability: stale
+                ? 'CHECK_AVAILABILITY'
+                : available > 0
+                  ? 'IN_STOCK'
+                  : 'LEAD_TIME',
+              quantity: effectiveQuantity,
+              priceBreaks,
+              price: {
+                ...price,
+                currency,
+                validUntil:
+                  rules.find((r) => r.id === price.ruleId)?.endsAt ?? null,
+              },
+              purchaseRules: purchaseRule(
+                company.purchaseSettings,
+                variant.sku,
+              ),
+            };
           })
           .filter((variant) => variant !== null),
       }))
@@ -474,7 +732,14 @@ export class DealerService {
     currentUser: JwtPayload,
   ) {
     const company = await this.approvedCompany(currentUser);
-    const authorizedBookIds = company.priceBooks.map(item => item.bookId);
+    const market = (await this.prisma.retailMarket.findUnique({
+      where: { code: company.country },
+    })) ?? { code: company.country };
+    const authorizedBookIds = company.priceBooks.map((item) => item.bookId);
+    const currency = String(
+      (company.purchaseSettings as Record<string, unknown> | undefined)
+        ?.currency ?? 'USD',
+    );
     const normalized = lines.map((line, index) => ({
       row: index + 1,
       sku: line.sku.trim().toUpperCase(),
@@ -484,15 +749,25 @@ export class DealerService {
     const variants = await this.prisma.productVariant.findMany({
       where: {
         sku: { in: [...new Set(normalized.map((line) => line.sku))] },
+        ...catalogVariantWhere(company.catalogPolicy),
         status: true,
-        product: { status: 'ACTIVE' },
+        product: {
+          ...catalogWhere(company.catalogPolicy, company.country),
+        },
       },
       select: {
         id: true,
         sku: true,
         name: true,
         b2bDefaultPriceCents: true,
-        stock: { select: { available: true } },
+        availabilityPolicy: true,
+        backorderLimit: true,
+        leadTimeDays: true,
+        stock: { select: { available: true, syncError: true } },
+        marketInventory: {
+          where: { market: company.country },
+          select: { market: true, available: true, syncError: true },
+        },
         product: { select: { name: true } },
       },
     });
@@ -523,6 +798,10 @@ export class DealerService {
             tierId: true,
             priceCents: true,
             minQty: true,
+            market: true,
+            currency: true,
+            startsAt: true,
+            endsAt: true,
           },
         })
       : [];
@@ -558,8 +837,10 @@ export class DealerService {
           tierId: company.tierId,
           authorizedBookIds,
           quantity: line.quantity,
+          market: company.country,
+          currency,
         }) ??
-        (variant.b2bDefaultPriceCents == null
+        (variant.b2bDefaultPriceCents == null || currency !== 'USD'
           ? null
           : {
               priceCents: variant.b2bDefaultPriceCents,
@@ -573,13 +854,45 @@ export class DealerService {
           message: 'No authorized dealer price is available.',
         };
       }
-      const available = variant.stock?.available ?? 0;
-      if (available < line.quantity) {
+      const inventory = inventoryAvailability(
+        { ...variant, stock: variant.stock ?? null },
+        market,
+      );
+      const available = Math.max(0, inventory.available);
+      if (variant.stock?.syncError || variant.marketInventory?.[0]?.syncError)
+        return {
+          ...line,
+          ok: false as const,
+          code: 'CHECK_AVAILABILITY',
+          message:
+            'Inventory needs confirmation; please contact sales before ordering.',
+        };
+      const rule = purchaseRule(company.purchaseSettings, line.sku);
+      rule.leadTimeDays = Math.max(
+        rule.leadTimeDays,
+        variant.leadTimeDays ?? 0,
+      );
+      if (
+        line.quantity < rule.moq ||
+        line.quantity % rule.multiple !== 0 ||
+        line.quantity % rule.caseSize !== 0
+      ) {
+        return {
+          ...line,
+          ok: false as const,
+          code: 'PURCHASE_RULE',
+          message: `MOQ ${rule.moq}; quantity multiple ${rule.multiple}; case size ${rule.caseSize}.`,
+        };
+      }
+      if (inventory.capacity < line.quantity) {
         return {
           ...line,
           ok: false as const,
           code: 'INSUFFICIENT_STOCK',
-          message: `Only ${available} units are currently available.`,
+          message:
+            rule.inventoryDisplay === 'EXACT' || !rule.inventoryDisplay
+              ? `Only ${available} units are currently available.`
+              : 'Requested quantity is unavailable; contact sales for lead time.',
         };
       }
       return {
@@ -591,12 +904,19 @@ export class DealerService {
         unitPriceCents: resolved.priceCents,
         priceSource: resolved.source,
         lineTotalCents: resolved.priceCents * line.quantity,
-        available,
+        available:
+          rule.inventoryDisplay === 'HIDDEN' ||
+          rule.inventoryDisplay === 'STATUS'
+            ? null
+            : available,
+        availability: inventory.availability ?? 'HIDDEN',
+        purchaseRules: rule,
       };
     });
     const accepted = results.filter((line) => line.ok);
     return {
       companyId: company.id,
+      currency,
       results,
       valid: results.every((line) => line.ok),
       totalCents: accepted.reduce(
@@ -619,8 +939,25 @@ export class DealerService {
       );
     }
     const company = await this.prisma.dealerCompany.findFirst({
-      where: { id: currentUser.companyId, status: 'APPROVED', members: { some: { userId: currentUser.sub, user: { status: 'ACTIVE' } } } },
-      select: { id: true, tierId: true, priceBooks: { select: { bookId: true } } },
+      where: {
+        id: currentUser.companyId,
+        status: 'APPROVED',
+        members: {
+          some: {
+            userId: currentUser.sub,
+            active: true,
+            user: { status: 'ACTIVE' },
+          },
+        },
+      },
+      select: {
+        id: true,
+        tierId: true,
+        country: true,
+        catalogPolicy: true,
+        purchaseSettings: true,
+        priceBooks: { select: { bookId: true } },
+      },
     });
     if (!company) {
       throw new BizException(
@@ -645,6 +982,8 @@ export class DealerService {
       country: true,
       businessType: true,
       attachments: true,
+      agreementVersion: true,
+      agreedAt: true,
       status: true,
       remark: true,
       reviewedAt: true,

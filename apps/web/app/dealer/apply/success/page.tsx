@@ -16,7 +16,11 @@ export default async function DealerApplicationSuccessPage({
   const { id, status } = await searchParams;
 
   return (
-    <main className="mx-auto flex min-h-[70vh] max-w-2xl items-center px-4 py-12">
+    <main
+      id="main-content"
+      tabIndex={-1}
+      className="mx-auto flex min-h-[70vh] max-w-2xl items-center px-4 py-12"
+    >
       <section className="w-full rounded-2xl border border-neutral-200 bg-white p-6 sm:p-10">
         <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[#2B5F8A]">
           Application received
@@ -49,9 +53,16 @@ export default async function DealerApplicationSuccessPage({
         </dl>
 
         <p className="mt-5 text-sm text-neutral-600">
-          We will contact you using the email provided in the application. Do
-          not share the reference number publicly.
+          Check the email provided in the application for your confirmation and
+          secure claim link. Register and verify that email, then claim the
+          application to receive review updates and submit corrections.
         </p>
+        <Link
+          href={`/dealer/application?application=${encodeURIComponent(id ?? "")}`}
+          className="mt-5 inline-block underline"
+        >
+          Track or claim this application
+        </Link>
         <Link
           href="/"
           className="mt-7 inline-flex rounded-xl bg-[#2B5F8A] px-5 py-2.5 font-semibold text-white hover:bg-[#204b70]"

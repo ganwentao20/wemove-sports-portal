@@ -9,13 +9,15 @@
  * 部署时可用 NEXT_PUBLIC_API_BASE_URL 指向网关绝对地址。
  */
 export const API_BASE =
-  process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/$/, '') ?? '/api/v1';
+  process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/$/, "") ?? "/api/v1";
 
 export interface ApiEnvelope<T> {
   code: number;
   message: string;
   data: T | null;
   traceId?: string;
+  request_id?: string;
+  field_errors?: Record<string, string[]>;
 }
 
 export class ApiError extends Error {
@@ -23,9 +25,11 @@ export class ApiError extends Error {
     message: string,
     readonly status: number,
     readonly code: number,
+    readonly fieldErrors: Record<string, string[]> = {},
+    readonly requestId?: string,
   ) {
     super(message);
-    this.name = 'ApiError';
+    this.name = "ApiError";
   }
 }
 
@@ -38,15 +42,19 @@ export async function apiFetch<T>(
   init?: RequestInit,
 ): Promise<T> {
   const headers = new Headers(init?.headers);
-  if (!headers.has('Accept')) headers.set('Accept', 'application/json');
-  if (init?.body != null && !(init.body instanceof FormData) && !headers.has('Content-Type')) {
-    headers.set('Content-Type', 'application/json');
+  if (!headers.has("Accept")) headers.set("Accept", "application/json");
+  if (
+    init?.body != null &&
+    !(init.body instanceof FormData) &&
+    !headers.has("Content-Type")
+  ) {
+    headers.set("Content-Type", "application/json");
   }
 
   const res = await fetch(`${API_BASE}${path}`, {
     ...init,
     headers,
-    cache: init?.cache ?? 'no-store',
+    cache: init?.cache ?? "no-store",
     next: init?.next,
   });
 
@@ -57,11 +65,13 @@ export async function apiFetch<T>(
       body?.message ?? `Request failed with HTTP ${res.status}`,
       res.status,
       body?.code ?? -1,
+      body?.field_errors ?? {},
+      body?.request_id ?? body?.traceId,
     );
   }
   return body.data as T;
 }
 
 export function apiGet<T>(path: string, init?: RequestInit): Promise<T> {
-  return apiFetch<T>(path, { ...init, method: 'GET' });
+  return apiFetch<T>(path, { ...init, method: "GET" });
 }

@@ -59,6 +59,9 @@ model DealerRfq {
   createdBy User @relation(fields: [createdById], references: [id], onDelete: Restrict)
   title String
   note String?
+  targetDeliveryAt DateTime?
+  attachmentIds String[] @default([])
+  rejectionReason String?
   status RfqStatus @default(DRAFT)
   revision Int @default(0)
   items Json // 服务端生成的 SKU/名称/数量快照；报价不会修改原始询价。
@@ -79,6 +82,9 @@ model DealerQuote {
   subtotalCents Int
   taxCents Int @default(0)
   shippingCents Int @default(0)
+  discountCents Int @default(0)
+  paymentTerms String @default("PREPAID")
+  deliveryTerms String?
   totalCents Int
   currency String @default("USD")
   validUntil DateTime
@@ -93,6 +99,10 @@ model PurchaseOrder {
   companyId String
   company DealerCompany @relation(fields: [companyId], references: [id], onDelete: Restrict)
   companyName String
+  market String @default("US")
+  inventoryReserved Boolean @default(true)
+  cancellationReason String?
+  adjustments Json @default("[]")
   createdById String
   createdBy User @relation(fields: [createdById], references: [id], onDelete: Restrict)
   rfqId String @unique
@@ -100,6 +110,15 @@ model PurchaseOrder {
   quoteVersion Int
   status PurchaseOrderStatus @default(PENDING_REVIEW)
   shippingAddress Json
+  billingAddress Json @default("{}")
+  customerPoNumber String?
+  paymentMethod String @default("BANK_TRANSFER")
+  paymentTerms String @default("PREPAID")
+  paymentStatus String @default("UNPAID")
+  payments PurchaseOrderPayment[]
+  returns PurchaseOrderReturn[]
+  refunds PurchaseOrderRefund[]
+  shipments PurchaseOrderShipment[]
   subtotalCents Int
   taxCents Int
   shippingCents Int
@@ -122,10 +141,12 @@ model PurchaseOrderItem {
   sku String
   variantName String?
   quantity Int
+  shippedQuantity Int @default(0)
   unitPriceCents Int
   lineCents Int
   createdAt DateTime @default(now())
   @@unique([orderId, variantId])
+  returnItems PurchaseOrderReturnItem[]
 }
 
 // ---------------------------------------------------------------------------
@@ -151,6 +172,7 @@ enum CompanyStatus {
   APPROVED
   REJECTED
   SUSPENDED
+  CLOSED
 }
 
 /// 经销商资质申请状态（MB）
@@ -165,7 +187,9 @@ enum ApplicationStatus {
 /// 商品状态（MC）
 enum ProductStatus {
   DRAFT
+  SCHEDULED
   ACTIVE
+  HIDDEN
   ARCHIVED
 }
 
@@ -188,6 +212,7 @@ enum PricingScope {
 /// 媒体可见性（MD）：PUBLIC 公开 / DEALER_ONLY 仅审核通过经销商 / INTERNAL 仅内部
 enum MediaVisibility {
   PUBLIC
+  REGISTERED
   DEALER_ONLY
   INTERNAL
 }
@@ -195,6 +220,8 @@ enum MediaVisibility {
 /// 联系表单/工单状态（MD）
 enum ContactStatus {
   NEW
+  ASSIGNED
+  WAITING_CUSTOMER
   IN_PROGRESS
   RESOLVED
   CLOSED
@@ -217,7 +244,9 @@ enum AuditActorKind {
 /// CMS 页面状态（MD）
 enum CmsPageStatus {
   DRAFT
+  SCHEDULED
   PUBLISHED
+  ARCHIVED
 }
 
 /// 企业内成员角色（MB）
@@ -239,6 +268,23 @@ model User {
   name               String
   ageConfirmed       Boolean             @default(false) // 合规：成年人声明（详见合规红线）
   status             AccountStatus       @default(PENDING)
+  authVersion        Int                 @default(0)
+  phone              String?
+  displayName        String?
+  country            String?
+  productUpdates     Boolean             @default(false)
+  termsVersion       String?
+  privacyVersion     String?
+  policiesAgreedAt   DateTime?
+  policiesIp         String?
+  locale             String              @default("en")
+  marketingEmail     Boolean             @default(false)
+  marketingSms       Boolean             @default(false)
+  mfaSecret          String?
+  mfaEnabled         Boolean             @default(false)
+  addresses          AccountAddress[]
+  favorites          AccountFavorite[]
+  privacyRequests    AccountPrivacyRequest[]
   dealerMembers      DealerMember[]
   dealerApplications DealerApplication[] // 本人提交的资质申请（归属判定依据）
   tokens             UserToken[]
@@ -260,6 +306,8 @@ model Staff {
   passwordHash   String
   name           String
   status         StaffStatus  @default(ACTIVE)
+  authVersion    Int          @default(0)
+  permissionOverrides Json    @default("{}")
   // MFA（TOTP）：敏感写操作二次认证；mfaSecret 为 base32，启用后仅经 TOTP 校验使用
   mfaSecret      String?
   mfaEnabled     Boolean      @default(false)
@@ -368,6 +416,11 @@ model DealerCompany {
   companyName  String
   legalRegNo   String
   country      String
+  profile      Json @default("{}")
+  catalogPolicy Json @default("{}")
+  purchaseSettings Json @default("{}")
+  addresses DealerAddress[]
+  invitations DealerInvitation[]
   status       CompanyStatus       @default(PENDING)
   tierId       String?
   tier         DealerTier?         @relation(fields: [tierId], references: [id], onDelete: SetNull)
@@ -390,6 +443,10 @@ model DealerMember {
   companyId String
   userId    String
   role      DealerMemberRole @default(VIEWER)
+  active Boolean @default(true)
+  termsVersion String?
+  termsAcceptedAt DateTime?
+  termsAcceptedIp String?
   company   DealerCompany    @relation(fields: [companyId], references: [id], onDelete: Cascade)
   user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
   createdAt DateTime         @default(now())
@@ -415,6 +472,11 @@ model DealerApplication {
   country      String
   businessType String // 零售商/批发商/电商/商超…
   attachments  Json              @default("[]") // [{mediaId,fileName,mimeType,sizeBytes,visibility:PRIVATE}]
+  agreementVersion String @default("dealer-2026-09")
+  agreedAt DateTime @default(now())
+  consentIp String?
+  claimTokenHash String? @unique
+  claimExpiresAt DateTime?
   status       ApplicationStatus @default(SUBMITTED)
   remark       String? // 审核意见/补件要求
   reviewedBy   String?
@@ -441,6 +503,11 @@ model ProductCategory {
   products  Product[]
   active    Boolean           @default(true)
   sortOrder Int               @default(0)
+  attributeTemplate Json      @default("[]")
+  filterableFields String[]   @default(["category", "age", "scene", "skill", "stock", "price"])
+  description String?
+  coverImage Json?
+  seo Json?
   createdAt DateTime          @default(now())
   updatedAt DateTime          @updatedAt
 }
@@ -453,6 +520,20 @@ model Product {
   summary     String?
   description String? // 富文本 HTML（CMS 编辑器输出）
   ageGuidance String? // 适龄与成人监护提示（公开 PDP）
+  ageMin      Int?
+  ageMax      Int?
+  scenes      String[]         @default([])
+  skills      String[]         @default([])
+  tags        String[]         @default([])
+  markets     String[]         @default([])
+  publishAt   DateTime?
+  unpublishAt DateTime?
+  specifications Json         @default("{}")
+  playGuide   String?
+  productFaq  Json             @default("[]")
+  relatedSlugs String[]        @default([])
+  associations Json           @default("[]")
+  archiveRedirect String?
   resources   Json             @default("[]") // [{label,url,type}] 说明书/证书/视频
   categoryId  String?
   category    ProductCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
@@ -479,6 +560,12 @@ model ProductVariant {
   salePriceCents       Int? // 零售促销价（B2C：sale 优先于 msrp）
   b2bDefaultPriceCents Int? // 默认 B2B 批发价（链尾兜底）
   weightGrams          Int?
+  barcode              String?       @unique
+  availabilityPolicy   String        @default("IN_STOCK_ONLY")
+  backorderLimit       Int           @default(0)
+  leadTimeDays         Int?
+  marketInventory      MarketInventory[]
+  marketPrices         Json          @default("{}")
   status               Boolean       @default(true)
   stock                Stock?
   priceRules           PricingRule[]
@@ -498,6 +585,10 @@ model Stock {
   variant   ProductVariant @relation(fields: [variantId], references: [id], onDelete: Cascade)
   available Int            @default(0) // 可售
   reserved  Int            @default(0) // 锁定（下单未支付）
+  lowThreshold Int         @default(5)
+  source       String      @default("MANUAL")
+  sourceUpdatedAt DateTime?
+  syncError    String?
   updatedAt DateTime       @updatedAt
 }
 
@@ -532,6 +623,10 @@ model PricingRule {
   minQty     Int            @default(1)
   active     Boolean        @default(true)
   note       String?
+  market     String?
+  currency   String         @default("USD")
+  startsAt   DateTime?
+  endsAt     DateTime?
   createdAt  DateTime       @default(now())
   updatedAt  DateTime       @updatedAt
 
@@ -551,8 +646,21 @@ model CmsPage {
   sections  Json          @default("[]")
   status    CmsPageStatus @default(DRAFT)
   seo       Json?
+  kind String @default("PAGE")
+  locale String @default("en")
+  market String @default("ALL")
+  publishAt DateTime?
+  unpublishAt DateTime?
+  revision Int @default(1)
+  author String?
+  category String?
+  productIds String[] @default([])
+  sortOrder Int @default(0)
+  translations Json @default("{}")
   createdAt DateTime      @default(now())
   updatedAt DateTime      @updatedAt
+
+  @@index([kind, sortOrder])
 }
 
 /// 媒体资源（图片/PDF 说明书/证书；私有文件经签名 URL 下载，直链永不公开）
@@ -562,12 +670,106 @@ model MediaAsset {
   fileName     String
   mimeType     String
   sizeBytes    Int
+  checksum String?
+  alt String @default("")
+  title String @default("")
+  language String @default("en")
+  resourceType String @default("OTHER")
+  tags String[] @default([])
+  decorative Boolean @default(false)
+  publishedAt DateTime @default(now())
+  usageLocations String[] @default([])
+  version Int @default(1)
+  previousVersionId String?
+  scanStatus String @default("LEGACY_UNSCANNED")
+  derivatives Json @default("[]")
+  companyIds String[] @default([])
+  productIds String[] @default([])
+  qualification Boolean @default(false)
   visibility   MediaVisibility @default(PUBLIC)
   uploader     Staff?          @relation("Uploader", fields: [uploadedById], references: [id], onDelete: SetNull)
   uploadedById String?
   createdAt    DateTime        @default(now())
 
   @@index([visibility, createdAt])
+  @@index([checksum, visibility])
+}
+
+model DealerAddress {
+  id String @id @default(cuid())
+  companyId String
+  company DealerCompany @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  label String
+  kind String @default("BOTH")
+  address Json
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  @@index([companyId])
+}
+
+model DealerInvitation {
+  id String @id @default(cuid())
+  companyId String
+  company DealerCompany @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  email String
+  role DealerMemberRole @default(VIEWER)
+  tokenHash String @unique
+  expiresAt DateTime
+  consumedAt DateTime?
+  createdAt DateTime @default(now())
+  @@index([companyId, email])
+}
+
+model DealerApplicationDraft {
+  userId String @id
+  data Json
+  updatedAt DateTime @updatedAt
+}
+
+model DealerProcurementCart {
+  userId String @id
+  companyId String
+  lines Json @default("[]")
+  updatedAt DateTime @updatedAt
+}
+
+model PurchaseOrderShipment {
+  id String @id @default(cuid())
+  orderId String
+  order PurchaseOrder @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  carrier String
+  trackingNumber String
+  lines Json
+  shippedAt DateTime @default(now())
+  dedupeKey String @unique
+  @@index([orderId])
+}
+
+model PurchaseOrderPayment {
+  id String @id @default(cuid())
+  orderId String
+  order PurchaseOrder @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  idempotencyKey String @unique
+  amountCents Int
+  currency String
+  mode String
+  status String @default("PENDING")
+  providerReference String?
+  checkoutUrl String?
+  events PurchaseOrderPaymentEvent[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  @@index([orderId])
+  refunds PurchaseOrderRefund[]
+}
+
+model PurchaseOrderPaymentEvent {
+  eventId String @id
+  paymentId String
+  payment PurchaseOrderPayment @relation(fields: [paymentId], references: [id], onDelete: Cascade)
+  payloadHash String
+  status String
+  createdAt DateTime @default(now())
 }
 
 /// 联系表单/咨询线索（MD：工单状态流转见 docs/cms 规范）
@@ -581,10 +783,79 @@ model ContactMessage {
   status    ContactStatus @default(NEW)
   handledBy String? // Staff id
   handledAt DateTime?
+  source String @default("CONTACT")
+  priority String @default("NORMAL")
+  assignedTo String?
+  assignedTeam String?
+  tags String[] @default([])
+  history Json @default("[]")
+  attachments String[] @default([])
   createdAt DateTime      @default(now())
   updatedAt DateTime      @updatedAt
 
   @@index([status, createdAt])
+  @@index([source, priority, createdAt])
+}
+
+model CmsRevision {
+  id String @id @default(cuid())
+  pageId String
+  revision Int
+  snapshot Json
+  actorId String
+  createdAt DateTime @default(now())
+  @@unique([pageId, revision])
+}
+
+model SiteSetting {
+  key String @id
+  value Json
+  updatedAt DateTime @updatedAt
+}
+
+model SiteRedirect {
+  id String @id @default(cuid())
+  source String @unique
+  destination String
+  status Int @default(301)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model AnalyticsEvent {
+  id String @id @default(cuid())
+  name String
+  path String
+  properties Json @default("{}")
+  createdAt DateTime @default(now())
+  @@index([name, createdAt])
+}
+
+model NewsletterSubscription {
+  email String @id
+  locale String @default("en")
+  status String @default("PENDING")
+  tokenHash String @unique
+  consentVersion String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model NotificationOutbox {
+  id String @id @default(cuid())
+  kind String
+  dedupeKey String @unique
+  payload String
+  status String @default("PENDING")
+  attempts Int @default(0)
+  availableAt DateTime @default(now())
+  lockedUntil DateTime?
+  lastError String?
+  sentAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  @@index([status, availableAt])
 }
 
 // ---------------------------------------------------------------------------
@@ -597,6 +868,7 @@ model Cart {
   userId    String     @unique
   user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
   items     CartItem[]
+  mergeKeys String[]   @default([])
   createdAt DateTime   @default(now())
   updatedAt DateTime   @updatedAt
 }
@@ -619,6 +891,7 @@ model CartItem {
 
 /// B2C 订单；金额与商品信息均保存下单快照，不受后续改名/改价影响。
 model Order {
+  calculationSnapshot Json @default("{}")
   id            String      @id @default(cuid())
   orderNo       String      @unique
   userId        String
@@ -626,6 +899,21 @@ model Order {
   status        OrderStatus @default(PENDING)
   subtotalCents Int
   totalCents    Int
+  currency      String      @default("USD")
+  market        String      @default("US")
+  discountCents Int         @default(0)
+  shippingCents Int         @default(0)
+  taxCents      Int         @default(0)
+  couponCode    String?
+  shippingMethod String    @default("STANDARD")
+  shippingAddress Json     @default("{}")
+  billingAddress Json      @default("{}")
+  paymentStatus String     @default("UNPAID")
+  reservationExpiresAt DateTime?
+  payments      RetailPayment[]
+  shipments     RetailShipment[]
+  returns       RetailReturn[]
+  refunds       RetailRefund[]
   items         OrderItem[]
   createdAt     DateTime    @default(now())
   updatedAt     DateTime    @updatedAt
@@ -636,6 +924,8 @@ model Order {
 
 /// 订单行快照；variant 删除后保留历史订单内容。
 model OrderItem {
+  priceSource String @default("MSRP")
+  weightGrams Int @default(0)
   id             String          @id @default(cuid())
   orderId        String
   order          Order           @relation(fields: [orderId], references: [id], onDelete: Cascade)
@@ -647,6 +937,8 @@ model OrderItem {
   quantity       Int
   unitPriceCents Int
   lineCents      Int
+  shippedQuantity Int              @default(0)
+  returnedQuantity Int             @default(0)
   createdAt      DateTime        @default(now())
   updatedAt      DateTime        @updatedAt
 
@@ -663,4 +955,273 @@ model RedirectRule {
   active     Boolean  @default(true)
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
+}
+
+/// Authentication is persisted so revocation never depends on Redis availability.
+model AuthenticationSession {
+  id          String   @id
+  ownerId     String
+  ownerKind   String
+  authVersion Int
+  mfaVerified Boolean  @default(false)
+  ip          String?
+  userAgent   String?
+  createdAt   DateTime @default(now())
+  lastSeenAt  DateTime @default(now())
+  expiresAt   DateTime
+  revokedAt   DateTime?
+  @@index([ownerKind, ownerId, revokedAt])
+}
+
+// Retail commerce configuration and immutable workflow evidence.
+model RetailMarket {
+  code String @id
+  label String
+  currency String @default("USD")
+  retailEnabled Boolean @default(true)
+  countries String[] @default([])
+  taxBps Int @default(0)
+  shippingCents Int @default(0)
+  expressCents Int @default(0)
+  freeShippingAboveCents Int?
+  reservationMinutes Int @default(30)
+  paymentMode String @default("DEMO")
+  inventoryDisplay String @default("STATUS")
+  allowPreorder Boolean @default(false)
+  allowBackorder Boolean @default(false)
+  defaultSort String @default("featured")
+  shippingRules Json @default("[]")
+  taxRegionRates Json @default("{}")
+  taxMode String @default("CONFIGURED")
+  shippingMode String @default("CONFIGURED")
+  updatedAt DateTime @updatedAt
+}
+
+model RetailCoupon {
+  code String @id
+  market String @default("US")
+  percentBps Int @default(0)
+  amountCents Int @default(0)
+  minimumCents Int @default(0)
+  startsAt DateTime?
+  endsAt DateTime?
+  maxUses Int?
+  uses Int @default(0)
+  active Boolean @default(true)
+  freeShipping Boolean @default(false)
+  productIds String[] @default([])
+  userIds String[] @default([])
+  perUserLimit Int?
+  updatedAt DateTime @updatedAt
+}
+
+model RetailPayment {
+  id String @id @default(cuid())
+  orderId String
+  order Order @relation(fields: [orderId], references: [id], onDelete: Restrict)
+  idempotencyKey String @unique
+  mode String
+  status String @default("PENDING")
+  amountCents Int
+  currency String
+  providerReference String?
+  checkoutUrl String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  @@index([orderId])
+}
+
+model RetailPaymentEvent {
+  eventId String @id
+  paymentId String
+  status String
+  payloadHash String
+  createdAt DateTime @default(now())
+}
+
+model RetailShipment {
+  id String @id @default(cuid())
+  orderId String
+  order Order @relation(fields: [orderId], references: [id], onDelete: Restrict)
+  idempotencyKey String @unique
+  carrier String
+  trackingNumber String
+  trackingUrl String?
+  items Json
+  deliveredAt DateTime?
+  createdAt DateTime @default(now())
+  @@index([orderId])
+}
+
+model RetailReturn {
+  id String @id @default(cuid())
+  orderId String
+  order Order @relation(fields: [orderId], references: [id], onDelete: Restrict)
+  reason String
+  description String @default("")
+  attachments Json @default("[]")
+  resolution String @default("REFUND")
+  status String @default("REQUESTED")
+  items Json
+  staffNote String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  @@index([orderId])
+}
+
+model RetailRefund {
+  id String @id @default(cuid())
+  orderId String
+  order Order @relation(fields: [orderId], references: [id], onDelete: Restrict)
+  returnId String?
+  idempotencyKey String @unique
+  amountCents Int
+  reason String
+  status String @default("PENDING")
+  providerReference String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  @@index([orderId])
+}
+
+model RetailPriceHistory {
+  id String @id @default(cuid())
+  variantId String
+  actorId String
+  before Json
+  after Json
+  createdAt DateTime @default(now())
+  @@index([variantId, createdAt])
+}
+
+/// Password-only staff challenges cannot access any protected API.
+model StaffLoginChallenge {
+  id          String @id @default(cuid())
+  tokenHash   String @unique
+  staffId     String
+  authVersion Int
+  setupSecret String?
+  attempts    Int @default(0)
+  expiresAt   DateTime
+  consumedAt  DateTime?
+  createdAt   DateTime @default(now())
+  @@index([staffId, expiresAt])
+}
+
+model AccountAddress {
+  id String @id @default(cuid())
+  userId String
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  label String
+  recipient String
+  phone String
+  country String
+  region String
+  city String
+  postalCode String
+  line1 String
+  line2 String @default("")
+  isDefaultBilling Boolean @default(false)
+  isDefaultShipping Boolean @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  @@index([userId])
+}
+
+model AccountFavorite {
+  id String @id @default(cuid())
+  userId String
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  productId String
+  createdAt DateTime @default(now())
+  @@unique([userId, productId])
+}
+
+model AccountPrivacyRequest {
+  id String @id @default(cuid())
+  userId String
+  user User @relation(fields: [userId], references: [id], onDelete: Restrict)
+  type String
+  status String @default("OPEN")
+  reason String
+  resolution String?
+  handledBy String?
+  createdAt DateTime @default(now())
+  resolvedAt DateTime?
+  @@index([status, createdAt])
+}
+
+/// Optional per-market allocation; every reservation also consumes the global Stock pool.
+model MarketInventory {
+  variantId String
+  variant ProductVariant @relation(fields:[variantId],references:[id],onDelete:Cascade)
+  market String
+  available Int @default(0)
+  reserved Int @default(0)
+  lowThreshold Int @default(5)
+  source String @default("MANUAL")
+  syncError String?
+  sourceUpdatedAt DateTime?
+  updatedAt DateTime @updatedAt
+  @@id([variantId,market])
+}
+
+model PurchaseOrderReturn {
+  id String @id @default(cuid())
+  orderId String
+  order PurchaseOrder @relation(fields:[orderId],references:[id],onDelete:Cascade)
+  requestedById String
+  idempotencyKey String @unique
+  reason String
+  status String @default("REQUESTED")
+  decisionReason String?
+  approvedById String?
+  carrier String?
+  trackingNumber String?
+  receivedAt DateTime?
+  receiveKey String? @unique
+  receiptHash String?
+  items PurchaseOrderReturnItem[]
+  refunds PurchaseOrderRefund[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  @@index([orderId,status])
+}
+model PurchaseOrderReturnItem {
+  id String @id @default(cuid())
+  returnId String
+  request PurchaseOrderReturn @relation(fields:[returnId],references:[id],onDelete:Cascade)
+  orderItemId String
+  orderItem PurchaseOrderItem @relation(fields:[orderItemId],references:[id],onDelete:Cascade)
+  quantity Int
+  receivedQuantity Int @default(0)
+  restockQuantity Int @default(0)
+  @@unique([returnId,orderItemId])
+}
+model PurchaseOrderRefund {
+  id String @id @default(cuid())
+  orderId String
+  order PurchaseOrder @relation(fields:[orderId],references:[id],onDelete:Cascade)
+  paymentId String
+  payment PurchaseOrderPayment @relation(fields:[paymentId],references:[id],onDelete:Cascade)
+  returnId String?
+  request PurchaseOrderReturn? @relation(fields:[returnId],references:[id],onDelete:SetNull)
+  requestedById String
+  approvedById String?
+  idempotencyKey String @unique
+  amountCents Int
+  currency String
+  reason String
+  cancelOrder Boolean @default(false)
+  status String @default("REQUESTED")
+  decisionReason String?
+  providerReference String?
+  attempts Int @default(0)
+  lastError String?
+  availableAt DateTime @default(now())
+  completedAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  @@index([orderId,status])
+  @@index([status,availableAt])
 }

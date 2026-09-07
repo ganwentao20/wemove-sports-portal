@@ -59,7 +59,9 @@ function setup(found: ApplicationFixture | null = application) {
         ),
     },
     dealerCompany: {
-      findFirst: vi.fn().mockResolvedValue({ id: 'company-a', tierId: 'gold', priceBooks: [] }),
+      findFirst: vi
+        .fn()
+        .mockResolvedValue({ id: 'company-a', tierId: 'gold', priceBooks: [] }),
       create: vi.fn().mockResolvedValue({ id: 'company-new' }),
       update: vi.fn().mockResolvedValue({ id: 'company-a' }),
     },
@@ -67,6 +69,7 @@ function setup(found: ApplicationFixture | null = application) {
     product: { findMany: vi.fn().mockResolvedValue([]) },
     productVariant: { findMany: vi.fn().mockResolvedValue([]) },
     pricingRule: { findMany: vi.fn().mockResolvedValue([]) },
+    retailMarket: { findUnique: vi.fn().mockResolvedValue(null) },
     mediaAsset: {
       findMany: vi.fn().mockResolvedValue([
         {
@@ -114,6 +117,7 @@ describe('DealerService', () => {
     const { service, prisma } = setup();
     await service.createApplication(
       {
+        agreementsAccepted: true,
         companyName: ' WEMOVE Dealer Ltd. ',
         legalRegNo: ' CN-DEMO-001 ',
         contactName: ' Buyer ',
@@ -160,6 +164,7 @@ describe('DealerService', () => {
     await expect(
       service.createApplication(
         {
+          agreementsAccepted: true,
           companyName: 'WEMOVE Dealer Ltd.',
           legalRegNo: 'CN-DEMO-003',
           contactName: 'Buyer',
@@ -187,6 +192,7 @@ describe('DealerService', () => {
     const { service, prisma } = setup();
     await service.createApplication(
       {
+        agreementsAccepted: true,
         companyName: 'WEMOVE Dealer Ltd.',
         legalRegNo: 'CN-DEMO-002',
         contactName: 'Buyer',
@@ -255,6 +261,7 @@ describe('DealerService', () => {
     vi.mocked(redis.incrWithTtl).mockResolvedValue(6);
     await expect(
       service.createApplication({
+        agreementsAccepted: true,
         companyName: 'WEMOVE Dealer Ltd.',
         legalRegNo: 'CN-DEMO-001',
         contactName: 'Buyer',

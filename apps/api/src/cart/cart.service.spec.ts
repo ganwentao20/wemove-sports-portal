@@ -18,6 +18,7 @@ function setup() {
     updatedAt: new Date(),
   };
   const prismaMock = {
+    retailMarket: { findUnique: vi.fn().mockResolvedValue(null) },
     cart: {
       upsert: vi.fn().mockResolvedValue(cart),
       findUnique: vi.fn().mockResolvedValue(cart),
@@ -68,6 +69,7 @@ describe('CartService', () => {
     prisma.productVariant.findUnique.mockResolvedValue({
       id: 'variant-a',
       status: true,
+      product: { status: 'ACTIVE' },
       msrpCents: 1999,
       salePriceCents: null,
       stock: { available: 2 },

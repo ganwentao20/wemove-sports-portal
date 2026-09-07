@@ -2,6 +2,8 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { AccountDetails } from "./account-details";
+import Link from "next/link";
 import { ApiError } from "../../../lib/api";
 import { secureApiFetch, sessionLogout } from "../../../lib/secure-api";
 
@@ -62,7 +64,7 @@ export function CustomerAccount() {
   const [notice, setNotice] = useState("");
   const [loading, setLoading] = useState(true);
   const [busyVariant, setBusyVariant] = useState<string | null>(null);
-  const [placingOrder, setPlacingOrder] = useState(false);
+  const placingOrder = false;
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -152,28 +154,7 @@ export function CustomerAccount() {
   }
 
   async function checkout() {
-    setPlacingOrder(true);
-    setError("");
-    setNotice("");
-    try {
-      const order = await secureApiFetch<Order>(
-        "customer",
-        "/orders/checkout",
-        {
-          method: "POST",
-        },
-      );
-      setNotice(
-        `Order ${order.orderNo} was created and inventory is reserved.`,
-      );
-      await load();
-    } catch (cause) {
-      setError(
-        cause instanceof ApiError ? cause.message : "Unable to place order.",
-      );
-    } finally {
-      setPlacingOrder(false);
-    }
+    router.push("/checkout");
   }
 
   async function cancelOrder(id: string) {
@@ -343,7 +324,11 @@ export function CustomerAccount() {
               <article key={order.id} className="rounded-xl bg-neutral-50 p-4">
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div>
-                    <h3 className="font-semibold">{order.orderNo}</h3>
+                    <h3 className="font-semibold">
+                      <Link href={`/orders/${order.id}`} className="underline">
+                        {order.orderNo}
+                      </Link>
+                    </h3>
                     <p className="mt-1 text-xs text-neutral-500">
                       {new Date(order.createdAt).toLocaleString()} ·{" "}
                       {order.status}
@@ -381,16 +366,7 @@ export function CustomerAccount() {
         )}
       </section>
 
-      <section className="mt-6 grid gap-4 sm:grid-cols-2">
-        {["Addresses — next", "Wishlist — next"].map((item) => (
-          <div
-            key={item}
-            className="rounded-2xl border border-dashed border-neutral-300 p-5 text-center text-sm text-neutral-400"
-          >
-            {item}
-          </div>
-        ))}
-      </section>
+      <AccountDetails />
     </div>
   );
 }

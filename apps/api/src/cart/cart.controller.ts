@@ -1,9 +1,22 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Patch,
+  Post,
+  UseGuards,
+} from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard.js';
 import { CurrentUser } from '../auth/current-user.decorator.js';
 import type { JwtPayload } from '../auth/auth.service.js';
 import { CartService } from './cart.service.js';
-import { AddCartItemDto, UpdateCartItemDto } from './dto/cart.dto.js';
+import {
+  AddCartItemDto,
+  UpdateCartItemDto,
+  MergeCartDto,
+} from './dto/cart.dto.js';
 
 @Controller('cart')
 @UseGuards(JwtAuthGuard)
@@ -15,9 +28,21 @@ export class CartController {
     return this.cart.getMyCart(actor);
   }
 
+  @Post('merge') merge(
+    @CurrentUser() actor: JwtPayload,
+    @Body() dto: MergeCartDto,
+  ) {
+    return this.cart.mergeGuest(
+      actor,
+      dto.idempotencyKey,
+      dto.items,
+      dto.market,
+    );
+  }
+
   @Post('items')
   addItem(@CurrentUser() actor: JwtPayload, @Body() dto: AddCartItemDto) {
-    return this.cart.addItem(actor, dto.variantId, dto.quantity);
+    return this.cart.addItem(actor, dto.variantId, dto.quantity, dto.market);
   }
 
   @Patch('items/:variantId')
@@ -26,11 +51,14 @@ export class CartController {
     @Param('variantId') variantId: string,
     @Body() dto: UpdateCartItemDto,
   ) {
-    return this.cart.updateQuantity(actor, variantId, dto.quantity);
+    return this.cart.updateQuantity(actor, variantId, dto.quantity, dto.market);
   }
 
   @Delete('items/:variantId')
-  removeItem(@CurrentUser() actor: JwtPayload, @Param('variantId') variantId: string) {
+  removeItem(
+    @CurrentUser() actor: JwtPayload,
+    @Param('variantId') variantId: string,
+  ) {
     return this.cart.removeItem(actor, variantId);
   }
 

@@ -1,5 +1,6 @@
 "use client";
 
+import { recordEvent } from "../../../components/consent-analytics";
 import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ApiError } from "../../../lib/api";
@@ -14,9 +15,21 @@ type ResultLine = {
   productName?: string;
   unitPriceCents?: number;
   lineTotalCents?: number;
-  available?: number;
+  available?: number | null;
+  availability?: string;
+  purchaseRules?: {
+    moq: number;
+    multiple: number;
+    caseSize: number;
+    leadTimeDays: number;
+  };
 };
-type Preview = { valid: boolean; totalCents: number; results: ResultLine[] };
+type Preview = {
+  valid: boolean;
+  currency: string;
+  totalCents: number;
+  results: ResultLine[];
+};
 
 export function QuickOrderWorkbench() {
   const router = useRouter();
@@ -25,6 +38,9 @@ export function QuickOrderWorkbench() {
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const [title, setTitle] = useState("");
+  const [note, setNote] = useState("");
+  const [target, setTarget] = useState("");
+  const [attachmentIds, setAttachmentIds] = useState<string[]>([]);
 
   async function createRequest() {
     if (!preview?.valid || !title.trim()) return;
@@ -35,11 +51,21 @@ export function QuickOrderWorkbench() {
         method: "POST",
         body: JSON.stringify({
           title: title.trim(),
+          note,
+          targetDeliveryAt: target ? new Date(target).toISOString() : undefined,
+          attachmentIds,
           lines: preview.results.map((line) => ({
             sku: line.sku,
             quantity: line.quantity,
           })),
         }),
+      });
+      recordEvent("request_quote", {
+        channel: "B2B",
+        items: preview.results.map((line) => ({
+          sku: line.sku,
+          qty: line.quantity,
+        })),
       });
       router.push("/dealer/procurement");
     } catch (cause) {
@@ -53,25 +79,14 @@ export function QuickOrderWorkbench() {
 
   async function validate(event: FormEvent) {
     event.preventDefault();
-    const lines = raw
-      .split(/\r?\n/)
-      .map((line) => line.trim())
-      .filter(Boolean)
-      .map((line) => {
-        const [sku = "", quantity = ""] = line
-          .split(/[,\t]/)
-          .map((value) => value.trim());
-        return { sku, quantity: Number(quantity) };
-      });
     setBusy(true);
     setError("");
     try {
       setPreview(
-        await secureApiFetch<Preview>(
-          "dealer",
-          "/dealer/quick-order/validate",
-          { method: "POST", body: JSON.stringify({ lines }) },
-        ),
+        await secureApiFetch<Preview>("dealer", "/dealer/quick-order/csv", {
+          method: "POST",
+          body: JSON.stringify({ csv: raw.replace(/\t/g, ",") }),
+        }),
       );
     } catch (cause) {
       if (cause instanceof ApiError && cause.status === 401) {
@@ -90,7 +105,11 @@ export function QuickOrderWorkbench() {
   }
 
   return (
-    <main className="mx-auto max-w-5xl px-4 py-10">
+    <main
+      id="main-content"
+      tabIndex={-1}
+      className="mx-auto max-w-5xl px-4 py-10"
+    >
       <p className="text-sm font-semibold text-[#2B5F8A]">APPROVED DEALER</p>
       <h1 className="mt-1 text-3xl font-bold">Quick Order</h1>
       <p className="mt-2 text-sm text-neutral-500">
@@ -99,6 +118,44 @@ export function QuickOrderWorkbench() {
         created.
       </p>
       <form onSubmit={validate} className="mt-6 space-y-4">
+        <label className="block">
+          Upload SKU CSV
+          <input
+            type="file"
+            accept=".csv,text/csv"
+            className="ml-3"
+            onChange={async (e) => {
+              const file = e.target.files?.[0];
+              if (file) {
+                if (file.size > 100000) {
+                  setError("CSV exceeds 100 KB");
+                  return;
+                }
+                setRaw(await file.text());
+                setPreview(null);
+              }
+            }}
+          />
+        </label>
+        <button
+          type="button"
+          className="underline"
+          onClick={async () => {
+            try {
+              const cart = await secureApiFetch<{
+                lines: Array<{ sku: string; quantity: number }>;
+              }>("dealer", "/dealer/cart");
+              setRaw(
+                cart.lines.map((l) => `${l.sku},${l.quantity}`).join("\n"),
+              );
+              setPreview(null);
+            } catch (e) {
+              setError((e as Error).message);
+            }
+          }}
+        >
+          Load saved procurement cart
+        </button>
         <textarea
           required
           rows={10}
@@ -134,7 +191,8 @@ export function QuickOrderWorkbench() {
             {preview.valid
               ? "All rows are ready for the next business-document step."
               : "Resolve the row errors before continuing."}{" "}
-            Valid total: ${(preview.totalCents / 100).toFixed(2)}
+            Valid total: {preview.currency}{" "}
+            {(preview.totalCents / 100).toFixed(2)}
           </div>
           <table className="min-w-full text-left text-sm">
             <thead className="bg-neutral-50">
@@ -156,12 +214,12 @@ export function QuickOrderWorkbench() {
                     className={`p-3 ${line.ok ? "text-emerald-700" : "text-red-700"}`}
                   >
                     {line.ok
-                      ? `${line.productName} · $${((line.unitPriceCents ?? 0) / 100).toFixed(2)} each · ${line.available} available`
+                      ? `${line.productName} · ${preview.currency} ${((line.unitPriceCents ?? 0) / 100).toFixed(2)} each · ${line.available == null ? line.availability : line.available + " available"} · lead time ${line.purchaseRules?.leadTimeDays ?? 0} days`
                       : line.message}
                   </td>
                   <td className="p-3">
                     {line.ok
-                      ? `$${((line.lineTotalCents ?? 0) / 100).toFixed(2)}`
+                      ? `${preview.currency} ${((line.lineTotalCents ?? 0) / 100).toFixed(2)}`
                       : "—"}
                   </td>
                 </tr>
@@ -193,6 +251,73 @@ export function QuickOrderWorkbench() {
             className="mt-4 rounded-lg bg-[var(--wm-dark)] px-4 py-2 text-sm text-white disabled:opacity-50"
           >
             Create RFQ draft
+          </button>
+          <label className="mt-3 block">
+            Target delivery date
+            <input
+              type="date"
+              value={target}
+              onChange={(e) => setTarget(e.target.value)}
+              className="ml-3 rounded border p-2"
+            />
+          </label>
+          <label className="mt-3 block">
+            Request notes
+            <textarea
+              value={note}
+              onChange={(e) => setNote(e.target.value)}
+              maxLength={2000}
+              className="mt-1 w-full rounded border p-2"
+            />
+          </label>
+          <label className="mt-3 block">
+            RFQ attachment
+            <input
+              type="file"
+              accept="application/pdf,image/jpeg,image/png"
+              onChange={async (e) => {
+                const file = e.target.files?.[0];
+                if (!file) return;
+                try {
+                  const form = new FormData();
+                  form.set("file", file);
+                  const result = await secureApiFetch<{ mediaId: string }>(
+                    "dealer",
+                    "/media/company-upload",
+                    { method: "POST", body: form },
+                  );
+                  setAttachmentIds((v) => [...v, result.mediaId]);
+                } catch (err) {
+                  setError((err as Error).message);
+                }
+              }}
+            />
+          </label>
+          <p className="text-sm">
+            {attachmentIds.length} attachment(s) uploaded.
+          </p>
+          <button
+            type="button"
+            disabled={busy}
+            className="mt-4 ml-3 underline"
+            onClick={async () => {
+              try {
+                await secureApiFetch("dealer", "/dealer/cart", {
+                  method: "PUT",
+                  body: JSON.stringify({
+                    lines: preview.results.map((l) => ({
+                      sku: l.sku,
+                      quantity: l.quantity,
+                    })),
+                  }),
+                });
+                setError("Procurement cart saved.");
+              } catch (e) {
+                setError((e as Error).message);
+              }
+            }}
+          >
+            Save procurement cart
           </button>
         </section>
       )}

@@ -20,11 +20,17 @@ import { MfaModule } from '../mfa/mfa.module.js';
 /** 引擎门面：供后续订单模块注入（组员 C 的 admin service 直接用 pricing-engine 纯函数，避免反向循环依赖） */
 @Injectable()
 export class PricingEngine {
-  dealer(rules: PricingRuleCandidate[], ctx: PriceContext): ResolvedPrice | null {
+  dealer(
+    rules: PricingRuleCandidate[],
+    ctx: PriceContext,
+  ): ResolvedPrice | null {
     return resolveDealerPrice(rules, ctx);
   }
 
-  retail(variant: { msrpCents?: number | null; salePriceCents?: number | null }): ResolvedPrice | null {
+  retail(variant: {
+    msrpCents?: number | null;
+    salePriceCents?: number | null;
+  }): ResolvedPrice | null {
     return resolveRetailPrice(variant);
   }
 

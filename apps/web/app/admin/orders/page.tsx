@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { OrderWorkbench } from "./order-workbench";
+import { ManualOrder } from "./manual-order";
 
 export const metadata: Metadata = {
   title: "Orders | WEMOVE Admin",
@@ -7,5 +8,10 @@ export const metadata: Metadata = {
 };
 
 export default function AdminOrdersPage() {
-  return <OrderWorkbench />;
+  return (
+    <>
+      <OrderWorkbench />
+      <ManualOrder />
+    </>
+  );
 }

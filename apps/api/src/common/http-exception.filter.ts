@@ -26,7 +26,9 @@ export class AllExceptionsFilter implements ExceptionFilter {
 
   catch(exception: unknown, host: ArgumentsHost) {
     const ctx = host.switchToHttp();
-    const response = ctx.getResponse<{ status(code: number): { json(body: unknown): void } }>();
+    const response = ctx.getResponse<{
+      status(code: number): { json(body: unknown): void };
+    }>();
 
     const result = this.resolve(exception);
     if (result.status >= 500) {
@@ -41,10 +43,23 @@ export class AllExceptionsFilter implements ExceptionFilter {
       message: result.message,
       data: null,
       traceId: requestTraceId(host),
+      request_id: requestTraceId(host),
+      ...(exception instanceof HttpException &&
+      typeof exception.getResponse() === 'object' &&
+      (exception.getResponse() as Record<string, unknown>).field_errors
+        ? {
+            field_errors: (exception.getResponse() as Record<string, unknown>)
+              .field_errors,
+          }
+        : {}),
     });
   }
 
-  private resolve(exception: unknown): { status: number; code: number; message: string } {
+  private resolve(exception: unknown): {
+    status: number;
+    code: number;
+    message: string;
+  } {
     // 1) 显式业务码（BizException 或 response 携带 code）
     if (exception instanceof HttpException) {
       const status = exception.getStatus();
@@ -58,7 +73,11 @@ export class AllExceptionsFilter implements ExceptionFilter {
       const raw = exception.getResponse() as RawResponse | string;
       if (typeof raw === 'object' && raw !== null) {
         if (typeof raw.code === 'number') {
-          return { status, code: raw.code, message: String(raw.message ?? exception.message) };
+          return {
+            status,
+            code: raw.code,
+            message: String(raw.message ?? exception.message),
+          };
         }
         // ValidationPipe 的校验错误数组
         if (Array.isArray(raw.message)) {
@@ -69,7 +88,11 @@ export class AllExceptionsFilter implements ExceptionFilter {
           };
         }
       }
-      return { status, code: this.defaultCodeOf(status), message: exception.message };
+      return {
+        status,
+        code: this.defaultCodeOf(status),
+        message: exception.message,
+      };
     }
 
     // 2) Prisma 已知错误 → 友好的业务码

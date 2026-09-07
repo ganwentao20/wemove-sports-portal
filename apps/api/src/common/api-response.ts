@@ -4,6 +4,8 @@ export interface ApiEnvelope<T> {
   message: string;
   data: T | null;
   traceId?: string;
+  request_id?: string;
+  field_errors?: Record<string, string[]>;
 }
 
 /** 分页结果（与 common/pagination.dto.ts 配套） */

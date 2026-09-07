@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { generate, generateSecret } from 'otplib';
 import { MfaService } from './mfa.service.js';
 import { RedisService } from '../redis/redis.service.js';
@@ -44,6 +44,27 @@ describe('MfaService (otplib v13)', () => {
     expect(await service.verifyCode('abc', secret)).toBe(false);
   });
 
+  it('accepts only the current and previous time step across a transmission boundary', async () => {
+    const service = new MfaService(fakeRedis());
+    const secret = 'JBSWY3DPEHPK3PXPJBSWY3DPEHPK3PXP';
+    const boundary = 1_800_000_000;
+    const previous = await generate({ secret, epoch: boundary - 1 });
+    const current = await generate({ secret, epoch: boundary });
+    const future = await generate({ secret, epoch: boundary + 30 });
+    const older = await generate({ secret, epoch: boundary - 31 });
+    const clock = vi.spyOn(Date, 'now').mockReturnValue(boundary * 1000 + 1);
+    try {
+      expect(await service.verifyCode(previous, secret)).toBe(true);
+      expect(await service.verifyCode(current, secret)).toBe(true);
+      expect(await service.verifyCode(future, secret)).toBe(false);
+      expect(await service.verifyCode(older, secret)).toBe(false);
+      clock.mockReturnValue((boundary + 30) * 1000);
+      expect(await service.verifyCode(previous, secret)).toBe(false);
+    } finally {
+      clock.mockRestore();
+    }
+  });
+
   it('verifyWithLimit 成功路径不增加失败计数并清除旧计数', async () => {
     const redis = fakeRedis();
     const service = new MfaService(redis);
@@ -58,7 +79,9 @@ describe('MfaService (otplib v13)', () => {
   it('错误码抛 MFA_INVALID(40301)', async () => {
     const service = new MfaService(fakeRedis());
     const secret = generateSecret();
-    await expect(service.verifyWithLimit('staff-1', '000000', secret)).rejects.toMatchObject({
+    await expect(
+      service.verifyWithLimit('staff-1', '000000', secret),
+    ).rejects.toMatchObject({
       status: 403,
       response: { code: 40301 },
     });
@@ -82,7 +105,22 @@ describe('MfaService (otplib v13)', () => {
     const service = new MfaService(redis);
     const secret = generateSecret();
     const code = await generate({ secret });
-    await expect(service.verifyWithLimit('staff-1', code, secret)).resolves.toBe(true);
+    await expect(
+      service.verifyWithLimit('staff-1', code, secret),
+    ).resolves.toBe(true);
     expect(redis.calls).not.toContain('incr:wm:rl:mfa:staff-1');
+  });
+  it('fails closed in production when MFA lockout storage is unavailable', async () => {
+    vi.stubEnv('NODE_ENV', 'production');
+    try {
+      const service = new MfaService({
+        getNumber: async () => null,
+      } as unknown as RedisService);
+      await expect(
+        service.verifyWithLimit('staff-1', '123456', generateSecret()),
+      ).rejects.toMatchObject({ status: 503 });
+    } finally {
+      vi.unstubAllEnvs();
+    }
   });
 });
