@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { Suspense } from 'react';
 import { ProductCatalog } from '../../../components/product-catalog';
 import { products } from '../../../lib/products';
 
@@ -24,7 +25,9 @@ export default async function ProductsPage() {
         <h1>选择下一款产品</h1>
         <p>{products.length} 款演示产品，按需求书支持分类、年龄、场景、排序与搜索。接口接入前使用原网站素材和本地演示数据。</p>
       </div>
-      <ProductCatalog products={products} />
+      <Suspense fallback={<div className="empty-state">正在加载产品筛选器...</div>}>
+        <ProductCatalog products={products} />
+      </Suspense>
     </div>
   );
 }

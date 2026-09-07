@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { ProductCard } from './product-card';
 import { productCategories, type Product } from '../lib/products';
 
@@ -14,13 +15,20 @@ const SORTS = [
 ];
 
 const numberFromText = (value: string) => Number(value.replace(/[^\d.]/g, '')) || 0;
+const valueFromParams = (value: string | null) => value || '全部';
+const sortFromParams = (value: string | null): string => (
+  value && SORTS.some((item) => item.value === value) ? value : 'default'
+);
 
 export function ProductCatalog({ products }: { products: Product[] }) {
-  const [category, setCategory] = useState('全部');
-  const [age, setAge] = useState('全部');
-  const [scene, setScene] = useState('全部');
-  const [keyword, setKeyword] = useState('');
-  const [sort, setSort] = useState('default');
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const [category, setCategory] = useState(() => valueFromParams(searchParams.get('category')));
+  const [age, setAge] = useState(() => valueFromParams(searchParams.get('age')));
+  const [scene, setScene] = useState(() => valueFromParams(searchParams.get('scene')));
+  const [keyword, setKeyword] = useState(() => searchParams.get('q') || '');
+  const [sort, setSort] = useState(() => sortFromParams(searchParams.get('sort')));
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
 
   const filterOptions = useMemo(() => {
@@ -54,6 +62,28 @@ export function ProductCatalog({ products }: { products: Product[] }) {
   const pagedProducts = visibleProducts.slice(0, visibleCount);
   const pendingCategory = productCategories.some((item) => item.label === category && item.status === 'pending-assets');
 
+  const syncUrl = (nextState: { q?: string; category?: string; age?: string; scene?: string; sort?: string }) => {
+    const nextParams = new URLSearchParams(searchParams.toString());
+    const entries = [
+      ['q', nextState.q ?? keyword, ''],
+      ['category', nextState.category ?? category, '全部'],
+      ['age', nextState.age ?? age, '全部'],
+      ['scene', nextState.scene ?? scene, '全部'],
+      ['sort', nextState.sort ?? sort, 'default'],
+    ] as const;
+
+    entries.forEach(([key, value, defaultValue]) => {
+      if (value && value !== defaultValue) {
+        nextParams.set(key, value);
+      } else {
+        nextParams.delete(key);
+      }
+    });
+
+    const query = nextParams.toString();
+    router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false });
+  };
+
   const resetFilters = () => {
     setKeyword('');
     setCategory('全部');
@@ -61,6 +91,7 @@ export function ProductCatalog({ products }: { products: Product[] }) {
     setScene('全部');
     setSort('default');
     setVisibleCount(PAGE_SIZE);
+    router.replace(pathname, { scroll: false });
   };
 
   return (
@@ -70,32 +101,57 @@ export function ProductCatalog({ products }: { products: Product[] }) {
           搜索
           <input
             value={keyword}
-            onChange={(event) => { setKeyword(event.target.value); setVisibleCount(PAGE_SIZE); }}
+            onChange={(event) => {
+              const nextKeyword = event.target.value;
+              setKeyword(nextKeyword);
+              setVisibleCount(PAGE_SIZE);
+              syncUrl({ q: nextKeyword });
+            }}
             placeholder="搜索产品名称、玩法或场景"
             aria-label="搜索产品"
           />
         </label>
         <label>
           分类
-          <select aria-label="产品分类" value={category} onChange={(event) => { setCategory(event.target.value); setVisibleCount(PAGE_SIZE); }}>
+          <select aria-label="产品分类" value={category} onChange={(event) => {
+            const nextCategory = event.target.value;
+            setCategory(nextCategory);
+            setVisibleCount(PAGE_SIZE);
+            syncUrl({ category: nextCategory });
+          }}>
             {filterOptions.categories.map((item) => <option key={item} value={item}>{item}</option>)}
           </select>
         </label>
         <label>
           年龄
-          <select aria-label="年龄筛选" value={age} onChange={(event) => { setAge(event.target.value); setVisibleCount(PAGE_SIZE); }}>
+          <select aria-label="年龄筛选" value={age} onChange={(event) => {
+            const nextAge = event.target.value;
+            setAge(nextAge);
+            setVisibleCount(PAGE_SIZE);
+            syncUrl({ age: nextAge });
+          }}>
             {filterOptions.ages.map((item) => <option key={item} value={item}>{item}</option>)}
           </select>
         </label>
         <label>
           场景
-          <select aria-label="场景筛选" value={scene} onChange={(event) => { setScene(event.target.value); setVisibleCount(PAGE_SIZE); }}>
+          <select aria-label="场景筛选" value={scene} onChange={(event) => {
+            const nextScene = event.target.value;
+            setScene(nextScene);
+            setVisibleCount(PAGE_SIZE);
+            syncUrl({ scene: nextScene });
+          }}>
             {filterOptions.scenes.map((item) => <option key={item} value={item}>{item}</option>)}
           </select>
         </label>
         <label>
           排序
-          <select aria-label="产品排序" value={sort} onChange={(event) => { setSort(event.target.value); setVisibleCount(PAGE_SIZE); }}>
+          <select aria-label="产品排序" value={sort} onChange={(event) => {
+            const nextSort = event.target.value;
+            setSort(nextSort);
+            setVisibleCount(PAGE_SIZE);
+            syncUrl({ sort: nextSort });
+          }}>
             {SORTS.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}
           </select>
         </label>

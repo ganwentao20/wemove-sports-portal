@@ -38,6 +38,17 @@ export default async function ProductDetailPage({ params }: PageProps) {
     '木质模块使用前请检查边角、连接处和弹珠轨道是否完好。',
     '收纳时将弹珠、小配件与积木分区放置，保持干燥通风。',
   ];
+  const packageItems = [
+    `${product.pieces} 轨道与结构模块`,
+    '弹珠与基础连接配件',
+    '纸质快速搭建说明卡',
+    '收纳与维护提示卡',
+  ];
+  const deliveryNotes = [
+    { label: '库存状态', value: product.status },
+    { label: '发货说明', value: '当前为前台展示占位，后续接入库存与订单接口。' },
+    { label: '售后支持', value: '支持查看说明书、常见问题与产品支持入口。' },
+  ];
 
   return (
     <main className="pdp-page">
@@ -78,6 +89,10 @@ export default async function ProductDetailPage({ params }: PageProps) {
             </div>
           </dl>
           <ProductActions product={product} />
+          <div className="pdp-resource-actions">
+            <Link href="/support/downloads">下载电子说明书</Link>
+            <Link href="/support">查看产品支持</Link>
+          </div>
           <small>价格、库存、购物车与订单接口后续由成员 C 接入；当前保留前端交互闭环。</small>
         </aside>
       </section>
@@ -107,6 +122,40 @@ export default async function ProductDetailPage({ params }: PageProps) {
             <span>标签</span>
             <strong>{product.tags.join(' / ')}</strong>
           </article>
+        </div>
+      </section>
+
+      <section className="pdp-info-grid">
+        <article className="pdp-section">
+          <span className="eyebrow">Package Includes</span>
+          <h2>包装内容</h2>
+          <ul>
+            {packageItems.map((item) => <li key={item}>{item}</li>)}
+          </ul>
+        </article>
+        <article className="pdp-section">
+          <span className="eyebrow">Delivery & Support</span>
+          <h2>交付与支持</h2>
+          <dl className="pdp-support-list">
+            {deliveryNotes.map((note) => (
+              <div key={note.label}>
+                <dt>{note.label}</dt>
+                <dd>{note.value}</dd>
+              </div>
+            ))}
+          </dl>
+        </article>
+      </section>
+
+      <section className="pdp-download-strip">
+        <div>
+          <span className="eyebrow">Downloads</span>
+          <h2>资料下载入口</h2>
+          <p>保留说明书、规格表、安全说明和搭建指导的前台入口，后续可由 CMS 或资料库接口动态维护。</p>
+        </div>
+        <div>
+          <Link href="/support/downloads">说明书 / Manual</Link>
+          <Link href="/support">常见问题 / FAQ</Link>
         </div>
       </section>
 

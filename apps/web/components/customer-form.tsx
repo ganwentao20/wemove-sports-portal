@@ -5,24 +5,32 @@ import { useRouter } from 'next/navigation';
 import { loginCustomer, registerCustomer } from '../lib/storefront-api';
 import { writeCustomer } from '../lib/customer-store';
 
+type FormStatus = 'idle' | 'success' | 'error' | 'info';
+
 export function CustomerForm({ register = false }: { register?: boolean }) {
   const router = useRouter();
   const [message, setMessage] = useState('');
+  const [status, setStatus] = useState<FormStatus>('idle');
   const [loading, setLoading] = useState(false);
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const form = new FormData(event.currentTarget);
-    const email = String(form.get('email') ?? '');
+    const email = String(form.get('email') ?? '').trim();
     const password = String(form.get('password') ?? '');
-    const name = String(form.get('name') || email.split('@')[0]);
+    const name = String(form.get('name') || email.split('@')[0]).trim();
+
+    setStatus('idle');
+    setMessage('');
 
     if (register && !form.get('terms')) {
+      setStatus('error');
       setMessage('请先同意服务条款与隐私政策。');
       return;
     }
 
     if (!/[A-Za-z]/.test(password) || !/\d/.test(password)) {
+      setStatus('error');
       setMessage('密码至少 8 位，并需要同时包含字母和数字。');
       return;
     }
@@ -31,13 +39,17 @@ export function CustomerForm({ register = false }: { register?: boolean }) {
     try {
       if (register) {
         await registerCustomer({ name, email, password, ageConfirmed: true });
+        setStatus('success');
         setMessage('注册请求已提交，接口开启邮箱验证时请按邮件完成验证。');
       } else {
         await loginCustomer({ email, password });
+        setStatus('success');
+        setMessage('登录成功，正在进入个人中心。');
       }
-      router.push('/customer/account');
+      window.setTimeout(() => router.push('/customer/account'), 500);
     } catch {
       writeCustomer({ name, email });
+      setStatus('info');
       setMessage('后端接口未启动或账号暂不可用，已进入前端演示登录状态。接口启动后会自动走真实 /auth 接口。');
       window.setTimeout(() => router.push('/customer/account'), 700);
     } finally {
@@ -52,7 +64,7 @@ export function CustomerForm({ register = false }: { register?: boolean }) {
     {register && <label className="check"><input name="terms" type="checkbox" />我同意服务条款与隐私政策。</label>}
     {register && <label className="check"><input name="marketing" type="checkbox" />订阅新品、活动和玩法灵感邮件。</label>}
     <button type="submit" disabled={loading}>{loading ? '提交中...' : register ? '创建账户' : '登录'}</button>
-    {message && <p className="form-message">{message}</p>}
+    {message && <p className={`form-message ${status}`} role="status" aria-live="polite">{message}</p>}
     <p className="hint">{register ? '已按组长接口 POST /api/v1/auth/register 预接线。' : '已按组长接口 POST /api/v1/auth/login 预接线。'}</p>
   </form>;
 }
