@@ -35,12 +35,26 @@
 | --- | --- |
 | 零售支付 | `PAYMENT_PROVIDER_URL`、`PAYMENT_PROVIDER_KEY`、`PAYMENT_WEBHOOK_SECRET`、`PAYMENT_WEBHOOK_URL`、`WEB_ORIGIN`。生产环境 DEMO 默认被拒绝；仅显式 `ALLOW_DEMO_PAYMENTS=true` 才允许。 |
 | 创建支付 | 向适配服务 `POST /sessions`：`paymentId,idempotencyKey,amountCents,currency,returnUrl,webhookUrl`；成功返回 HTTPS `checkoutUrl` 和 `reference`。 |
-| 退款 | 向适配服务 `POST /refunds`：`refundId,idempotencyKey,orderId,amountCents,reason`；返回 `status=PENDING/SUCCEEDED/FAILED` 和 `reference`。重复请求必须按稳定的退款 ID 幂等处理。 |
-| 出站支付签名 | `x-payment-timestamp` 为毫秒时间戳；`x-payment-signature` 为 `HMAC-SHA256(key, timestamp + "." + 原始 JSON body)` 的十六进制；同时发送 `idempotency-key`。HTTPS、禁止重定向、15 秒超时。 |
+| 退款 | 向适配服务 `POST /refunds`：`refundId,idempotencyKey,orderId,paymentId,paymentReference,amountCents,currency,reason`；`idempotencyKey` 恒等于持久退款 ID。响应须原值回显 `refundId,orderId,paymentId,paymentReference,amountCents,currency`，并返回字符串 `status=PENDING/SUCCEEDED/FAILED` 与非空退款流水 `reference`（最多 160 字符）。首次和重试使用同一校验；身份、金额、币种不匹配不会入账。 |
+| 出站支付签名 | `x-payment-timestamp` 为毫秒时间戳；`x-payment-signature` 为 `HMAC-SHA256(key, timestamp + "." + 原始 JSON body)` 的十六进制；同时发送 `idempotency-key`。生产只允许 HTTPS；非生产另允许 localhost/127.0.0.1/[::1] 的 HTTP 测试服务。禁止重定向，15 秒超时。 |
 | 入站支付回调 | `POST /commerce/payment-webhook` 接收 `eventId,paymentId,status,amountCents,currency,providerReference`。签名串为 `timestamp + "." + JSON.stringify([eventId,paymentId,status,amountCents,currency,providerReference])`，用 `PAYMENT_WEBHOOK_SECRET` 签名；时间窗口 ±5 分钟。相同事件不同载荷会拒绝，真实金额/币种必须匹配。 |
 | 税/实时运价 | `TAX_PROVIDER_URL/KEY`、`SHIPPING_PROVIDER_URL/KEY`；HTTP 模式向配置的完整 HTTPS URL POST 报价。返回 `amountCents,currency,reference`。头部 `x-quote-timestamp/x-quote-signature` 用原始 JSON body 及相同 HMAC 规则，3 秒超时，币种必须一致。 |
 
 支付适配服务不可把 DEMO 成功当成真实扣款。当前未指定并接通实际商户；生产收款仍需选定商户、提供密钥、实现其协议到上述适配契约的映射，并完成实际支付/退款/回调验收。税务和物流外部模式同理。现有配置计算器、手工物流与演示支付可以独立完整运行。
+
+退款适配器接收示例（金额为最小币种单位）：
+
+```json
+{"refundId":"refund-123","idempotencyKey":"refund-123","orderId":"order-123","paymentId":"payment-123","paymentReference":"capture-456","amountCents":700,"currency":"USD","reason":"Return reimbursement"}
+```
+
+确认实际结果后返回：
+
+```json
+{"refundId":"refund-123","orderId":"order-123","paymentId":"payment-123","paymentReference":"capture-456","amountCents":700,"currency":"USD","status":"SUCCEEDED","reference":"provider-refund-789"}
+```
+
+`paymentReference` 是原收款流水，`reference` 是本次退款流水，两者不可混用。供应商适配器必须核对真实退款交易结果，再将业务身份回填至响应。超时或回包不可信时，即使供应商可能已成功退款，本地仍保留原 `PENDING` 记录和金额占额，发出内部告警；重试不得创建新退款 ID，供应商也必须按同一 ID 返回原交易。只有匹配的终态响应才自动更新财务状态；匹配的 `PENDING` 响应只保存跟踪流水。多个成功付款无法唯一匹配时不猜测；迟到扣款补偿按其原付款 ID 处理。后台人工结果核实属于独立受 MFA/权限控制并留审计的补偿操作。
 
 PDF 是站内交易凭据。法定税务票据编号、认证开票系统及当地有效税率需要由业务选择和配置；当前不声称已经连接税务机关或真实开票商。
 
@@ -119,3 +133,11 @@ CSV 导入原先直接保存原始 SKU，而常规创建和经销商 Quick Order
 历史小写或带前后空格的 SKU 使用参数化查询按规范值找到原记录，按原 ID 更新并规范化，不产生第二个变体。历史数据若已有多个规范值相同的 SKU，则返回明确冲突，整批不写入，要求运营先核对重复业务记录；不会擅自合并库存、报价或订单引用。
 
 2026-09-08 00:58：`catalog-operations` 4 项及 `retail-commerce` 28 项共 32/32 实库通过，API 类型检查通过。新增场景经真实导入接口检查小写创建/预览更新、跨商品归属冲突、大小写重复批次不改变价格库存且不新增其他行、空值拒绝、历史 SKU 保留 ID 和冲突拒绝，最后通过已授权经销商的 Quick Order HTTP 接口取得该 SKU 有效价格。证据 `.local/catalog-sku-normalization.log`；运行仅安装验收库和 Redis DB 4，无常驻 API、无 Web 或迁移修改。最终 API/迁移镜像需包含该修复并重新验证。
+
+## 零售退款响应验证补充
+
+最终只读复核发现，旧零售适配响应只验证状态和退款流水，未核对退款/付款身份、金额与币种；这属于代码验证缺口，已修复，不能归为缺商户凭据。`deliverProviderRefund` 统一首次退款和自动重试，按上述完整契约验证，错误响应保留原待确认记录并告警；订单行锁和条件状态更新确保并发确认只计一次。
+
+新增真实本地 HTTP 适配器回归，覆盖首次错误金额、重试错误币种/退款 ID/订单 ID/付款 ID/原收款流水、空退款流水、错误类型及未知状态，可信待处理/成功响应、两路并发重试与重复管理请求。供应商桩先记录已执行交易再返回错误响应，证明重试始终使用原幂等 ID，不产生二次外部退款。生产模式明确拒绝本地明文 HTTP。此补充后的测试时间与最终整合结果由根任务再次冻结，旧 CI 结果不覆盖此修改。
+
+2026-09-08 01:25，零售完整 29/29 实库回归与 API 类型检查通过，证据 `.local/retail-refund-protocol.log`。仅使用 `wemove_install_20260907` / Redis DB 4，真实 HTTP 测试服务和 Nest 应用已关闭。无迁移、无 Web 改动；最终完整 CI/生产镜像必须包含此批修复后重新运行。

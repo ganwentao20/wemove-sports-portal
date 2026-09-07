@@ -666,7 +666,21 @@ export class CommerceService implements OnModuleInit, OnModuleDestroy {
   ): Promise<Record<string, unknown>> {
     const base = process.env.PAYMENT_PROVIDER_URL;
     const key = process.env.PAYMENT_PROVIDER_KEY;
-    if (!base || !key || !base.startsWith('https://'))
+    let endpoint: URL;
+    try {
+      endpoint = new URL(base ?? '');
+    } catch {
+      commerceError('HTTPS payment provider and key are not configured');
+    }
+    if (
+      !key ||
+      (endpoint.protocol !== 'https:' &&
+        !(
+          process.env.NODE_ENV !== 'production' &&
+          endpoint.protocol === 'http:' &&
+          ['localhost', '127.0.0.1', '[::1]'].includes(endpoint.hostname)
+        ))
+    )
       commerceError('HTTPS payment provider and key are not configured');
     const body = JSON.stringify(payload);
     const timestamp = String(Date.now());
@@ -675,18 +689,21 @@ export class CommerceService implements OnModuleInit, OnModuleDestroy {
       .digest('hex');
     let response: Response;
     try {
-      response = await fetch(`${base.replace(/\/$/, '')}/${path}`, {
-        method: 'POST',
-        headers: {
-          'content-type': 'application/json',
-          'x-payment-timestamp': timestamp,
-          'x-payment-signature': signature,
-          'idempotency-key': String(payload.idempotencyKey),
+      response = await fetch(
+        `${endpoint.toString().replace(/\/$/, '')}/${path}`,
+        {
+          method: 'POST',
+          headers: {
+            'content-type': 'application/json',
+            'x-payment-timestamp': timestamp,
+            'x-payment-signature': signature,
+            'idempotency-key': String(payload.idempotencyKey),
+          },
+          body,
+          signal: AbortSignal.timeout(15000),
+          redirect: 'error',
         },
-        body,
-        signal: AbortSignal.timeout(15000),
-        redirect: 'error',
-      });
+      );
     } catch {
       await this.paymentAlert(
         'PROVIDER_UNAVAILABLE',
@@ -925,42 +942,8 @@ export class CommerceService implements OnModuleInit, OnModuleDestroy {
     let processed = 0;
     for (const refund of pending) {
       try {
-        const result = await this.providerRequest('refunds', {
-          idempotencyKey: refund.id,
-          refundId: refund.id,
-          orderId: refund.orderId,
-          amountCents: refund.amountCents,
-          reason: refund.reason,
-        });
-        if (
-          typeof result.reference !== 'string' ||
-          !['SUCCEEDED', 'FAILED', 'PENDING'].includes(String(result.status))
-        )
-          continue;
-        if (result.status === 'PENDING') {
-          await this.prisma.retailRefund.updateMany({
-            where: { id: refund.id, status: 'PENDING' },
-            data: { providerReference: result.reference },
-          });
-          continue;
-        }
-        await this.prisma.$transaction(async (tx) => {
-          await tx.$queryRaw`SELECT "id" FROM "Order" WHERE "id"=${refund.orderId} FOR UPDATE`;
-          const changed = await tx.retailRefund.updateMany({
-            where: { id: refund.id, status: 'PENDING' },
-            data: {
-              status: String(result.status),
-              providerReference: String(result.reference),
-            },
-          });
-          if (changed.count) {
-            await this.refundBalance(tx, refund.orderId);
-            processed++;
-          }
-        });
-        await this.notifyOrder(refund.orderId, 'order.refund.external-result');
-        if (result.status === 'FAILED')
-          await this.paymentAlert('REFUND_FAILED', refund.id);
+        const result = await this.deliverProviderRefund(refund.id);
+        if (result.changed && result.refund.status !== 'PENDING') processed++;
       } catch {
         this.logger.warn(
           'Provider refund pending; retry retains the same idempotency key',
@@ -968,6 +951,99 @@ export class CommerceService implements OnModuleInit, OnModuleDestroy {
       }
     }
     return { processed };
+  }
+
+  private async deliverProviderRefund(id: string) {
+    const refund = await this.prisma.retailRefund.findUniqueOrThrow({
+      where: { id },
+      include: {
+        order: {
+          include: {
+            payments: {
+              where: { mode: 'WEBHOOK', status: 'SUCCEEDED' },
+            },
+          },
+        },
+      },
+    });
+    const { order, ...storedRefund } = refund;
+    if (refund.status !== 'PENDING')
+      return { refund: storedRefund, changed: false };
+    const latePaymentId = refund.idempotencyKey.startsWith('late-capture-')
+      ? refund.idempotencyKey.slice('late-capture-'.length)
+      : null;
+    const payment = latePaymentId
+      ? order.payments.find((item) => item.id === latePaymentId)
+      : order.payments.length === 1
+        ? order.payments[0]
+        : undefined;
+    if (
+      !payment?.providerReference?.trim() ||
+      payment.currency !== order.currency ||
+      refund.amountCents > payment.amountCents
+    ) {
+      await this.paymentAlert('REFUND_PAYMENT_UNCONFIRMED', id);
+      commerceError(
+        'refund payment cannot be identified; refund remains pending',
+      );
+    }
+    const payload = {
+      idempotencyKey: refund.id,
+      refundId: refund.id,
+      orderId: refund.orderId,
+      paymentId: payment.id,
+      paymentReference: payment.providerReference,
+      amountCents: refund.amountCents,
+      currency: order.currency,
+      reason: refund.reason,
+    };
+    let result: Record<string, unknown>;
+    try {
+      result = await this.providerRequest('refunds', payload);
+    } catch (error) {
+      await this.paymentAlert('REFUND_UNCONFIRMED', id);
+      throw error;
+    }
+    if (
+      result.refundId !== payload.refundId ||
+      result.orderId !== payload.orderId ||
+      result.paymentId !== payload.paymentId ||
+      result.paymentReference !== payload.paymentReference ||
+      result.amountCents !== payload.amountCents ||
+      result.currency !== payload.currency ||
+      typeof result.reference !== 'string' ||
+      !result.reference.trim() ||
+      result.reference.length > 160 ||
+      typeof result.status !== 'string' ||
+      !['PENDING', 'SUCCEEDED', 'FAILED'].includes(result.status)
+    ) {
+      await this.paymentAlert('REFUND_RESPONSE_MISMATCH', id);
+      commerceError(
+        'unverified refund provider result; refund remains pending and must be retried with the same key',
+      );
+    }
+    const outcome = await this.prisma.$transaction(async (tx) => {
+      await tx.$queryRaw`SELECT "id" FROM "Order" WHERE "id"=${refund.orderId} FOR UPDATE`;
+      const updated = await tx.retailRefund.updateMany({
+        where: { id, status: 'PENDING' },
+        data: {
+          status: String(result.status),
+          providerReference: String(result.reference),
+        },
+      });
+      if (updated.count && result.status !== 'PENDING')
+        await this.refundBalance(tx, refund.orderId);
+      return {
+        refund: await tx.retailRefund.findUniqueOrThrow({ where: { id } }),
+        changed: updated.count > 0,
+      };
+    });
+    if (outcome.changed && outcome.refund.status !== 'PENDING') {
+      await this.notifyOrder(refund.orderId, 'order.refund.external-result');
+      if (outcome.refund.status === 'FAILED')
+        await this.paymentAlert('REFUND_FAILED', id);
+    }
+    return outcome;
   }
   async shipment(actor: JwtPayload, id: string, dto: ShipmentDto) {
     validateLines(dto.items);
@@ -1306,31 +1382,15 @@ export class CommerceService implements OnModuleInit, OnModuleDestroy {
     });
     this.record(actor, 'order.refund.create', id, result);
     if (result.status === 'PENDING') {
-      const provider = await this.providerRequest('refunds', {
-        idempotencyKey: result.id,
-        refundId: result.id,
-        orderId: id,
-        amountCents: result.amountCents,
-        reason: result.reason,
-      });
-      if (
-        typeof provider.reference !== 'string' ||
-        !['PENDING', 'SUCCEEDED', 'FAILED'].includes(String(provider.status))
-      )
-        commerceError(
-          'invalid refund provider response; retry the same refund key',
-        );
-      if (provider.status !== 'PENDING')
-        return this.refundResult(
+      const delivered = await this.deliverProviderRefund(result.id);
+      if (delivered.changed && delivered.refund.status !== 'PENDING')
+        this.record(
           actor,
-          result.id,
-          String(provider.status),
-          provider.reference,
+          'order.refund.external-result',
+          id,
+          delivered.refund,
         );
-      return this.prisma.retailRefund.update({
-        where: { id: result.id },
-        data: { providerReference: provider.reference },
-      });
+      return delivered.refund;
     }
     return result;
   }

@@ -102,7 +102,7 @@ node scripts/ops-restore.mjs --container wemove-production-postgres-1 --database
 | 验证 | 结果 |
 | --- | --- |
 | `node scripts/ops-config-check.mjs` | 使用临时测试值校验 production+monitoring Compose，通过；不读取真实 .env |
-| `node --test scripts/ops-backup.test.mjs scripts/ops-scanner.test.mjs` | 4/4 通过：认证/损坏检测、拒绝业务库覆盖、扫描授权/恶意与不确定结果拒绝、真实 TCP INSTREAM 帧 |
+| `node --test scripts/ops-backup.test.mjs scripts/ops-scanner.test.mjs scripts/ops-runtime.test.mjs` | 7/7 通过：认证/损坏检测、拒绝业务库覆盖、扫描授权/恶意与不确定结果拒绝、真实 TCP INSTREAM 帧、Compose 环境隔离及凭据脱敏 |
 | 加密数据库恢复演练 | 从 `wemove_verify_20260907` 导出，2026-09-08 00:24 恢复到全新 `wemove_restore_1788798262509`；62 张表逐表行数一致；原库未写入 |
 | metrics 实机连接隔离数据库 | HTTP `/metrics` 返回队列、支付、库存、搜索、数据库指标；测试进程已停止 |
 | 身份、认证、偏好、提交与客服 DB 回归 | identity/auth-flow/auth-token/public-submission/contact-triage 五文件 33/33 通过；新增 Contact 6 个实库场景包含分页、导出 MFA/权限、历史、附件 scanStatus |
@@ -120,14 +120,18 @@ node scripts/ops-restore.mjs --container wemove-production-postgres-1 --database
 | Caddy 镜像内配置校验 | .local/ops-caddy-check.log 为 Valid configuration；仅格式提示。不是正式域名证书或公网健康验证 |
 | Prometheus/Promtool 配置校验 | .local/ops-prometheus-check.log 为 SUCCESS，1 个规则文件、12 条规则；不表示真实告警接收人已收到通知 |
 
-最终源码冻结后追加的运行验证（2026-09-08 01:00，本机独立 Compose 环境）：
+最终源码冻结后追加的运行验证（2026-09-08 01:23，本机独立 Compose 环境；复现并修复 CI #47 环境覆盖后）：
 
 | 验证 | 结果 / 证据 |
 | --- | --- |
 | API、迁移、Web 最终生产镜像 | `finalverify-20260908` 三个 targets 均构建导出成功；API/migrate 最后重建已包含 MFA 30 秒边界修复及 CSV SKU 大小写规范化/历史 SKU 兼容修复，复用未改动的最终 Web 镜像（字体/图片性能调整）；`.local/ops-{api,migrate,web}-final-build.log` |
-| 真实生产服务启动 | `.local/ops-runtime-report.json` 为 `passed:true`；新项目 `wemove-runtime-1788800411192` 启动 PostgreSQL、Redis、ClamAV、扫描器、迁移、API、Web；迁移镜像在空库完成 29 个迁移，API readiness 200 且 DB/Redis 均 up |
+| 真实生产服务启动 | `.local/ops-runtime-report.json` 为 `passed:true`；新项目 `wemove-runtime-1788801785177` 启动 PostgreSQL、Redis、ClamAV、扫描器、迁移、API、Web；迁移镜像在空库完成 29 个迁移，API readiness 200 且 DB/Redis 均 up |
 | Web 与 API 同源代理 | 生产 Web `/en/products` 返回 200、HTML 与真实 main；产品和配置代理 200/code=0；未登录私有账户代理 401。报告记录实际运行的七个镜像 ID |
-| 完整数据库和媒体加密备份恢复 | 调用实际备份脚本停止本项目 API 后备份数据库与媒体，并恢复到新库/卷 `wemove_restore_runtime_1788800440993`；62 张表逐表一致，媒体 4096 字节随机二进制验收文件 SHA256 一致；API 自动恢复运行且 readiness 再次通过 |
+| 完整数据库和媒体加密备份恢复 | 调用实际备份脚本停止本项目 API 后备份数据库与媒体，并恢复到新库/卷 `wemove_restore_runtime_1788801814921`；62 张表逐表一致，媒体 4096 字节随机二进制验收文件 SHA256 一致；API 自动恢复运行且 readiness 再次通过 |
+
+CI #47 曾在迁移容器退出：Compose 的 shell 环境优先于 `--env-file`，CI 全局数据库地址因此覆盖本次隔离地址，迁移在容器内连接 `localhost:5432` 并报 P1001。本机使用相同环境已复现（`.local/ops-runtime-ci-env-before.json`），随后修复演练的子进程环境：去除 production Compose 引用的全部继承变量及 `COMPOSE_*`，仅注入本次生成值，同时保留执行 Docker 必需的主机环境。启动前验证解析后的数据库、JWT、外部资源和 worker 配置；不会把配置明文写入报告。
+
+修复后，在全局 CI 数据库/JWT 和额外邮件、支付、S3、镜像及 profile 配置存在时，完整演练通过（`.local/ops-runtime-ci-env-after.json`）。独立测试迁移镜像主动退出 42 并输出测试数据库地址，失败报告成功收集迁移和依赖日志且凭据已脱敏（`.local/ops-runtime-diagnostic.json`）；生成及继承的凭据、URL 编码形式和 URL 用户信息均脱敏后才截取日志。失败与成功资源都已停止。此修复的最终远程整合 CI 仍须主任务重跑核对。
 
 这次演练没有发布外部端口、申请正式证书或发送外部邮件；临时凭据文件已移除，所有演练容器已停止，独立恢复卷保留。完整媒体恢复采用本次生成的文件，验证的是恢复机制及字节完整性，不代表正式业务媒体、异地副本、恢复容量或生产切流已验收。
 

@@ -93,7 +93,7 @@ jobs:
       - name: Validate production Compose and backup/scanner contracts
         run: |
           node scripts/ops-config-check.mjs
-          node --test scripts/ops-backup.test.mjs scripts/ops-scanner.test.mjs
+          node --test scripts/ops-backup.test.mjs scripts/ops-scanner.test.mjs scripts/ops-runtime.test.mjs
           node --experimental-strip-types --test apps/web/lib/safe-redirect.test.mjs
 
       - name: Lint (workspaces, if present)

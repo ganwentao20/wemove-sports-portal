@@ -1,8 +1,13 @@
 import { createHash, randomBytes } from "node:crypto";
-import { mkdir, writeFile, unlink } from "node:fs/promises";
+import { mkdir, readFile, writeFile, unlink } from "node:fs/promises";
 import { setTimeout as delay } from "node:timers/promises";
 import path from "node:path";
 import { args, backup, command, restore } from "./ops-backup-lib.mjs";
+import {
+  assertRuntimeCompose,
+  runtimeComposeEnv,
+  runtimeRedactor,
+} from "./ops-runtime-lib.mjs";
 
 // Starts the actual production Compose services on a new project. No published
 // ports, real SMTP, public DNS/TLS request, existing database or project is used.
@@ -56,21 +61,13 @@ const compose = [
   "-p",
   project,
 ];
-const call = (...argv) => command("docker", [...compose, ...argv]);
-const errorText = (error) =>
-  [
-    pg,
-    ...Object.entries(settings)
-      .filter(([key]) =>
-        /PASSWORD|SECRET|TOKEN|KEY|PASS|DATABASE_URL/.test(key),
-      )
-      .map(([, value]) => value),
-  ]
-    .filter(Boolean)
-    .reduce(
-      (message, value) => message.replaceAll(value, "[redacted]"),
-      String(error?.message || error),
-    );
+const composeEnv = runtimeComposeEnv(
+  settings,
+  await readFile("infra/production/compose.yml", "utf8"),
+);
+const call = (...argv) =>
+  command("docker", [...compose, ...argv], undefined, { env: composeEnv });
+const errorText = runtimeRedactor(settings, process.env);
 let initialized = false;
 try {
   await mkdir(directory, { recursive: true });
@@ -85,7 +82,14 @@ try {
     overridePath,
     'services:\n  api:\n    environment:\n      NOTIFICATION_WORKER: "false"\n      MEDIA_CLEANUP_WORKER: "false"\n      B2B_REFUND_WORKER: "false"\n      RETENTION_WORKER: "false"\n',
   );
-  await call("config", "--quiet");
+  assertRuntimeCompose(
+    JSON.parse(await call("config", "--format", "json")),
+    settings,
+  );
+  report.environmentIsolation = {
+    generatedValuesOnly: true,
+    externalResourcesDisabled: true,
+  };
   const existing = (
     await command("docker", [
       "ps",
@@ -237,6 +241,25 @@ try {
   report.passed = true;
 } catch (error) {
   report.error = errorText(error);
+  if (initialized) {
+    try {
+      report.diagnostics = errorText(
+        await call(
+          "logs",
+          "--no-color",
+          "--tail",
+          "100",
+          "migrate",
+          "api",
+          "web",
+          "postgres",
+          "scanner",
+        ),
+      ).slice(-18000);
+    } catch (diagnosticError) {
+      report.diagnosticsError = errorText(diagnosticError);
+    }
+  }
   process.exitCode = 1;
 } finally {
   if (initialized) {

@@ -30,10 +30,11 @@ export function backupKey() {
     throw new Error("OPS_BACKUP_KEY must be a base64 encoded 32-byte key");
   return key;
 }
-export function child(command, argv, { input = "pipe" } = {}) {
+export function child(command, argv, { input = "pipe", env } = {}) {
   const process = spawn(command, argv, {
     stdio: [input, "pipe", "pipe"],
     windowsHide: true,
+    ...(env ? { env } : {}),
   });
   let stderr = "";
   process.stderr.on("data", (chunk) => {
@@ -51,8 +52,8 @@ export function child(command, argv, { input = "pipe" } = {}) {
   done.catch(() => {});
   return { process, done };
 }
-export async function command(name, argv, input) {
-  const { process, done } = child(name, argv);
+export async function command(name, argv, input, options) {
+  const { process, done } = child(name, argv, options);
   let output = "";
   process.stdout.on("data", (chunk) => {
     output += chunk.toString();

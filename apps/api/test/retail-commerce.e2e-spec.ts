@@ -2,7 +2,8 @@ import type { INestApplication } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import { JwtService } from '@nestjs/jwt';
 import { PrismaClient } from '@prisma/client';
-import { randomUUID } from 'node:crypto';
+import { createHmac, randomUUID } from 'node:crypto';
+import { createServer } from 'node:http';
 import { generate, generateSecret } from 'otplib';
 import request from 'supertest';
 import { AppModule } from '../src/app.module.js';
@@ -11,6 +12,8 @@ import { authenticatedFixture } from './auth-session.js';
 import { signPayment } from '../src/order/commerce-rules.js';
 import { vi } from 'vitest';
 import { searchQuery } from '../src/platform/search-query.js';
+import { CommerceService } from '../src/order/commerce.service.js';
+import { NotificationsService } from '../src/notifications/notifications.service.js';
 
 describe.skipIf(process.env.E2E_DB !== '1')(
   'Retail commerce: HTTP, DB, stock and provider boundaries',
@@ -772,14 +775,16 @@ describe.skipIf(process.env.E2E_DB !== '1')(
         oldKey = process.env.PAYMENT_PROVIDER_KEY;
       process.env.PAYMENT_PROVIDER_URL = 'https://provider.example.test';
       process.env.PAYMENT_PROVIDER_KEY = 'provider-test-key';
-      const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue(
-        new Response(
-          JSON.stringify({
-            status: 'SUCCEEDED',
-            reference: 'REFUND-LATE-001',
-          }),
-          { status: 200, headers: { 'content-type': 'application/json' } },
-        ),
+      const fetchMock = vi.spyOn(globalThis, 'fetch').mockImplementation(
+        async (_url, init) =>
+          new Response(
+            JSON.stringify({
+              ...JSON.parse(String(init?.body)),
+              status: 'SUCCEEDED',
+              reference: 'REFUND-LATE-001',
+            }),
+            { status: 200, headers: { 'content-type': 'application/json' } },
+          ),
       );
       try {
         const event = {
@@ -827,6 +832,241 @@ describe.skipIf(process.env.E2E_DB !== '1')(
         else process.env.PAYMENT_PROVIDER_URL = oldUrl;
         if (oldKey === undefined) delete process.env.PAYMENT_PROVIDER_KEY;
         else process.env.PAYMENT_PROVIDER_KEY = oldKey;
+      }
+    });
+    it('verifies refund identity, captured payment, amount and currency over HTTP before any financial update and retries the same external operation', async () => {
+      const f = await fixture();
+      const order = await paid(f);
+      const paymentReference = 'CAPTURE-' + order.payment.id;
+      await prisma.retailPayment.update({
+        where: { id: order.payment.id },
+        data: {
+          mode: 'WEBHOOK',
+          providerReference: paymentReference,
+        },
+      });
+      const oldUrl = process.env.PAYMENT_PROVIDER_URL,
+        oldKey = process.env.PAYMENT_PROVIDER_KEY;
+      const providerKey = 'retail-refund-provider-' + suffix;
+      const requests: Array<{
+        body: Record<string, unknown>;
+        raw: string;
+        timestamp: string;
+        signature: string;
+        key: string;
+      }> = [];
+      const external = new Map<string, string>();
+      let responsePatch: Record<string, unknown> = { amountCents: 701 };
+      const server = createServer((req, res) => {
+        let raw = '';
+        req.on('data', (chunk) => {
+          raw += chunk;
+        });
+        req.on('end', () => {
+          const body = JSON.parse(raw) as Record<string, unknown>;
+          requests.push({
+            body,
+            raw,
+            timestamp: String(req.headers['x-payment-timestamp']),
+            signature: String(req.headers['x-payment-signature']),
+            key: String(req.headers['idempotency-key']),
+          });
+          const refundId = String(body.refundId);
+          if (!external.has(refundId))
+            external.set(refundId, 'EXTERNAL-REFUND-' + refundId);
+          res.writeHead(200, { 'content-type': 'application/json' });
+          res.end(
+            JSON.stringify({
+              ...body,
+              status: 'SUCCEEDED',
+              reference: external.get(refundId),
+              ...responsePatch,
+            }),
+          );
+        });
+      });
+      await new Promise<void>((resolve) =>
+        server.listen(0, '127.0.0.1', resolve),
+      );
+      const bound = server.address();
+      if (!bound || typeof bound === 'string')
+        throw new Error('provider test server did not bind');
+      process.env.PAYMENT_PROVIDER_URL = 'http://127.0.0.1:' + bound.port;
+      process.env.PAYMENT_PROVIDER_KEY = providerKey;
+      const alerts = vi.spyOn(app.get(NotificationsService), 'enqueueInternal');
+      try {
+        const requestBody = {
+          idempotencyKey: 'http-refund-' + order.id,
+          amountCents: 700,
+          reason: 'Return reimbursement',
+        };
+        const rejected = await api(
+          'post',
+          `/admin/commerce/orders/${order.id}/refunds`,
+        )
+          .set(await adminHeaders())
+          .send(requestBody)
+          .expect((response) => {
+            expect(response.status, response.text).toBe(409);
+          });
+        expect(rejected.body.message).toContain(
+          'unverified refund provider result',
+        );
+        const refund = await prisma.retailRefund.findUniqueOrThrow({
+          where: { idempotencyKey: requestBody.idempotencyKey },
+        });
+        expect(refund).toMatchObject({
+          status: 'PENDING',
+          providerReference: null,
+        });
+        expect(
+          (await prisma.order.findUniqueOrThrow({ where: { id: order.id } }))
+            .paymentStatus,
+        ).toBe('PAID');
+        const expected = {
+          refundId: refund.id,
+          idempotencyKey: refund.id,
+          orderId: order.id,
+          paymentId: order.payment.id,
+          paymentReference,
+          amountCents: 700,
+          currency: order.currency,
+        };
+        const service = app.get(CommerceService);
+        for (const invalid of [
+          { currency: 'EUR' },
+          { refundId: 'wrong-refund' },
+          { orderId: 'wrong-order' },
+          { paymentId: 'wrong-payment' },
+          { paymentReference: 'wrong-capture' },
+          { reference: '   ' },
+          { amountCents: '700' },
+          { status: 'UNKNOWN' },
+          { status: ['SUCCEEDED'] },
+        ]) {
+          responsePatch = invalid;
+          expect((await service.retryPendingRefunds()).processed).toBe(0);
+          expect(
+            await prisma.retailRefund.findUniqueOrThrow({
+              where: { id: refund.id },
+            }),
+          ).toMatchObject({ status: 'PENDING', providerReference: null });
+          expect(
+            (await prisma.order.findUniqueOrThrow({ where: { id: order.id } }))
+              .paymentStatus,
+          ).toBe('PAID');
+        }
+        expect(
+          alerts.mock.calls.some(
+            ([input]) =>
+              input.dedupeKey ===
+              `payment-alert:REFUND_RESPONSE_MISMATCH:${refund.id}`,
+          ),
+        ).toBe(true);
+        responsePatch = { status: 'PENDING' };
+        expect((await service.retryPendingRefunds()).processed).toBe(0);
+        expect(
+          await prisma.retailRefund.findUniqueOrThrow({
+            where: { id: refund.id },
+          }),
+        ).toMatchObject({
+          status: 'PENDING',
+          providerReference: external.get(refund.id),
+        });
+        responsePatch = {};
+        const retried = await Promise.all([
+          service.retryPendingRefunds(),
+          service.retryPendingRefunds(),
+        ]);
+        expect(
+          retried.reduce((total, result) => total + result.processed, 0),
+        ).toBe(1);
+        expect(
+          await prisma.retailRefund.findUniqueOrThrow({
+            where: { id: refund.id },
+          }),
+        ).toMatchObject({
+          status: 'SUCCEEDED',
+          amountCents: 700,
+          providerReference: external.get(refund.id),
+        });
+        expect(
+          (await prisma.order.findUniqueOrThrow({ where: { id: order.id } }))
+            .paymentStatus,
+        ).toBe('PARTIALLY_REFUNDED');
+        expect(external.size).toBe(1);
+        for (const sent of requests) {
+          expect(sent.body).toMatchObject(expected);
+          expect(sent.key).toBe(refund.id);
+          expect(sent.signature).toBe(
+            createHmac('sha256', providerKey)
+              .update(sent.timestamp + '.' + sent.raw)
+              .digest('hex'),
+          );
+        }
+        const calls = requests.length;
+        const repeated = await api(
+          'post',
+          `/admin/commerce/orders/${order.id}/refunds`,
+        )
+          .set(await adminHeaders())
+          .send(requestBody)
+          .expect(201);
+        expect(repeated.body.data).toMatchObject({
+          id: refund.id,
+          status: 'SUCCEEDED',
+        });
+        expect(requests).toHaveLength(calls);
+        expect(
+          await prisma.retailRefund.count({ where: { orderId: order.id } }),
+        ).toBe(1);
+        const direct = await api(
+          'post',
+          `/admin/commerce/orders/${order.id}/refunds`,
+        )
+          .set(await adminHeaders())
+          .send({
+            ...requestBody,
+            idempotencyKey: 'direct-' + order.id,
+            amountCents: 300,
+          })
+          .expect(201);
+        expect(direct.body.data).toMatchObject({
+          status: 'SUCCEEDED',
+          amountCents: 300,
+        });
+        expect(external.size).toBe(2);
+        const oldEnvironment = process.env.NODE_ENV;
+        const callsBeforeProduction = requests.length;
+        process.env.NODE_ENV = 'production';
+        try {
+          const production = await api(
+            'post',
+            `/admin/commerce/orders/${order.id}/refunds`,
+          )
+            .set(await adminHeaders())
+            .send({
+              ...requestBody,
+              idempotencyKey: 'production-' + order.id,
+              amountCents: 1,
+            })
+            .expect(409);
+          expect(production.body.message).toContain('HTTPS payment provider');
+          expect(requests).toHaveLength(callsBeforeProduction);
+        } finally {
+          if (oldEnvironment === undefined) delete process.env.NODE_ENV;
+          else process.env.NODE_ENV = oldEnvironment;
+        }
+      } finally {
+        alerts.mockRestore();
+        if (oldUrl === undefined) delete process.env.PAYMENT_PROVIDER_URL;
+        else process.env.PAYMENT_PROVIDER_URL = oldUrl;
+        if (oldKey === undefined) delete process.env.PAYMENT_PROVIDER_KEY;
+        else process.env.PAYMENT_PROVIDER_KEY = oldKey;
+        server.closeAllConnections();
+        await new Promise<void>((resolve, reject) =>
+          server.close((error) => (error ? reject(error) : resolve())),
+        );
       }
     });
     it('keeps source-failure quantities intact, blocks checkout and recovers on a healthy stock update', async () => {
