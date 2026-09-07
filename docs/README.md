@@ -2,7 +2,7 @@
 
 > 本目录存放**过程性/规范类**材料。课程最终提交件（④需求文档、⑤测试报告、⑥答辩PPT 等）见下方「交付物清单与红线」。
 
-2026-09-08 更新：[当前 Word 交付件索引](deliverables/README.md)、[材料审核与项目完成度](plans/document-review-20260908.md)、[交付就绪清单](delivery-readiness.md)。五人 AI 汇总和五份个人 AI 说明已齐；独立技术现状/思政报告已归档 3/5，首次实际会议纪要已归档，测试报告已升至 v0.6 并保存 CI #49 整合证据。
+2026-09-08 更新：[当前 Word 交付件索引](deliverables/README.md)、[材料审核与项目完成度](plans/document-review-20260908.md)、[交付就绪清单](delivery-readiness.md)。五人 AI 汇总和五份个人 AI 说明已齐；独立技术现状/思政报告已归档 4/5，首次实际会议纪要已归档，测试报告已升至 v0.7 并保存 CI #51、100 用户负载与实际截图证据；九页汇报 PPT 已完成。
 
 ## 成员花名册（命名与分工引用，2026-09 确认）
 
@@ -28,9 +28,9 @@
 | `plans/initial-tasks.md` | 全员首个任务拆解卡 + 组长任务队列 + 例会#1 议程 | 组长维护 |
 | `plans/requirements-outline.md` | 需求文档（④整合版）目录大纲与章节分工 | 组长牵头 |
 | `requirements.md` | 项目需求文档 v0.4（课程基线、验收标准、需求追踪） | 组长牵头 |
-| [`test-report.md`](test-report.md) | v0.6 最终整合测试与历史勘误；[原始证据](evidence/ci49/README.md) | E 原稿/团队整合复核 |
+| [`test-report.md`](test-report.md) | v0.7 最终整合测试与历史勘误；[原始证据](evidence/ci49/README.md) | E 原稿/团队整合复核 |
 | [`ai-assistance-summary.md`](ai-assistance-summary.md)、[`ai-usage/`](ai-usage/README.md) | 五人大模型辅助说明和五份个人说明 | 各成员陈述/团队整理 |
-| [`individual-reports/`](individual-reports/README.md) | 各自独立技术现状/思政报告，已收 3/5 | 各成员本人 |
+| [`individual-reports/`](individual-reports/README.md) | 各自独立技术现状/思政报告，已收 4/5 | 各成员本人 |
 | [`meetings/2026-09-04-meeting-01.md`](meetings/2026-09-04-meeting-01.md) | 首次真实会议，保留历史六名参会者及后续分工注记 | 陈婧琳记录 |
 | `operation-manual.md` | 当前四门户操作步骤与安全注意事项 | D 牵头 |
 | `delivery-readiness.md` | 最终交付物现状、责任人与停止线 | 组长统筹 |

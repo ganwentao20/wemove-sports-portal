@@ -1,0 +1,11 @@
+{
+  "timestamp": "2026-09-07T19:48:01.417Z",
+  "directory": "/home/runner/work/wemove-sports-portal/wemove-sports-portal/.local/ops-drill-1788810480231",
+  "tables": 62,
+  "scope": "database-only",
+  "database": "wemove_restore_1788810480231",
+  "rowCountsVerified": true,
+  "mediaRestored": false,
+  "encryption": "AES-256-GCM; HMAC-SHA256 manifest; SHA256 ciphertext",
+  "productionDatabaseChanged": false
+}
