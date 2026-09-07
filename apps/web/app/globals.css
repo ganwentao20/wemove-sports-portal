@@ -43,11 +43,17 @@ a {
 .hero { min-height: 620px; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); overflow: hidden; background: #f0e8dc; }
 .hero-copy { display: flex; flex-direction: column; justify-content: center; padding: 9vw; }
 .hero h1 { margin: 0; color: var(--wm-dark); font-size: clamp(2.8rem, 5vw, 5.6rem); line-height: .98; letter-spacing: -.07em; }
+.hero h1 span { display: block; }
 .hero p { max-width: 35rem; margin: 2rem 0; color: #54514c; font-size: 1.05rem; line-height: 1.8; }
 .hero-copy div { display: flex; flex-wrap: wrap; gap: .8rem; }
 .hero-copy a, .customer-form button { border-radius: 999px; background: var(--wm-dark); color: white; padding: .9rem 1.25rem; font-size: .92rem; font-weight: 700; }
 .hero-copy a + a { background: transparent; color: var(--wm-dark); border: 1px solid #8b857c; }
 .hero > img { width: 100%; height: 100%; min-height: 620px; object-fit: cover; object-position: center; }
+.hero-carousel .hero-controls { margin-top: 2rem; align-items: center; }
+.hero-controls button { width: 2.35rem; height: 2.35rem; border: 1px solid #8b857c; border-radius: 999px; background: transparent; color: var(--wm-dark); font-weight: 800; cursor: pointer; }
+.hero-controls > div { align-items: center; gap: .45rem; }
+.hero-controls > div button { width: .72rem; height: .72rem; border-color: #a7a096; padding: 0; }
+.hero-controls > div button.active { width: 1.8rem; background: var(--wm-dark); border-color: var(--wm-dark); }
 .home-section, .catalog { max-width: 1200px; margin: auto; padding: 6.5rem 1.5rem; }
 .home-section h2, .catalog h1 { margin: 0; font-size: clamp(2rem, 3vw, 3.3rem); letter-spacing: -.04em; }
 .home-section > p, .catalog > p { max-width: 40rem; color: var(--wm-gray); line-height: 1.8; }

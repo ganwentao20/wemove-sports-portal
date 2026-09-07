@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import Image from 'next/image';
+import { HomeHeroCarousel } from '../../components/home-hero-carousel';
 import { HomeShowcase } from '../../components/home-showcase';
 import { ProductCard } from '../../components/product-card';
 import { products } from '../../lib/products';
@@ -15,17 +15,7 @@ export default function HomePage() {
 
   return (
     <div className="storefront-home">
-      <section className="hero">
-        <div className="hero-copy">
-          <h1>让学习<br />变成一种游戏</h1>
-          <p>通过自由拼接的轨道与隧道，在玩乐中探索结构、重力、速度与空间路径的乐趣。</p>
-          <div>
-            <Link href="/products">探索产品系列</Link>
-            <Link href="#showcase">体验动态选品</Link>
-          </div>
-        </div>
-        <Image src="/products/hero-cover.png" alt="WEMOVE 轨道积木封面" width={1140} height={760} priority />
-      </section>
+      <HomeHeroCarousel />
 
       <section className="home-section">
         <h2>探索 WEMOVE</h2>
