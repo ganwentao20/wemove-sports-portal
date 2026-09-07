@@ -112,3 +112,22 @@ export async function saveCart(items: CartItem[]) {
 export async function clearCart() {
   window.localStorage.removeItem('wemove-cart');
 }
+
+export type ResearchInquiryInput = {
+  organization: string;
+  contact: string;
+  topic: string;
+  message: string;
+};
+
+export async function submitResearchInquiry(input: ResearchInquiryInput) {
+  // 预留接口：POST /contact/research（待 CMS/contact 模块接入后替换为真实合作咨询流）。
+  try {
+    return await apiFetch<{ id: string; status: string }>('/contact/research', {
+      method: 'POST',
+      body: JSON.stringify(input),
+    });
+  } catch {
+    return { id: `local-research-${Date.now()}`, status: 'local-demo' };
+  }
+}
