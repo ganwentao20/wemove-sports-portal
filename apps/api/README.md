@@ -120,6 +120,7 @@ Schema 单一事实源：`prisma/schema.prisma`（归属注释 M1/MA/MB/MC/MD/ME
   生产部署必须常驻 Redis。
 - **邮件服务**：`SMTP_HOST` 未配置时走"开发日志模式"（验证/重置链接打印到终端），
   配置后真发信（Mailpit 联调见组员 E 的 E1 任务）；发送失败只记日志不阻断注册主流程。
+- 邮箱验证、重发与密码重置使用同一账号行锁，在事务内重新检查令牌有效期、消费状态和账号状态；验证不能重新激活停用账号，成功重置会作废该账号全部已有重置链接。HTML 与纯文本邮件均包含可用链接。
 - **全局加固层（已在 setupApp 生效）**：helmet 安全响应头（nosniff/X-Frame-Options 等）、
   gzip 压缩（threshold=0，首屏性能支撑）、请求体上限 256kb、全局限流
   （单 IP/分钟，env `GLOBAL_RATE_LIMIT_PER_MIN` 默认 12000，兼容 100 并发压测；/health 豁免）、
@@ -131,6 +132,8 @@ Schema 单一事实源：`prisma/schema.prisma`（归属注释 M1/MA/MB/MC/MD/ME
 - e2e 离线冒烟：`npm run test:e2e`（响应体/校验/门禁约定）。
 - **DB 集成闭环（需 docker 的 PG+Redis）**：设置 `E2E_DB=1` 后运行 test:e2e，
   覆盖注册→验证→登录→登出/限流、公开目录，以及结算→库存预留→本人订单→取消返库；CI #40 已通过。
+- **真实邮件闭环（需 PG+Redis+Mailpit）**：同时设置 `E2E_DB=1`、`E2E_MAIL=1`，运行 `npm run test:e2e -w api`（仓库根目录）。完整套件目前为 7 文件、42 用例；其中 `auth-token.e2e-spec.ts` 覆盖 5 项令牌并发/停用/过期回归，`mailpit-flow.e2e-spec.ts` 覆盖 4 项真实收信闭环。
+  邮件测试单独读取 `E2E_SMTP_HOST`/`E2E_SMTP_PORT`（默认 localhost/1025）及 `E2E_MAILPIT_URL`（默认 http://localhost:8025），不使用本机业务 SMTP 账号。测试创建随机账号，仅清理本轮账号与对应邮件。执行前明确设置已迁移的独立测试 `DATABASE_URL` 和测试 `REDIS_URL`；Vitest 不自动加载 API 的 `.env`。CI 已配置 Mailpit service 和邮件测试开关。
 
 ## B2B 采购扩展（甘文韬，M1/MB）
 

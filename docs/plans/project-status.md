@@ -82,4 +82,6 @@
 
 ## 2026-09-07 承接增量
 
-当前团队五人，甘文韬负责 M1/MB 两个工作包。历史作者保留在上表，现分工以 workload-current.md 为准。远端 `feature/storefront-a` 更新至 cb573b0，新增 `feature/data-dictionary-c`；此次保留两分支，尚未合并。新 B2B 功能、迁移和 13 项真实数据库用例已完成；完整验证记录见 test-report.md。
+当前团队五人，甘文韬负责 M1/MB 两个工作包，计划占比 25%，其余四人各 18.75%。历史作者保留在上表，现分工以 workload-current.md 为准。远端 `feature/storefront-a` 更新至 d650274，新增 `feature/data-dictionary-c`；此次保留两分支，尚未合并。新 B2B 功能、迁移和 13 项真实数据库用例已完成；完整验证记录见 test-report.md。
+
+本轮继续完成 M1 邮件验证增量：修复一次性验证/重置令牌的并发重复消费，以及旧验证链接激活停用账号；补齐纯文本邮件链接，新增 5 项数据库安全回归和 4 项真实 Mailpit 收信测试。全量结果更新为 69 单测、42 项 e2e 全通过，Next/Nest 构建通过；CI 新增 Mailpit service。上文 CI #40 为旧主线记录，当前分支的最新证据见测试报告第 11 节。答辩继续暂缓。

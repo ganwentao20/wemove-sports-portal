@@ -1,12 +1,12 @@
 # WEMOVE SPORTS 测试报告（持续更新版）
 
-版本：v0.4　日期：2026-09-07　责任人：龙祖怡（组员 E）/ 全员复测
+版本：v0.5　日期：2026-09-07　责任人：龙祖怡（组员 E）/ 全员复测；本轮认证回归：甘文韬
 
 ## 1. 测试范围与结论
 
 本报告覆盖公共目录、客户认证与购物车、B2C 订单和库存事务、经销商申请/私有资质/审批/授权价格/Quick Order、员工 RBAC/MFA/审计，以及 CMS、媒体、联系工单和工程质量门禁。冻结代码提交 `5c9d5bf` 本地全仓验证通过；[GitHub Actions CI #40](https://github.com/ganwentao20/wemove-sports-portal/actions/runs/34058318600) 已在 PostgreSQL 16 与 Redis 7 真环境成功完成迁移、e2e 和构建。
 
-当前结论：P0 主链路已具备自动化证据；已实现的 P1 订单与 Quick Order 切片通过单元/构建验证。浏览器兼容截图、邮件 UI 截图和最新数据库 e2e 截图须在部署或本地 Docker 可用后补入最终提交包。
+当前结论：本地 Docker PostgreSQL/Redis/Mailpit 全量 e2e 42 项通过，包含真实注册收信、验证、重发和密码重置；本轮还修复令牌并发消费及停用账号被旧验证链接激活的问题。69 项单测和全仓构建通过。浏览器兼容、邮件 UI 截图仍待人工补入最终提交包；本地通过不代表远端 CI 已通过。
 
 ## 2. 环境
 
@@ -15,8 +15,9 @@
 | 操作系统 | Windows，PowerShell | GitHub-hosted Ubuntu |
 | Node / npm | Node ≥22 / npm ≥10 | Node 22 / npm ci |
 | Web / API | Next.js 16.3.4 / NestJS 12 | 同 lockfile |
-| 数据库 | Docker Desktop 本轮未运行 | PostgreSQL 16 service |
-| 缓存 | 本轮数据库用例环境门控 | Redis 7 service |
+| 数据库 | Docker PostgreSQL 16，独立测试数据库，8 次迁移 | PostgreSQL 16 service |
+| 缓存 | Docker Redis 7，测试使用逻辑库 14 | Redis 7 service |
+| 邮件 | Docker Mailpit，SMTP 1025 / API 8025，4 项真实收信测试通过 | 本轮新增 Mailpit service；结果按对应提交 CI 确认 |
 | 测试工具 | Vitest 4.1.11、Supertest、Next/Nest build | 同仓脚本 |
 
 ## 3. 自动化结果
@@ -27,7 +28,7 @@
 | 静态检查 | `npm run lint` | 通过 | API/Web lint |
 | 类型 | `npm run typecheck` | 通过 | API/Web TypeScript |
 | 单元 | `npm test` | 14 文件、69 用例通过 | 认证限流、MFA、价格优先级、购物车归属、私有附件、审核/订单状态机、Quick Order |
-| 离线 e2e | `npm run test:e2e -w api` | 12 通过、8 环境门控 | 响应 envelope、404、参数与权限元数据 |
+| 全量 e2e | `E2E_DB=1 E2E_MAIL=1 npm run test:e2e -w api` | 7 文件、42 用例通过，无跳过 | 认证、目录、订单库存、B2B、并发令牌、真实 SMTP 收信 |
 | 生产构建 | `npm run build` | 通过 | Next 全部路由 + Nest build |
 | DB e2e | GitHub Actions CI #40 | 通过 | 迁移、认证/Redis、目录（含 PDP 字段）、订单库存闭环 |
 
@@ -36,7 +37,7 @@
 | 编号 | 场景 | 期望 | 证据 | 状态 |
 |---|---|---|---|---|
 | AUTH-01 | 未勾选 18+ 注册 | 422，服务端拒绝 | Auth DTO/Service 单测 | 通过 |
-| AUTH-02/05 | 验证/重置令牌重复使用 | 哈希存储、一次性消费、过期拒绝 | auth-flow e2e | 通过 |
+| AUTH-02/05 | 验证/重置令牌重复或并发使用 | 哈希存储、一次性消费、过期拒绝、停用账号不能激活/重置 | auth-flow + auth-token e2e，Mailpit 收信闭环 | 通过 |
 | AUTH-03/04 | 登出黑名单、连续 5 次登录失败 | 旧 JWT 失效；锁定时正确密码不能绕过 | auth-flow e2e + 单测 | 通过 |
 | DLR-02/03 | 审核与跨企业读取 | 写操作 MFA+审计；跨企业 403 | Dealer 单测与控制器元数据测试 | 通过 |
 | DLR-04 | Quick Order 无效/重复/库存不足 | 逐行错误，不泄漏未授权 SKU | Dealer 单测 2 项 | 通过 |
@@ -108,3 +109,24 @@
 `wemove-mailpit` 容器已启动且健康检查通过；使用 API 的 Nodemailer 与本地环境配置完成 SMTP 握手，收件箱 `http://localhost:8025` 返回 HTTP 200。这仅证明联调基础设施就绪，尚未代替注册邮件闭环验收。
 
 待人工操作并补图：启动（或重启）本地 API/Web，使用新邮箱注册，确认注册状态为 `PENDING`、未验证时不能登录；在 Mailpit 打开验证邮件并访问其中链接，完成验证后确认可以登录。截图记录环境与日期，遮盖验证令牌；由实际操作人员填写复测结果。
+
+## 11. 2026-09-07 认证并发修复与真实 SMTP 回归
+
+本轮在实际数据库上先运行新增回归用例，旧代码 5 项中 4 项失败：6 个并发验证请求出现 3 次成功；停用用户的旧验证链接返回成功并激活账号；相同以及不同重置令牌的两个并发改密请求均成功。修复后同组 5 项全部通过，只有一次有效消费产生成功结果和成功审计。
+
+修复措施：邮箱验证、重发与重置密码按账号加行锁，锁内重新检查令牌有效期/消费状态及账号状态；修改账号与作废令牌在同一事务完成。停用账号无法用验证链接恢复。纯文本邮件直接使用包含完整链接的正文，避免从 HTML 去标签时丢失链接。
+
+真实 SMTP 测试不注入或伪造令牌，向 Mailpit 发信后通过其 API 按本轮随机收件人取信，再调用业务验证/重置接口。4 项用例覆盖：注册为 PENDING、未验证禁止登录、HTML/纯文本链接、哈希存储、激活与登录；重发使旧链接失效；邮件重置后旧密码失效且链接不能重复使用；不存在或停用账号返回统一响应且不发送额外邮件。Mailpit API 依据[官方说明](https://mailpit.axllent.org/docs/api-v1/)。仅清理测试账号和它们的邮件，保留用户收件箱中的其他邮件。
+
+验证结果：`npm run verify` 通过（lint、类型检查、69 单测、Next 31 页与 Nest 构建）；`E2E_DB=1 E2E_MAIL=1` 完整 e2e 为 7 文件、42 用例，无跳过。数据库沿用本轮独立测试库；业务 `.env` 中用户要求的 SMTP 与强制验证设置保持原值。CI 工作流已新增 Mailpit service 和 `E2E_MAIL` 开关，远端执行结果另行记录。
+
+以下 PowerShell 命令在仓库根目录执行；前提是 `DATABASE_URL` 指向已执行 `db:deploy` 的独立测试库，`REDIS_URL` 指向测试 Redis：
+
+```powershell
+docker compose -f infra/docker-compose.yml up -d mailpit
+$env:E2E_DB = '1'
+$env:E2E_MAIL = '1'
+npm run test:e2e -w api
+```
+
+本节证明 HTTP API 与真实 SMTP 邮件闭环，不替代浏览器交互、兼容性或人工截图验收。

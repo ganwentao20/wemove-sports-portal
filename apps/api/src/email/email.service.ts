@@ -56,7 +56,7 @@ export class EmailService implements OnModuleDestroy {
         to,
         subject,
         html,
-        text: html.replace(/<[^>]+>/g, ' '),
+        text: devText,
       });
       this.logger.log(`email sent to=${to} subject="${subject}"`);
     } catch (err) {

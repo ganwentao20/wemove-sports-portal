@@ -2,6 +2,7 @@ import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import type { JwtSignOptions } from '@nestjs/jwt';
 import { randomUUID } from 'node:crypto';
+import type { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { AuditService } from '../audit/audit.service.js';
 import { RedisService } from '../redis/redis.service.js';
@@ -109,29 +110,28 @@ export class AuthService {
   // ---------------------------------------------------------------- 邮箱验证
   async verifyEmail(dto: VerifyEmailDto) {
     const tokenHash = sha256(dto.token.trim());
-    const record = await this.prisma.userToken.findFirst({
-      where: { type: 'EMAIL_VERIFY', tokenHash, consumedAt: null },
-    });
-    if (!record || record.expiresAt.getTime() < Date.now()) {
-      throw new BizException(ERROR_CODES.VALIDATION, 'verification link invalid or expired', 400);
-    }
-
-    await this.prisma.$transaction([
-      this.prisma.user.update({
-        where: { id: record.userId ?? '' },
+    const user = await this.prisma.$transaction(async (tx) => {
+      const { user } = await this.lockUserToken(tx, 'EMAIL_VERIFY', tokenHash);
+      if (user.status !== 'PENDING') this.invalidToken('EMAIL_VERIFY');
+      await tx.user.update({
+        where: { id: user.id },
         data: { status: 'ACTIVE' },
-      }),
-      this.prisma.userToken.update({ where: { id: record.id }, data: { consumedAt: new Date() } }),
-    ]);
+      });
+      await tx.userToken.updateMany({
+        where: { type: 'EMAIL_VERIFY', userId: user.id, consumedAt: null },
+        data: { consumedAt: new Date() },
+      });
+      return user;
+    });
 
     void this.audit.record({
       actorKind: 'CUSTOMER',
-      actorCustomerId: record.userId,
+      actorCustomerId: user.id,
       action: 'auth.email.verify',
       entityType: 'user',
-      entityId: record.userId,
+      entityId: user.id,
     });
-    return { verified: true, email: record.email };
+    return { verified: true, email: user.email };
   }
 
   /** 重发验证邮件：统一返回成功形状（防邮箱枚举） */
@@ -140,16 +140,18 @@ export class AuthService {
     if (await this.exceeded(`wm:rl:resend:${email}`, RL.resendEmail)) {
       throw new BizException(ERROR_CODES.RATE_LIMIT, 'too many emails, try later', 429);
     }
-    const user = await this.prisma.user.findUnique({ where: { email } });
-    if (user && user.status === 'PENDING') {
-      // 作废旧验证码再发新的，避免堆积
-      await this.prisma.userToken.updateMany({
+    const token = await this.prisma.$transaction(async (tx) => {
+      // Resend and verification share the account lock: replacement is atomic.
+      await tx.$queryRaw`SELECT "id" FROM "User" WHERE "email" = ${email} FOR UPDATE`;
+      const user = await tx.user.findUnique({ where: { email } });
+      if (!user || user.status !== 'PENDING') return null;
+      await tx.userToken.updateMany({
         where: { type: 'EMAIL_VERIFY', email, consumedAt: null },
         data: { consumedAt: new Date() },
       });
-      const token = await this.issueToken('EMAIL_VERIFY', email, user.id, 24);
-      await this.email.sendVerification(email, token);
-    }
+      return this.issueToken('EMAIL_VERIFY', email, user.id, 24, tx);
+    });
+    if (token) await this.email.sendVerification(email, token);
     return { ok: true };
   }
 
@@ -262,23 +264,22 @@ export class AuthService {
     const record = await this.prisma.userToken.findFirst({
       where: { type: 'PASSWORD_RESET', tokenHash, consumedAt: null },
     });
-    if (!record || record.expiresAt.getTime() < Date.now()) {
+    if (!record || record.expiresAt.getTime() <= Date.now()) {
       throw new BizException(ERROR_CODES.VALIDATION, 'reset link invalid or expired', 400);
     }
-    const user = await this.prisma.user.findUnique({ where: { email: record.email } });
-    if (!user || user.status === 'SUSPENDED') {
-      throw new BizException(ERROR_CODES.VALIDATION, 'reset link invalid or expired', 400);
-    }
-
+    // Hash outside the transaction, then recheck the token under the account lock.
     const passwordHash = await hashPassword(dto.password);
-    await this.prisma.$transaction([
-      this.prisma.user.update({ where: { id: user.id }, data: { passwordHash } }),
+    const user = await this.prisma.$transaction(async (tx) => {
+      const { user } = await this.lockUserToken(tx, 'PASSWORD_RESET', tokenHash);
+      if (user.status === 'SUSPENDED') this.invalidToken('PASSWORD_RESET');
+      await tx.user.update({ where: { id: user.id }, data: { passwordHash } });
       // 同邮箱全部重置令牌一次性作废（含本次）
-      this.prisma.userToken.updateMany({
-        where: { type: 'PASSWORD_RESET', email: user.email, consumedAt: null },
+      await tx.userToken.updateMany({
+        where: { type: 'PASSWORD_RESET', userId: user.id, consumedAt: null },
         data: { consumedAt: new Date() },
-      }),
-    ]);
+      });
+      return user;
+    });
 
     void this.audit.record({
       actorKind: 'CUSTOMER',
@@ -338,6 +339,31 @@ export class AuthService {
   }
 
   // ---------------------------------------------------------------- 内部工具
+  private invalidToken(type: 'EMAIL_VERIFY' | 'PASSWORD_RESET'): never {
+    throw new BizException(
+      ERROR_CODES.VALIDATION,
+      `${type === 'EMAIL_VERIFY' ? 'verification' : 'reset'} link invalid or expired`,
+      400,
+    );
+  }
+
+  private async lockUserToken(
+    tx: Prisma.TransactionClient,
+    type: 'EMAIL_VERIFY' | 'PASSWORD_RESET',
+    tokenHash: string,
+  ) {
+    const candidate = await tx.userToken.findFirst({ where: { type, tokenHash } });
+    if (!candidate?.userId) this.invalidToken(type);
+    // Lock the account, not just one token: multiple reset links must serialize too.
+    await tx.$queryRaw`SELECT "id" FROM "User" WHERE "id" = ${candidate.userId} FOR UPDATE`;
+    const record = await tx.userToken.findFirst({
+      where: { id: candidate.id, type, tokenHash, consumedAt: null, expiresAt: { gt: new Date() } },
+    });
+    const user = await tx.user.findUnique({ where: { id: candidate.userId } });
+    if (!record || !user || record.email !== user.email) this.invalidToken(type);
+    return { record, user };
+  }
+
   /** 限流计数是否超限（Redis 不可用返回 false=放行） */
   private async exceeded(key: string, limit: { max: number; windowSec: number }): Promise<boolean> {
     const count = await this.redis.incrWithTtl(key, limit.windowSec);
@@ -365,9 +391,10 @@ export class AuthService {
     email: string,
     userId: string | null,
     hours: number,
+    db: Prisma.TransactionClient = this.prisma,
   ) {
     const { token, tokenHash } = newOpaqueToken();
-    await this.prisma.userToken.create({
+    await db.userToken.create({
       data: {
         type,
         tokenHash,

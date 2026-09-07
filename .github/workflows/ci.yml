@@ -40,6 +40,16 @@ jobs:
           --health-interval 5s
           --health-timeout 3s
           --health-retries 20
+      mailpit:
+        image: axllent/mailpit:latest
+        ports:
+          - 1025:1025
+          - 8025:8025
+        options: >-
+          --health-cmd "/mailpit readyz"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 20
     env:
       DATABASE_URL: postgresql://wemove:wemove_dev@localhost:5432/wemove?schema=public
       REDIS_URL: redis://localhost:6379/0
@@ -69,8 +79,13 @@ jobs:
       - name: Apply database migrations
         run: npm run db:deploy
 
-      - name: E2E tests with DB (auth flow, E2E_DB gate)
+      - name: E2E tests with PostgreSQL, Redis and Mailpit
         run: npm run test:e2e -w api
+        env:
+          E2E_MAIL: '1'
+          E2E_MAILPIT_URL: http://localhost:8025
+          E2E_SMTP_HOST: localhost
+          E2E_SMTP_PORT: '1025'
 
       - name: Build api
         run: npm run build:api
