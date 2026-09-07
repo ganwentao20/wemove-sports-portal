@@ -1,4 +1,167 @@
-# WEMOVE SPORTS 测试报告（持续更新版）
+# WEMOVE SPORTS 系统测试报告（v0.6 · 最终整合证据）
+
+版本：v0.6　归档日期：2026-09-08（Asia/Shanghai）。原测试材料编写人：龙祖怡（组员 E）；本次为团队最终整合证据复核，不据此改写成员本人实际贡献或代签验收。本次仅审阅已有报告、源码及 CI 记录，没有重新运行测试或压测。
+
+## 1. 最终结论及版本边界
+
+[GitHub Actions CI #49](https://github.com/ganwentao20/wemove-sports-portal/actions/runs/34147768469) 整体结论为 **success**。已逐项读取该次 `check (22)` 的步骤和原始日志：24 文件 **110 个单测**、21 文件 **169 个数据库/HTTP/邮件用例**、三浏览器引擎及性能任务合计 **67 个 Playwright 用例**通过；29 次迁移、类型检查、lint、API/Web 构建、生产依赖审计、生产容器运行和恢复演练均成功。以上属于不同测试层，不相加称为独立需求覆盖数或“100% 覆盖”。
+
+该结论适用于下列已整合代码树，不沿用开发分支 CI #44、旧 CI #40 或整体失败的 CI #47。后续代码变更仍须对应新提交验证；通过 PR 整合检出不等于 PR 已合入 main 或生产已上线。
+
+| 追溯项 | CI #49 记录 |
+| --- | --- |
+| 源码 head | `0d33eef8a8d1bdd78be20c6977c2f6b1f179aee8` |
+| 已整合的 main 提交 | `5642da28542373bbe747dd941b8c0394a5b8c4ed` |
+| PR #10 的 CI 整合检出 | `d35819d2614a43aa06c24a338576821955ecb09c` |
+| 实测 tree | `9c5e9dbd57f722e5471e013d90db70b1ffabf99d` |
+| 一致性检查 | `mainIncluded=true`、`sourceAndCheckoutTreesMatch=true` |
+| 证据时间 | 日志为 2026-09-07 17:29–17:38 UTC，即北京时间 2026-09-08 01:29–01:38 |
+
+映射见 artifact 的 `.local/acceptance-revision.json`。完整 [CI #49 artifact](https://github.com/ganwentao20/wemove-sports-portal/actions/runs/34147768469/artifacts/10028492738) 名称为 `integrated-acceptance-d35819d2614a43aa06c24a338576821955ecb09c`。核心 JSON、四模板 Lighthouse 原始结果及三张页面截图已按原字节保存至[仓库证据目录](evidence/ci49/README.md)，附源路径和 SHA-256 清单，可在 Actions artifact 到期后复核。它们是 CI 下载证据，不是本次文档归档新运行的结果。
+
+## 2. 最终测试环境及自动化结果
+
+CI 使用 Ubuntu 24.04 runner、Node 22.23.2、`npm ci` 安装的仓库锁定依赖；Next.js 16.3.4、NestJS 12、Vitest 4.1.11。数据库/缓存/邮件服务为 PostgreSQL 16、Redis 7、Mailpit。CI 的 Redis URL 使用逻辑库 0；此前 Windows 独立测试库、Redis 3 或 14 的记录均属于各自历史运行，不能写成 CI 环境。
+
+浏览器入口使用测试专用 `https://127.0.0.1:3443`，代理到 Web 3000；API 为 8080，业务 API 统一前缀 `/api/v1`。测试上下文允许临时自签证书，生产 `Secure`、`HttpOnly`、`SameSite=Strict` 会话 Cookie 保持不变。修复 HTTP 下 WebKit 拒收 Secure Cookie 的测试环境问题，不以伪造会话绕过真实登录。
+
+| CI #49 检查 | 最终结果 | 可复核证据 |
+| --- | --- | --- |
+| 依赖安装、Prisma Client、类型、lint | 全部通过 | job `101823414708` 对应步骤 |
+| 生产依赖审计 | `npm audit --omit=dev --audit-level=high` 成功，日志为 0 漏洞 | 同次 job；不等于不存在未知漏洞 |
+| 单测 | 24 文件、110 用例通过 | `Unit tests` 原始日志 |
+| 空库迁移 | 29 次迁移应用成功 | `Apply database migrations` |
+| DB/HTTP/Mailpit | 21 文件、169 用例通过，无跳过 | `E2E tests with PostgreSQL, Redis and Mailpit`；不是旧 19、42 或 168 项 |
+| API/Web 生产构建 | 均通过 | Next 生成阶段 48/48 完成并输出实际路由表；这个数字不是业务页面总数 |
+| 浏览器、无障碍及性能任务 | 67/67 通过：Chromium、Firefox、WebKit 各 22 个业务/界面场景，加 1 个性能任务 | `Browser and accessibility acceptance`、`playwright-report/` |
+| 生产包装 | API、migrate、Web、Postgres、scanner 镜像构建及 Caddy/Prometheus 配置检查通过 | `Validate production packaging` |
+| 真实隔离运行与恢复 | 29 迁移；API ready、Web、同源代理成功；未登录私有代理 401 | `.local/ops-runtime-report.json` 的 `passed=true` |
+| DB/媒体恢复 | 独立数据库 62 表逐表行数核对；4096 字节随机媒体样本字节核对；应用恢复健康 | runtime 报告 `fullBackupRestore`；不是生产真实媒体全量验收 |
+| 病毒引擎/PITR | 真实 ClamAV clean/EICAR/未授权 401/引擎停机 503；WAL 恢复保留目标前标记、不保留目标后标记 | `.local/ops-scanner-report.json`、`.local/ops-pitr-report.json` 均通过 |
+
+单独 `.local/ops-restore-report.json` 只验证数据库（`mediaRestored=false`）；媒体恢复证据来自随后 runtime 报告。不得把两个报告的范围互相替换。
+
+## 3. 当前功能、角色和安全口径
+
+下列“通过”指 CI #49 中相应自动化回归通过，不代表所有职能账号已经人工逐按钮签字。
+
+| 场景 | 当前行为与安全边界 | 主要回归 |
+| --- | --- | --- |
+| 注册、验证、密码与会话 | 年龄/协议校验；验证和重置令牌哈希存储、一次性及并发消费；停用用户不可借旧链接激活；真实 SMTP 邮件闭环 | auth-flow、auth-token、auth-mail、identity-flow |
+| 会话撤销 | 受保护请求校验 JWT 及持久 AuthenticationSession、账号状态、authVersion、会话撤销/过期；旧会话在登出/改密/停用后失效，不能仅概括为 Redis 黑名单 | auth/identity 回归 |
+| 员工登录与动作权限 | 密码步骤返回 MFA challenge，完成 MFA 才取得有效员工会话；每次请求重读当前权限/撤权；敏感写操作还校验当前 MFA 码。客服、内容、商品、经销商运营、管理员及超级管理员按权限区分，普通客户令牌不能充当员工 | identity-flow、roles.guard、MFA 回归；三引擎真实员工登录 |
+| 经销商边界 | 未批准/停用企业和非活动成员不可取企业数据；首次同意当前版本条款；OWNER/BUYER/VIEWER 权限分离，VIEWER 禁止采购写入；员工用专用 admin 路由 | dealer-lifecycle、b2b-flow、identity-flow |
+| 授权价格与资料 | 企业/产品/变体/区域授权和实时撤权；企业专属价、价表、等级、默认价按规则决策；数量、币种和有效期重核 | b2b-flow、pricing、media-lifecycle |
+| 公开商品字段 | 允许返回面向消费者的零售价：列表 `priceCents`、详情变体 `price.priceCents`；不暴露内部 `b2bDefaultPriceCents`，不直接输出变体原始 `msrpCents`/`salePriceCents`。不能写成“公开接口无价格” | catalog-smoke、retail-commerce |
+| 价格规则后台 | 页面 `/admin/pricing`，API `/api/v1/admin/pricing-rules`；需员工有效会话及 `catalog:price:write` 等当前授权，敏感写操作 MFA。无有效令牌通常 401；已认证但无权限 403 | pricing-admin、identity/RBAC |
+| B2B 采购与售后 | CSV 表头/MOQ/倍数/箱规、RFQ 版本/期限、PO 快照、分批发货、复购；员工代建保存实际员工与理由，不伪造客户条款同意；全额/部分退款、线下真实流水确认、线上不确定结果重试和库存幂等 | b2b-flow、b2b-after-sales；三引擎 dealer-journey |
+| 零售与库存 | 支付签名/金额/币种/幂等、退货私有证据及退款补偿；全局与市场库存一致加锁。默认现货防超卖；明确开启的预订/缺货订购可在上限内为负可用量，出库另核实物库存，不能笼统写“所有库存永不为负” | order-flow、retail-commerce、return-evidence |
+| 媒体权限 | PUBLIC、REGISTERED、DEALER_ONLY、INTERNAL 四级。注册/经销商下载签发前验证当前身份和授权；资格/售后附件由各业务归属及后台权限校验；原文件和衍生图同权限 | media-lifecycle、b2b-flow、identity-flow、return-evidence |
+| 上传与文件生命周期 | 资格文件 JPG/PNG/PDF ≤5 MiB；后台媒体 JPG/PNG/WebP/PDF/MP4/WebM ≤50 MiB。MIME/扩展/签名字节/大小、扫描、checksum、版本、响应式图片、真实引用保护、删除重试 | media-lifecycle；真实 ClamAV 容器报告 |
+| CMS、联系及审计 | 草稿/未来发布内容不公开；联系校验/反垃圾/状态跟踪；富文本过滤；敏感变更与业务审计 | platform-flow、contact-triage、public-submission、CMS 浏览器场景 |
+
+媒体链接不是“任何持有效签名者还必须再次登录”。账号下载入口 `/api/v1/media/:id/access` 校验授权后签发资源 ID + 到期时间的 HMAC bearer URL，最长 300 秒；到期或签名篡改被拒。后台 `/api/v1/media/:id/sign` 是独立权限入口，期限上限不同（86400 秒），不能把所有链接统称为“按人绑定/统一 300 秒”。非公开原文件无有效签名不能直接下载；PUBLIC 已发布且扫描状态允许时可公开访问。尚未同意经销商条款的已注册用户只能保留 REGISTERED 访问，不能获得 DEALER_ONLY 授权。
+
+全局 IP 限流代码默认固定 60 秒窗口、12000 次，超限 HTTP 429/code 42900，支持环境配置；健康探针豁免。Redis 不可用时该全局计数器降级放行，因此不能将它描述为无条件限流保证。账号防爆破、MFA、注册/邮件频率控制另有各自规则。CI 回归验证相关逻辑，不等于在本次 head 重做了 100 连接默认限流压测。
+
+## 4. 当前路由与实际浏览器覆盖
+
+| 入口 | 浏览器页面 | API 范围（统一 `/api/v1` 前缀） |
+| --- | --- | --- |
+| 公开目录、资料与内容 | `/products`、`/products/[slug]`、`/content/[slug]`、`/support/downloads` | `/products`、`/cms/pages`、`/media/public`；公开经销商 `/dealer/directory` |
+| 客户认证/账户/订单 | `/customer/register`、`/customer/login`、`/customer/account`、`/orders/[id]`；验证/重置页为 `/verify-email`、`/forgot-password`、`/reset-password` | `/auth/*`、`/account/*`、`/orders/*` |
+| 经销商 | `/dealer/apply`、`/dealer/application`、`/dealer/login`、`/dealer/terms`、`/dealer/catalog`、`/dealer/quick-order`、`/dealer/procurement`、`/dealer/company`、`/dealer/downloads` | `/dealer/*`；采购单售后 `/dealer/purchase-orders/:id/after-sales` |
+| 后台 | `/admin/login`、`/admin/products`、`/admin/pricing`、`/admin/orders`、`/admin/b2b`、`/admin/dealers`、`/admin/cms`、`/admin/media`、`/admin/roles`、`/admin/reports` 等 | `/admin/*`；媒体管理为 `/media/*` 的受保护动作，页面名不自动等于 API 名 |
+
+Next 同源会话路由 `/api/session/[kind]/login` 和私有代理 `/api/secure/[kind]/[...path]` 不属于上述 Nest `/api/v1` 业务前缀。构建日志包含当前路由清单，不再引用旧“31 页”作为最终页面数量。
+
+三引擎均完成真实客户登录、员工密码/MFA、经销商首次条款→CSV→RFQ→报价转 PO→中文地址→授权 PDF/匿名拒绝→退款申请，以及零售购物车/结算/演示付款/授权 PDF。公开模板按 360、390、768、1024、1440、1920 六种宽度检查横向溢出；指定页面 axe critical/serious 检查通过。它们不等于全部 WCAG 成功标准或真机人工验收。CI 的 `test-results/` 保留首页 390/1440 截图和后台 CMS 截图，`playwright-report/` 保留运行详情。
+
+## 5. CI #49 性能结果：浏览器与 API 分开记录
+
+来源：同次 artifact `.local/lighthouse/summary.json` 及四模板各 3 份 JSON/HTML。生成时间 2026-09-07 17:36:08 UTC。生产构建、Chromium new headless、Lighthouse 移动模拟；每个模板 3 次冷浏览器运行，LCP/TBT 取中位数、CLS 取最差值。
+
+| 模板 | LCP 中位数（ms） | 三次 LCP 原样本（ms，四舍五入） | CLS | TBT 中位数（ms） | Performance / Accessibility |
+| --- | ---: | --- | ---: | ---: | --- |
+| 首页 | 2267 | 2163 / 2267 / 2281 | 0 | 101 | 98 / 100 |
+| 商品列表 | 2340 | 2359 / 2340 / 2338 | 0 | 50.5 | 98 / 100 |
+| 商品详情 | 2395 | 2407 / 2320 / 2395 | 0 | 44.5 | 98 / 100 |
+| 文章 | 2259 | 2259 / 2257 / 2268 | 0 | 94 | 98 / 100 |
+
+同任务对 5 个公开 API 分别预热后按 6 批 × 5 并发采集 30 个样本，等待完整响应体；按升序第 `ceil(30×0.95)` 个样本计算 P95。该方法是有限样本接口回归，不是 100 并发容量压测或“90% 浏览 + 10% 登录”混合负载。
+
+| API 路径（均加 `/api/v1`） | 样本数 | P95（ms） |
+| --- | ---: | ---: |
+| `/products?pageSize=20&market=US` | 30 | 44.63 |
+| `/products/ring-toss-outdoor-game-set?market=US` | 30 | 45.01 |
+| `/search?q=bowling&market=US` | 30 | 50.55 |
+| `/cms/pages?kind=ARTICLE&market=US` | 30 | 28.55 |
+| `/site/config` | 30 | 16.42 |
+
+该轮满足测试脚本的实验室门禁 LCP ≤2500ms、CLS ≤0.1、API P95 <500ms。API 延迟、LCP、TBT、INP 是不同指标；不能把旧 P99 ≤134ms 换算成网页 LCP、把 TBT 写成实测 INP，或据 localhost/CI 数据宣称公网 SLA、真实移动网络和地理流量均达标。
+
+## 6. 历史测试保留与原 Word 的修订说明
+
+历史源 A：龙祖怡 `测试报告-v0.2-性能数据更新.docx`；原件由用户本地保留，其哈希和公开审校版见[成员材料归档](archive/member-submissions-20260908/README.md)。历史源 B：本文件原 v0.5 与 [首版压测方案](plans/load-test-plan.md)。本次已逐页查看原 Word 的全部10页，确认其中有真实截图，具体核对见第6.4节；查看截图不等于重新运行测试。
+
+### 6.1 历史功能/工程基线
+
+| 时间/来源 | 保留的历史记录 | 本次如何使用 |
+| --- | --- | --- |
+| 2026-09-06，源 A，E1/E2、PR #2/#5 | 3 文件19 e2e：app 12、auth-flow 2、catalog-smoke 5；p3截图可读3/19通过，p4为CI #17/#21/#22；原文关联 main `7caada8` | 保留历史截图和来源；不是 CI #49 的计数，也不单凭构建证明全部业务完成 |
+| 2026-09-07，原 v0.5/CI #40 | 旧冻结 `5c9d5bf`、69 单测；先33项DB回归（含13项B2B），后含真实SMTP的42项回归；8迁移、旧31页构建记录 | 保留各时点范围，不累计成新总数；原文见下方历史附录 |
+| 原 v0.5 的本地浏览器受阻/Mailpit准备 | 曾有仅构建、SMTP握手就绪、浏览器未执行或截图待补的时点 | 属当时状态，已由后续真实 SMTP/浏览器/CI49证据补充，不继续写作当前阻塞 |
+| CI #47 | 单测/业务浏览器通过但生产运行迁移失败，整体失败 | 保留缺陷闭环：Compose受宿主环境变量干扰；修复后以CI49整步成功关闭自动化项 |
+
+### 6.2 历史 100 连接只读容量数据（不得移植至新 SHA）
+
+两份来源均记载 2026-09-06、Windows 单机 dev watch、autocannon 8.0.0、100 连接 × 30 秒；容量场景把 `GLOBAL_RATE_LIMIT_PER_MIN` 提至 600000。源A的p8/p9终端截图与其134/103ms表格一致（详情Avg截图为73.61ms，表格取一位小数）。源B记录另一组数值；缺少完整时间/SHA和跨来源轮次映射，故分表保留，不择优、不求合并平均、不将“可复现”改写为本次已复测。
+
+| 历史源 A（龙祖怡 Word） | 总请求/时长 | Avg | P99 | Max | Req/s | 原报告错误数 |
+| --- | --- | ---: | ---: | ---: | ---: | ---: |
+| 商品列表 | ≈33k / 30.15s | 92.1ms | 134ms | 274ms | ≈1082 | 0 |
+| 商品详情 | ≈41k / 30.12s | 73.6ms | 103ms | 158ms | ≈1351 | 0 |
+
+| 历史源 B（v0.5/压测方案） | 总请求/时长 | Avg | P99 | Max | Req/s | 原报告错误数 |
+| --- | --- | ---: | ---: | ---: | ---: | ---: |
+| 商品列表 | ≈34k / 30s | 88.9ms | 132ms | 264ms | ≈1121 | 0 |
+| 商品详情 | ≈42k / 30s | 70.6ms | 93ms | 129ms | ≈1409 | 0 |
+
+这些数据仅支持当时只读场景的容量基线记录。原文“P99远低于2.5秒，因此满足页面首屏N-01”应改为“API基线与浏览器首屏分开验证”；原文“满足N-02”应限定当时的只读场景。当前 head 尚无该规模的100连接或90/10登录混合负载新证据；CI49的5并发样本不能补算此项。
+
+### 6.3 历史默认限流数据
+
+| 2026-09-06 默认限流场景 | 历史2xx | 历史非2xx（原报告归为429） |
+| --- | ---: | ---: |
+| 商品列表 | 12000 | ≈66247 |
+| 商品详情 | 11279 | ≈79796 |
+
+保留数据及原源，不再把两行都写为“精确放行12000”。详情11279与12000不同；固定窗口起点、连续测试是否共享IP/窗口及逐响应记录尚不足，不能猜测原因。该历史记录说明当时出现限流响应；当前默认阈值由源码核对，未在CI49重新完成同样的100连接阈值压测。429属于限流安全验证结果，应与提限容量场景的应用错误数分开统计。
+
+原 Word p6 的图4-1另可读出：商品列表 **12000个2xx、71659个non-2xx、约84k请求/30.12s**；Avg35.45ms、P99 133ms、Max300ms。它与p5表格的66247个非2xx并非同一数值，应保留为“截图所示另一记录，轮次待核”，不能静默改成与表格一致。图片只分类non-2xx，没有逐响应状态明细，不能仅由该截图认定每个非2xx都是429。
+
+### 6.4 原 Word 十页视觉复核与归档处理
+
+真实截图不是占位框：p2为Docker三容器healthy；p3为Vitest 3文件/19通过；p4为CI #17/#21/#22及Mailpit收件列表；p6为限流终端；p8/p9为两份容量终端；p9末为单发登录结果。图片能佐证各自显示的数据，未显示最终CI49源码SHA，不能改图题后冒充新版截图。
+
+原件不建议不加处理直接公开入库。p5账号表有明文演示密码；p9登录截图含测试密码和JWT前缀。该JWT在截图中以省略号结尾，未见完整签名，本次没有验证它可用，也不称“完整令牌泄露”。公开历史副本应删除整张登录截图及DOCX内对应媒体文件（图片8，`rId13`，`word/media/image8.png`），保留登录成功文字并注明移除原因；密码表改为本地Seed初始化说明，不再列出密码。p4 Mailpit只见测试邮箱/邮件摘要，未见可用的验证或重置链接。原件可作受控本地历史材料保留，Git/正式共享包采用另存的审校历史副本，并附本报告的版本/数值勘误，不覆盖原始证据或修改保留截图中的数字。
+
+版式勘误：p2→p3同一表格行被拆页，p4 Mailpit图片与p5图题分离；p7/p8/p10有大块留白。新排版宜让表格行与图题保持相邻并改善分页。历史截图应保持原内容，脱敏必须标明，不将新旧终端输出拼成一次运行。
+
+## 7. 最终自动化已关闭项与仍需验收项
+
+最终自动化整合项以 CI49 全部步骤成功关闭。真实商户收款/退款、银行到账、法定票据及业务数据、生产SMTP/域名认证、DNS/TLS/异地切流、真实媒体库规模恢复、当前/前一版浏览器与 iOS/Android 真机、完整人工无障碍、现场 INP/p75 和月度可用率仍需相应环境与人员验收，不能由本报告代签。新增100并发及登录混合压测也仍须在最终目标环境实际执行并归档，不能换用历史数据。
+
+当前 Word 提交候选件使用本报告第1～7节，保留历史数据的来源与限制。公开历史副本已删除登录截图和示例密码，其他七张图片字节未修改；最终 CI 截图另存证据目录。后台登录现在要求 MFA，早期演示账号步骤不能替代当前操作手册。下方旧 v0.5 全文仅供过程追溯。
+
+## 附录：原 v0.5 历史全文（不代表当前状态）
+
+以下折叠内容原样保留用于追溯。其“当前”“最终”“通过/待测”、计数、环境、媒体5MB等文字均指旧报告时点；若与v0.6第1～7节不一致，以各自明确版本和证据为准，不复制成新结果。
+
+<details>
+<summary>展开原 v0.5 报告（2026-09-07）</summary>
+
+# WEMOVE SPORTS 测试报告（持续更新版，历史 v0.5）
 
 版本：v0.5　日期：2026-09-07　责任人：龙祖怡（组员 E）/ 全员复测；本轮认证回归：甘文韬
 
@@ -130,3 +293,5 @@ npm run test:e2e -w api
 ```
 
 本节证明 HTTP API 与真实 SMTP 邮件闭环，不替代浏览器交互、兼容性或人工截图验收。
+
+</details>

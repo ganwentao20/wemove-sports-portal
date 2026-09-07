@@ -1,0 +1,55 @@
+{
+  "date": "2026-09-08",
+  "scope": "本次七份审核导出文档；并非成员签字或软件运行验收。",
+  "outputs": [
+    {
+      "path": "docs/deliverables/下午班-08组-WEMOVE-SPORTS-大模型辅助实践说明-v1.0.docx",
+      "sha256": "c40f23f8d20e769e4d8d71a722ca52d5613f8506894d6834ca3f9b3f9fec16fa",
+      "bytes": 41844,
+      "pages": 3,
+      "allPagesVisuallyReviewed": true
+    },
+    {
+      "path": "docs/deliverables/Web开发技术现状报告_陈婧琳.docx",
+      "sha256": "6f84fdde7e04fd96bc1c7c520277047bd9d6aebb180c58a68573a66c6839b1f3",
+      "bytes": 40556,
+      "pages": 2,
+      "allPagesVisuallyReviewed": true
+    },
+    {
+      "path": "docs/deliverables/Web开发技术现状报告_龙祖怡.docx",
+      "sha256": "6e8d9aeedf46edf150ff4882a58d31f9b3ba1638ef2c0f752f0ec045313971e5",
+      "bytes": 40452,
+      "pages": 2,
+      "allPagesVisuallyReviewed": true
+    },
+    {
+      "path": "docs/deliverables/Web开发技术现状报告_倪依玲.docx",
+      "sha256": "513b5d08996e4ec9e38d3649f7a5e66827e74ebcb6a7966f1a51338ab8101b7d",
+      "bytes": 40515,
+      "pages": 2,
+      "allPagesVisuallyReviewed": true
+    },
+    {
+      "path": "docs/deliverables/成员A-需求分析-审核稿-v1.0.docx",
+      "sha256": "351384c733acfeed6f2b2856bcd7f9eef52f6d920379055a7545bd12e48d52c3",
+      "bytes": 48185,
+      "pages": 7,
+      "allPagesVisuallyReviewed": true
+    },
+    {
+      "path": "docs/deliverables/下午班-08组-WEMOVE-SPORTS-测试报告-v0.6.docx",
+      "sha256": "7c15d70c17858f90c3ef7298a62888bbb99ed6316b941726ff8aab754f09d7dd",
+      "bytes": 51127,
+      "pages": 8,
+      "allPagesVisuallyReviewed": true
+    },
+    {
+      "path": "docs/archive/member-submissions-20260908/测试报告-v0.2-性能数据更新-历史审校版.docx",
+      "sha256": "65757fa1f1cf0b85b5aadee3cfd693070ecb655451687d54aed9911a4f472be6",
+      "bytes": 403402,
+      "pages": 8,
+      "allPagesVisuallyReviewed": true
+    }
+  ]
+}

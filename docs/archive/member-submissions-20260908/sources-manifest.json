@@ -1,0 +1,43 @@
+[
+  {
+    "sourceId": 1,
+    "submittedFilename": "大模型辅助实践说明.docx",
+    "archive": "docs/archive/member-submissions-20260908/大模型辅助实践说明_周慧莹_原稿.docx",
+    "sha256": "527e407614d58a12c1f90b644cbd2bc0f01124aca55183f0442da55d517cf1b4",
+    "status": "历史原稿，当前提交件以审核版为准"
+  },
+  {
+    "sourceId": 2,
+    "submittedFilename": "大模型使用说明.docx",
+    "archive": "docs/archive/member-submissions-20260908/大模型使用说明_陈婧琳_原稿.docx",
+    "sha256": "22a34c749b1529fd42c8c684009726278466199e377699a401eb9ed07e0ae737",
+    "status": "历史原稿，当前提交件以审核版为准"
+  },
+  {
+    "sourceId": 3,
+    "submittedFilename": "创新实践2思政报告_24151010_龙祖怡.docx",
+    "archive": "docs/archive/member-submissions-20260908/技术现状报告_龙祖怡_原稿.docx",
+    "sha256": "ae1f0cc192193b634fb1429d642636dcdfcf6cd15682016ab29258a79012aa17",
+    "status": "历史原稿，当前提交件以审核版为准"
+  },
+  {
+    "sourceId": 5,
+    "submittedFilename": "成员A_需求分析 (1).docx",
+    "archive": "docs/archive/member-submissions-20260908/成员A需求分析_原稿.docx",
+    "sha256": "6b414313222eef0a516456003e0f69eb384e26a71113735711cc882b888cd704",
+    "status": "历史原稿，当前提交件以审核版为准"
+  },
+  {
+    "sourceId": 6,
+    "submittedFilename": "软件开发实践2思政报告_24151009_陈婧琳.docx",
+    "archive": "docs/archive/member-submissions-20260908/技术现状报告_陈婧琳_原稿.docx",
+    "sha256": "051ac96ca672ba401fed11187cb7a12aba947c4bba3bcb4c73f81baae8c09077",
+    "status": "历史原稿，当前提交件以审核版为准"
+  },
+  {
+    "sourceId": 4,
+    "submittedFilename": "测试报告-v0.2-性能数据更新.docx",
+    "sha256": "d54d5368aebb2b697113d86803b7bfe4f96693d942f97af0c2b0e504be737bec",
+    "status": "原文件留在用户本机；仓库只收删除认证截图及示例密码的历史审校副本"
+  }
+]

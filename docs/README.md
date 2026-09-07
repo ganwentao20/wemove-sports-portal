@@ -2,6 +2,8 @@
 
 > 本目录存放**过程性/规范类**材料。课程最终提交件（④需求文档、⑤测试报告、⑥答辩PPT 等）见下方「交付物清单与红线」。
 
+2026-09-08 更新：[当前 Word 交付件索引](deliverables/README.md)、[材料审核与项目完成度](plans/document-review-20260908.md)、[交付就绪清单](delivery-readiness.md)。五人 AI 汇总和五份个人 AI 说明已齐；独立技术现状/思政报告已归档 3/5，首次实际会议纪要已归档，测试报告已升至 v0.6 并保存 CI #49 整合证据。
+
 ## 成员花名册（命名与分工引用，2026-09 确认）
 
 | 编号 | 姓名 | 分工 |
@@ -26,7 +28,10 @@
 | `plans/initial-tasks.md` | 全员首个任务拆解卡 + 组长任务队列 + 例会#1 议程 | 组长维护 |
 | `plans/requirements-outline.md` | 需求文档（④整合版）目录大纲与章节分工 | 组长牵头 |
 | `requirements.md` | 项目需求文档 v0.4（课程基线、验收标准、需求追踪） | 组长牵头 |
-| `test-report.md` | 测试环境、功能/安全/性能证据、缺陷与待补截图 | E 牵头/全员复测 |
+| [`test-report.md`](test-report.md) | v0.6 最终整合测试与历史勘误；[原始证据](evidence/ci49/README.md) | E 原稿/团队整合复核 |
+| [`ai-assistance-summary.md`](ai-assistance-summary.md)、[`ai-usage/`](ai-usage/README.md) | 五人大模型辅助说明和五份个人说明 | 各成员陈述/团队整理 |
+| [`individual-reports/`](individual-reports/README.md) | 各自独立技术现状/思政报告，已收 3/5 | 各成员本人 |
+| [`meetings/2026-09-04-meeting-01.md`](meetings/2026-09-04-meeting-01.md) | 首次真实会议，保留历史六名参会者及后续分工注记 | 陈婧琳记录 |
 | `operation-manual.md` | 当前四门户操作步骤与安全注意事项 | D 牵头 |
 | `delivery-readiness.md` | 最终交付物现状、责任人与停止线 | 组长统筹 |
 | `deliverables/下午班-08组-WEMOVE-SPORTS-项目需求文档-v0.4.docx` | 已排版的 Word 需求文档（提交候选件） | 组长统筹 |
@@ -40,7 +45,7 @@
 | `plans/schedule-current.md` | 第 8 组当前进度计划（动态更新） | 组长统筹 |
 | `drafts/` | 需求文档 v0.1 初稿等过程稿（评审升版，终稿线下归档） | 组长统筹 |
 | `development-conventions.md` | 开发/安全/合规注意事项与 Git 协作规范（根 README 只放项目信息，注意事项统一收于此） | 组长维护 |
-| `api/` | API 相关规范（见 `apps/api/README.md`，数据字典由组员 C 认领后亦可放此） | 组员 C |
+| [`apps/api/README.md`](../apps/api/README.md) | 已有 API 一览；[C 历史数据字典 v1.0 已审核归档](api/data-dictionary-review-20260908.md)，当前完整字典仍需同步新增模型 | 组员 C 负责核对 |
 | 根目录 `README.md` | 全仓总览（仅项目信息）：简介/架构/分工/快速开始 | 组长 |
 
 ## 交付物清单与红线（《软件开发实践2》考核要求）

@@ -1,0 +1,30 @@
+{
+  "startedAt": "2026-09-07T17:38:13.018Z",
+  "engineImage": "clamav/clamav:stable",
+  "scannerImage": "wemove-scanner:ci",
+  "network": "wemove_scan_drill_1788802693018",
+  "engine": "wemove_clam_drill_1788802693018",
+  "scanner": "wemove_scan_gateway_1788802693018",
+  "passed": true,
+  "clean": {
+    "status": 200,
+    "body": {
+      "clean": true
+    }
+  },
+  "eicar": {
+    "status": 200,
+    "body": {
+      "clean": false
+    }
+  },
+  "unauthorized": {
+    "status": 401,
+    "body": {
+      "error": "Unauthorized"
+    }
+  },
+  "unavailable": 503,
+  "finishedAt": "2026-09-07T17:38:25.514Z",
+  "containersStopped": true
+}

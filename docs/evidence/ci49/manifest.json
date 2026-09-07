@@ -1,0 +1,137 @@
+{
+  "runNumber": 49,
+  "runId": 34147768469,
+  "jobId": 101823414708,
+  "artifactId": 10028492738,
+  "artifactName": "integrated-acceptance-d35819d2614a43aa06c24a338576821955ecb09c",
+  "artifactZipSha256": "7e49ca352f64ca8701cbafd3852e611da5eb8840fa2ab0356c4f6371c3193f88",
+  "archiveDate": "2026-09-08",
+  "files": [
+    {
+      "artifactPath": ".local/acceptance-revision.json",
+      "archivePath": "acceptance-revision.json",
+      "bytes": 366,
+      "sha256": "1fee6ad5a511d2a9744285b7018e6ea9d5d63d76881aa91cc0c295a6cf61a2a3"
+    },
+    {
+      "artifactPath": ".local/ops-runtime-report.json",
+      "archivePath": "ops-runtime-report.json",
+      "bytes": 3658,
+      "sha256": "9b6665ef0788aa0a7b21840e6f3157c5f82284f619392dd50b834fb16521d7bd"
+    },
+    {
+      "artifactPath": ".local/ops-restore-report.json",
+      "archivePath": "ops-restore-report.json",
+      "bytes": 409,
+      "sha256": "7c1f3324c6eaece150dd0660cf1c13991b5028ddf231872d7f3b604b74ec86cf"
+    },
+    {
+      "artifactPath": ".local/ops-scanner-report.json",
+      "archivePath": "ops-scanner-report.json",
+      "bytes": 632,
+      "sha256": "700abc39d53a798cffa63e847af42731bc0926e0dcd3dc3e87e9dc41230f1c80"
+    },
+    {
+      "artifactPath": ".local/ops-pitr-report.json",
+      "archivePath": "ops-pitr-report.json",
+      "bytes": 1231,
+      "sha256": "4f21c0e9716abfb7a9616bae89b32a29fe75b84175b3fcaa67b275816a91a49e"
+    },
+    {
+      "artifactPath": ".local/lighthouse/article-1.json",
+      "archivePath": "lighthouse/article-1.json",
+      "bytes": 642930,
+      "sha256": "9cdad23091fdfd393f4ce9ae778ae9ff808695fdeef31b8d144ba6ccff638424"
+    },
+    {
+      "artifactPath": ".local/lighthouse/article-2.json",
+      "archivePath": "lighthouse/article-2.json",
+      "bytes": 642397,
+      "sha256": "e7de9dfefe73243376bcb34855abd18d2affe365de7a6a9d62ef98c59c57564a"
+    },
+    {
+      "artifactPath": ".local/lighthouse/article-3.json",
+      "archivePath": "lighthouse/article-3.json",
+      "bytes": 642748,
+      "sha256": "c5938520fabb76e4a94be6a654bd40204042182287176ac12a9b294958aeafd9"
+    },
+    {
+      "artifactPath": ".local/lighthouse/home-1.json",
+      "archivePath": "lighthouse/home-1.json",
+      "bytes": 680125,
+      "sha256": "d1e3f45526905a87f26f5bd83cdb72bed2c6ddace2f82cff9a6b913302f4ec66"
+    },
+    {
+      "artifactPath": ".local/lighthouse/home-2.json",
+      "archivePath": "lighthouse/home-2.json",
+      "bytes": 680745,
+      "sha256": "7dbf08c632d9d5b118e629fab66ef572bf257793e9eb326700c46716d5c06613"
+    },
+    {
+      "artifactPath": ".local/lighthouse/home-3.json",
+      "archivePath": "lighthouse/home-3.json",
+      "bytes": 680492,
+      "sha256": "501458633a97bce8172e2d5917c36a6aecb6dbd2ceeedea447d7c9dceaef3015"
+    },
+    {
+      "artifactPath": ".local/lighthouse/product-1.json",
+      "archivePath": "lighthouse/product-1.json",
+      "bytes": 672006,
+      "sha256": "f54f4f61ae403716a24959bb03c191ee4c6843b032f44ff7e71fff530fd12845"
+    },
+    {
+      "artifactPath": ".local/lighthouse/product-2.json",
+      "archivePath": "lighthouse/product-2.json",
+      "bytes": 671546,
+      "sha256": "e87866080d99a6ce05401fa1ca622c6b37cca8f9504cc190b43de2f9bbd26c2b"
+    },
+    {
+      "artifactPath": ".local/lighthouse/product-3.json",
+      "archivePath": "lighthouse/product-3.json",
+      "bytes": 671661,
+      "sha256": "e53efc3644ea66f8bc655ae9e4f4039690c459b9700f4ee86db12da4b74e5cfd"
+    },
+    {
+      "artifactPath": ".local/lighthouse/products-1.json",
+      "archivePath": "lighthouse/products-1.json",
+      "bytes": 654776,
+      "sha256": "e0e29b2bab7cf76b5cb229f759bc5247bda6fdd7537f470e72a2255456eddc83"
+    },
+    {
+      "artifactPath": ".local/lighthouse/products-2.json",
+      "archivePath": "lighthouse/products-2.json",
+      "bytes": 654760,
+      "sha256": "062a6dbb1eeecb23b833399e460b159c0f1b74e8ac5e6436d414c8757167dcdb"
+    },
+    {
+      "artifactPath": ".local/lighthouse/products-3.json",
+      "archivePath": "lighthouse/products-3.json",
+      "bytes": 654759,
+      "sha256": "de8c6ed2ca4889e9332daf14f2d44edad8827915c6052adb841a45e407ed0a19"
+    },
+    {
+      "artifactPath": ".local/lighthouse/summary.json",
+      "archivePath": "lighthouse/summary.json",
+      "bytes": 1821,
+      "sha256": "b78c6506340b634681f4ecb762c4992d3349d8132b80fdcbe45fcd3eeee0fb9c"
+    },
+    {
+      "artifactPath": "test-results/admin-cms.png",
+      "archivePath": "screenshots/admin-cms.png",
+      "bytes": 382561,
+      "sha256": "46a64ad7857890a325432b724e56f480bff2ecc302cfd01f461d6756b93db41b"
+    },
+    {
+      "artifactPath": "test-results/home-1440.png",
+      "archivePath": "screenshots/home-1440.png",
+      "bytes": 1681341,
+      "sha256": "ef0c0282af795e1b9311608775c0b3b145a7e878fbad68d4da6c4222894649d7"
+    },
+    {
+      "artifactPath": "test-results/home-390.png",
+      "archivePath": "screenshots/home-390.png",
+      "bytes": 863512,
+      "sha256": "1c7b477386ea6f9c5278f7c2b97e573926db95b09064be8427a522b1d3276f91"
+    }
+  ]
+}
