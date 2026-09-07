@@ -6,8 +6,10 @@
 |---|---|---|
 | `app/(storefront)/` | 品牌官网：`/` `/products`(PLP) `/products/[slug]`(PDP) `/compare` `/play-learn` `/support` `/contact` `/search` | 组员 A |
 | `app/customer/` | B2C 用户中心：login/register/account | 组员 A（API：组长/组员 C） |
-| `app/dealer/` | 经销商门户：apply/login/dashboard/quick-order（RFQ/PO 依联合状态机决策） | 组员 B |
+| `app/dealer/` | 经销商门户：apply/login/dashboard/quick-order/procurement（版本 RFQ 与企业 PO） | 甘文韬（M1/MB） |
 | `app/admin/` | 运营后台：login/dashboard/products/orders/dealers/cms/media/contacts | 组员 D |
+
+`app/admin/b2b/` 的报价、采购履约与企业价格表授权由甘文韬（M1/MB）负责。
 
 ## 关键约定
 

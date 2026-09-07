@@ -15,7 +15,7 @@
 | `src/health/`                                            | `/health/live` `/health/ready`（探活）                                                       | 组长/E                   |
 | `src/pricing/`                                           | **价格引擎（纯函数 + 单测）**：企业专属价 > 价格表 > 等级价 > B2B 默认价；零售只走 MSRP/Sale | 组员 C（引擎与组长联调） |
 | `src/catalog/`                                           | 商品公开目录 + 商品/分类/SKU/库存后台（白名单出参防底价泄漏）                                 | 组员 C                   |
-| `src/dealer/`                                            | 经销商申请与私有资质、本人/企业边界、防刷限流、审核状态机与 Quick Order                    | 组员 B                   |
+| `src/dealer/`                                            | 经销商申请/私有资质、审核、Quick Order、价格表授权、版本 RFQ 与企业 PO                    | 甘文韬（M1/MB）                   |
 | `src/cart/` `src/order/`                                | B2C 购物车、结算快照、库存事务与订单状态机                                                   | C                        |
 | `src/cms/` `src/media/` `src/contact/`                  | CMS 草稿/发布、受限媒体与联系工单 API                                                         | D                        |
 
@@ -131,3 +131,7 @@ Schema 单一事实源：`prisma/schema.prisma`（归属注释 M1/MA/MB/MC/MD/ME
 - e2e 离线冒烟：`npm run test:e2e`（响应体/校验/门禁约定）。
 - **DB 集成闭环（需 docker 的 PG+Redis）**：设置 `E2E_DB=1` 后运行 test:e2e，
   覆盖注册→验证→登录→登出/限流、公开目录，以及结算→库存预留→本人订单→取消返库；CI #40 已通过。
+
+## B2B 采购扩展（甘文韬，M1/MB）
+
+新增 5 表及迁移 `20260907140000_b2b_procurement`。接口、DTO 字段、状态机、事务与权限边界详见 `../../docs/b2b-state-machines.md`，真实数据库验证见 `test/b2b-flow.e2e-spec.ts`。

@@ -10,6 +10,8 @@ import { MediaModule } from '../media/media.module.js';
 import { DealerController } from './dealer.controller.js';
 import { DealerAdminController } from './dealer-admin.controller.js';
 import { DealerService } from './dealer.service.js';
+import { B2bService } from './b2b.service.js';
+import { B2bController, B2bAdminController } from './b2b.controller.js';
 
 /**
  * MB：B2B 经销商申请模块；后续 Quick Order/RFQ/PO 在本模块内扩展。
@@ -17,8 +19,8 @@ import { DealerService } from './dealer.service.js';
  */
 @Module({
   imports: [RedisModule, AuditModule, PricingModule, MfaModule, MediaModule],
-  controllers: [DealerController, DealerAdminController],
-  providers: [DealerService, OptionalJwtAuthGuard, RolesGuard, RequireMfaGuard],
+  controllers: [DealerController, DealerAdminController, B2bController, B2bAdminController],
+  providers: [DealerService, B2bService, OptionalJwtAuthGuard, RolesGuard, RequireMfaGuard],
   exports: [DealerService],
 })
 export class DealerModule {}

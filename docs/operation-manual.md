@@ -1,6 +1,6 @@
 # WEMOVE SPORTS 系统操作手册
 
-版本：v0.3　日期：2026-09-07　责任人：倪依玲（组员 D）
+版本：v0.4　日期：2026-09-07　责任人：倪依玲（组员 D）；本轮 B2B 章节由甘文韬补充
 
 ## 1. 启动与演示准备
 
@@ -39,7 +39,10 @@
 - `/dealer/apply` 分步提交企业资料。资质附件可选，仅支持 PDF/JPG/PNG 且不超过 5 MB，以私有媒体存储；登录客户提交会绑定本人账号。
 - 后台批准后，重新登录 `/dealer/login`，进入 `/dealer/catalog` 查看所属企业授权价。
 - `/dealer/quick-order` 每行输入 `SKU, 数量`，最多 100 行；系统逐行返回重复、未授权、无价格或库存不足错误。
-- 当前 Quick Order 只做安全校验与报价预览；RFQ/PO 落库等待企业业务单据模型评审。
+- 校验全部通过后填写 Request title，点击 Create RFQ draft；进入 `/dealer/procurement` 后点击 Submit for quotation。
+- 销售报价后可查看最新和历史版本、有效期、税费与运费。OWNER/BUYER 可接受或拒绝；VIEWER 只读。
+- 接受报价后填写收货信息并确认，创建企业 PO 并预留库存。重复同版本接受返回已有 PO。
+- PO 仅在 PENDING_REVIEW 时可取消；取消库存自动返还。企业暂停、成员撤销、过期或旧版本报价会被服务端拒绝。
 
 ## 4. 后台员工
 
@@ -60,7 +63,14 @@
 - SKU 唯一；库存不能为负。
 - `/admin/orders` 按状态筛选；允许 PENDING→CONFIRMED→FULFILLED，PENDING/CONFIRMED→CANCELLED，非法转换会拒绝。
 
-### CMS、媒体和联系工单
+### B2B 报价、采购履约与价格表授权
+
+- `/admin/b2b` 显示 RFQ/PO 和价格表授权；所有保存操作需当前 MFA。
+- 对 SUBMITTED/QUOTED 询价逐 SKU 填写 USD 单价、税费、运费和本地有效期，发行新报价。旧版本只读，刷新后才能基于最新 revision 继续报价。
+- PO 按 CONFIRMED→PROCESSING→SHIPPED→COMPLETED 操作；确认前可取消；发货才消耗预留库存。
+- Create book 建价目表，在公司下勾选后 Save company access；清空勾选保存即撤销授权。价目表内规则继续使用 `/admin/pricing-rules` API，由商品价格模块维护。
+
+### CMS、媒体和联系工单操作
 
 - `/admin/cms` 新建草稿，sections 必须是 JSON 数组；发布前草稿不会出现在公共接口。
 - `/admin/media` 仅允许 JPG、PNG、WebP、PDF，单文件不超过 5 MB；私有文件通过 60 秒签名链接下载。

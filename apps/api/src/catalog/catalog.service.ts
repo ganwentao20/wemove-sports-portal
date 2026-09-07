@@ -148,7 +148,7 @@ export class CatalogService {
           msrpCents: v.msrpCents,
           salePriceCents: v.salePriceCents,
         }),
-        // 说明：经销商价格（价格表/企业专属/等级价/B2B 默认）一律经 /dealer 专属端点 + 鉴权输出（组员 B/C）
+        // 说明：经销商价格（价格表/企业专属/等级价/B2B 默认）一律经 /dealer 专属端点 + 鉴权输出（甘文韬/组员 C）
       })),
     };
   }

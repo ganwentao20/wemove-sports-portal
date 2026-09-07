@@ -12,6 +12,7 @@ const modules = [
   ["Products & stock", "/admin/products"],
   ["Orders", "/admin/orders"],
   ["Dealer review", "/admin/dealers"],
+  ["B2B quotes & purchase orders", "/admin/b2b"],
   ["Contact inbox", "/admin/contacts"],
   ["CMS pages", "/admin/cms"],
   ["Media library", "/admin/media"],

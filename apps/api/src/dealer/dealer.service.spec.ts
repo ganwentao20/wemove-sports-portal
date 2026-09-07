@@ -59,7 +59,7 @@ function setup(found: ApplicationFixture | null = application) {
         ),
     },
     dealerCompany: {
-      findFirst: vi.fn().mockResolvedValue({ id: 'company-a', tierId: 'gold' }),
+      findFirst: vi.fn().mockResolvedValue({ id: 'company-a', tierId: 'gold', priceBooks: [] }),
       create: vi.fn().mockResolvedValue({ id: 'company-new' }),
       update: vi.fn().mockResolvedValue({ id: 'company-a' }),
     },

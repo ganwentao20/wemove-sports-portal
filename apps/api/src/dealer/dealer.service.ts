@@ -370,29 +370,8 @@ export class DealerService {
    * 返回值仅包含最终成交价，不暴露其他企业规则或内部优先级。
    */
   async listDealerCatalog(quantity: number, currentUser: JwtPayload) {
-    if (
-      !this.pricing.canViewDealerPrice(currentUser) ||
-      currentUser.kind !== 'customer' ||
-      !currentUser.companyId
-    ) {
-      throw new BizException(
-        ERROR_CODES.FORBIDDEN,
-        'approved dealer membership is required',
-        403,
-      );
-    }
-
-    const company = await this.prisma.dealerCompany.findFirst({
-      where: { id: currentUser.companyId, status: 'APPROVED' },
-      select: { id: true, tierId: true },
-    });
-    if (!company) {
-      throw new BizException(
-        ERROR_CODES.FORBIDDEN,
-        'dealer company is not approved',
-        403,
-      );
-    }
+    const company = await this.approvedCompany(currentUser);
+    const authorizedBookIds = company.priceBooks.map(item => item.bookId);
 
     const products = await this.prisma.product.findMany({
       where: { status: 'ACTIVE' },
@@ -422,6 +401,7 @@ export class DealerService {
     );
     const scopeFilters: Prisma.PricingRuleWhereInput[] = [
       { scope: 'COMPANY_SPECIFIC', companyId: company.id },
+      { scope: 'PRICE_TABLE', bookId: { in: authorizedBookIds } },
       { scope: 'B2B_DEFAULT' },
     ];
     if (company.tierId) {
@@ -465,6 +445,7 @@ export class DealerService {
               {
                 companyId: company.id,
                 tierId: company.tierId,
+                authorizedBookIds,
                 quantity,
               },
             );
@@ -486,15 +467,14 @@ export class DealerService {
   }
 
   /**
-   * Quick Order preview deliberately stops before persistence: company RFQ/PO ownership and
-   * lifecycle require the team-approved enterprise order schema. Each requested row still gets
-   * an explicit authorization/stock/price result so the flow is demonstrable and safe.
+   * M1/MB：Quick Order 逐行预览；RFQ 创建复用校验，接受报价时事务内重新检查库存。
    */
   async validateQuickOrder(
     lines: QuickOrderLineDto[],
     currentUser: JwtPayload,
   ) {
     const company = await this.approvedCompany(currentUser);
+    const authorizedBookIds = company.priceBooks.map(item => item.bookId);
     const normalized = lines.map((line, index) => ({
       row: index + 1,
       sku: line.sku.trim().toUpperCase(),
@@ -526,6 +506,7 @@ export class DealerService {
             active: true,
             OR: [
               { scope: 'COMPANY_SPECIFIC', companyId: company.id },
+              { scope: 'PRICE_TABLE', bookId: { in: authorizedBookIds } },
               ...(company.tierId
                 ? [{ scope: 'TIER_LEVEL' as const, tierId: company.tierId }]
                 : []),
@@ -575,6 +556,7 @@ export class DealerService {
         this.pricing.dealer(rulesByVariant.get(variant.id) ?? [], {
           companyId: company.id,
           tierId: company.tierId,
+          authorizedBookIds,
           quantity: line.quantity,
         }) ??
         (variant.b2bDefaultPriceCents == null
@@ -637,8 +619,8 @@ export class DealerService {
       );
     }
     const company = await this.prisma.dealerCompany.findFirst({
-      where: { id: currentUser.companyId, status: 'APPROVED' },
-      select: { id: true, tierId: true },
+      where: { id: currentUser.companyId, status: 'APPROVED', members: { some: { userId: currentUser.sub, user: { status: 'ACTIVE' } } } },
+      select: { id: true, tierId: true, priceBooks: { select: { bookId: true } } },
     });
     if (!company) {
       throw new BizException(

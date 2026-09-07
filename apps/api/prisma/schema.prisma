@@ -5,7 +5,7 @@
 // 1. 金额一律用整数“分”存储（priceCents），避免浮点误差；展示层负责格式化。
 // 2. 所有表必须带 createdAt/updatedAt（除纯枚举外），多租户隔离字段为 dealerCompanyId。
 // 3. 安全底线：经销商价只能经 pricing 引擎 + 服务层鉴权后返回，严禁直接 SELECT 暴露。
-// 4. 模块归属注释：M1 组长基座 / MA 组员A用户中心 / MB 组员B B2B / MC 组员C 商品订单 / MD 组员D CMS 媒体 / ME 测试工程。
+// 4. 模块归属注释：M1 组长基座 / MA 组员A用户中心 / MB 甘文韬兼任 B2B B2B / MC 组员C 商品订单 / MD 组员D CMS 媒体 / ME 测试工程。
 // 5. 状态机字段注释处仅标注“状态机见 xx 规范”，由对应组员以 .md 输出后链接到 docs/。
 //
 // 迁移流程（apps/api 目录下执行，或仓库根 npm run db:migrate）：
@@ -20,6 +20,112 @@ generator client {
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
+}
+
+// M1 (甘文韬，兼任 MB)：企业授权、版本化询报价与采购订单。
+enum RfqStatus {
+  DRAFT
+  SUBMITTED
+  QUOTED
+  ACCEPTED
+  REJECTED
+  EXPIRED
+}
+
+enum PurchaseOrderStatus {
+  PENDING_REVIEW
+  CONFIRMED
+  PROCESSING
+  SHIPPED
+  COMPLETED
+  CANCELLED
+}
+
+model DealerPriceBook {
+  companyId String
+  bookId String
+  company DealerCompany @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  book PriceBook @relation(fields: [bookId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  @@id([companyId, bookId])
+}
+
+model DealerRfq {
+  id String @id @default(cuid())
+  companyId String
+  company DealerCompany @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  createdById String
+  createdBy User @relation(fields: [createdById], references: [id], onDelete: Restrict)
+  title String
+  note String?
+  status RfqStatus @default(DRAFT)
+  revision Int @default(0)
+  items Json // 服务端生成的 SKU/名称/数量快照；报价不会修改原始询价。
+  quotes DealerQuote[]
+  purchaseOrder PurchaseOrder?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  @@index([companyId, createdAt])
+  @@index([status, createdAt])
+}
+
+model DealerQuote {
+  id String @id @default(cuid())
+  rfqId String
+  rfq DealerRfq @relation(fields: [rfqId], references: [id], onDelete: Cascade)
+  version Int
+  items Json // 不可变服务端商品/数量/报价快照，金额均为整数分。
+  subtotalCents Int
+  taxCents Int @default(0)
+  shippingCents Int @default(0)
+  totalCents Int
+  currency String @default("USD")
+  validUntil DateTime
+  quotedById String // 审计保留员工 ID；所有报价写入也记录事务审计。
+  createdAt DateTime @default(now())
+  @@unique([rfqId, version])
+}
+
+model PurchaseOrder {
+  id String @id @default(cuid())
+  orderNo String @unique
+  companyId String
+  company DealerCompany @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  companyName String
+  createdById String
+  createdBy User @relation(fields: [createdById], references: [id], onDelete: Restrict)
+  rfqId String @unique
+  rfq DealerRfq @relation(fields: [rfqId], references: [id], onDelete: Restrict)
+  quoteVersion Int
+  status PurchaseOrderStatus @default(PENDING_REVIEW)
+  shippingAddress Json
+  subtotalCents Int
+  taxCents Int
+  shippingCents Int
+  totalCents Int
+  currency String @default("USD")
+  items PurchaseOrderItem[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  @@index([companyId, createdAt])
+  @@index([status, createdAt])
+}
+
+model PurchaseOrderItem {
+  id String @id @default(cuid())
+  orderId String
+  order PurchaseOrder @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  variantId String
+  variant ProductVariant @relation(fields: [variantId], references: [id], onDelete: Restrict)
+  productName String
+  sku String
+  variantName String?
+  quantity Int
+  unitPriceCents Int
+  lineCents Int
+  createdAt DateTime @default(now())
+  @@unique([orderId, variantId])
 }
 
 // ---------------------------------------------------------------------------
@@ -139,6 +245,8 @@ model User {
   auditLogs          AuditLog[]          @relation("ActorCustomer")
   cart               Cart?
   orders             Order[]
+  rfqs               DealerRfq[]
+  purchaseOrders     PurchaseOrder[]
   createdAt          DateTime            @default(now())
   updatedAt          DateTime            @updatedAt
 
@@ -266,6 +374,9 @@ model DealerCompany {
   members      DealerMember[]
   applications DealerApplication[]
   priceRules   PricingRule[]       @relation("RuleCompany")
+  priceBooks   DealerPriceBook[]
+  rfqs         DealerRfq[]
+  purchaseOrders PurchaseOrder[]
   approvedAt   DateTime?
   createdAt    DateTime            @default(now())
   updatedAt    DateTime            @updatedAt
@@ -373,6 +484,7 @@ model ProductVariant {
   priceRules           PricingRule[]
   cartItems            CartItem[]
   orderItems           OrderItem[]
+  purchaseOrderItems    PurchaseOrderItem[]
   sortOrder            Int           @default(0)
   createdAt            DateTime      @default(now())
   updatedAt            DateTime      @updatedAt
@@ -395,6 +507,7 @@ model PriceBook {
   code      String        @unique
   label     String
   rules     PricingRule[] @relation("RuleBook")
+  companies DealerPriceBook[]
   createdAt DateTime      @default(now())
 }
 

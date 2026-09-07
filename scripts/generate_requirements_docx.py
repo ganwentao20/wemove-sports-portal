@@ -14,10 +14,10 @@ from docx.shared import Cm, Pt, RGBColor
 
 ROOT = Path(__file__).resolve().parents[1]
 SOURCE = ROOT / "docs" / "requirements.md"
-OUTPUT = ROOT / "docs" / "deliverables" / "下午班-08组-WEMOVE-SPORTS-项目需求文档-v0.2.docx"
+OUTPUT = ROOT / "docs" / "deliverables" / "下午班-08组-WEMOVE-SPORTS-项目需求文档-v0.4.docx"
 
-NAVY = "17324D"
-TEAL = "0D7C86"
+NAVY = "000000"
+TEAL = "000000"
 LIGHT_TEAL = "E8F4F4"
 LIGHT_BLUE = "EEF3F7"
 GRAY = "5D6975"
@@ -81,6 +81,9 @@ def add_field(paragraph, instruction: str) -> None:
 
 
 def configure_styles(doc: Document) -> None:
+    for style in doc.styles:
+        for border in list(style.element.iter(qn("w:pBdr"))):
+            border.getparent().remove(border)
     normal = doc.styles["Normal"]
     normal.font.name = "Aptos"
     normal._element.rPr.rFonts.set(qn("w:eastAsia"), "等线")
@@ -134,7 +137,7 @@ def add_header_footer(section) -> None:
     table.columns[0].width = Cm(12.5)
     table.columns[1].width = Cm(4)
     left = table.cell(0, 0).paragraphs[0]
-    run = left.add_run("项目需求文档 · v0.2 · 2026-09-06")
+    run = left.add_run("项目需求文档 · v0.4 · 2026-09-07")
     set_run_font(run, size=8, color=GRAY)
     right = table.cell(0, 1).paragraphs[0]
     right.alignment = WD_ALIGN_PARAGRAPH.RIGHT
@@ -160,12 +163,8 @@ def add_cover(doc: Document) -> None:
     subtitle = doc.add_paragraph()
     subtitle.paragraph_format.space_after = Pt(24)
     run = subtitle.add_run("项目需求文档  ·  Requirements Specification")
-    set_run_font(run, size=14, color=GRAY)
+    set_run_font(run, size=14, color="000000")
 
-    line = doc.add_paragraph()
-    line.paragraph_format.space_after = Pt(24)
-    run = line.add_run("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
-    set_run_font(run, size=9, color=TEAL)
 
     meta = doc.add_table(rows=4, cols=2)
     meta.alignment = WD_TABLE_ALIGNMENT.LEFT
@@ -174,8 +173,8 @@ def add_cover(doc: Document) -> None:
     values = [
         "软件开发实践2",
         "下午班 · 第 8 组",
-        "v0.2 · 2026-09-06",
-        "甘文韬（组长） · 陈婧琳 · 朱容杰 · 周慧莹 · 倪依玲 · 龙祖怡",
+        "v0.4 · 2026-09-07",
+        "甘文韬（组长） · 陈婧琳 · 周慧莹 · 倪依玲 · 龙祖怡",
     ]
     for idx, (label, value) in enumerate(zip(labels, values)):
         meta.cell(idx, 0).width = Cm(3)
@@ -236,6 +235,8 @@ def add_table(doc: Document, rows: list[list[str]]) -> None:
             elif row_idx % 2 == 0:
                 set_cell_shading(cell, LIGHT_BLUE)
             for paragraph in cell.paragraphs:
+                if row_idx == 0:
+                    paragraph.paragraph_format.keep_with_next = True
                 paragraph.paragraph_format.space_after = Pt(1.5)
                 paragraph.paragraph_format.space_before = Pt(1.5)
                 for run in paragraph.runs:
@@ -319,7 +320,7 @@ def build() -> None:
         configure_page(section)
     doc.core_properties.title = "WEMOVE SPORTS 官网与业务门户重构——项目需求文档"
     doc.core_properties.subject = "软件开发实践2 · 下午班第8组"
-    doc.core_properties.author = "甘文韬、陈婧琳、朱容杰、周慧莹、倪依玲、龙祖怡"
+    doc.core_properties.author = "甘文韬、陈婧琳、周慧莹、倪依玲、龙祖怡"
     doc.core_properties.keywords = "WEMOVE SPORTS, 软件开发实践2, 需求文档, 第8组"
     doc.save(OUTPUT)
     print(OUTPUT)

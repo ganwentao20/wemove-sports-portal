@@ -48,19 +48,19 @@ Mailpit 开发收件箱：http://localhost:8025。演示凭据仅可用于本地
 |---|---|---|
 | `apps/web/app/(storefront)/*` | 官网页面（首页/PLP/PDP/对比/Play&Learn/Support/Contact/Search） | A |
 | `apps/web/app/customer/*` | B2C 用户中心 | A |
-| `apps/web/app/dealer/*` | 经销商门户 | B |
+| `apps/web/app/dealer/*` | 经销商门户 | 甘文韬（M1/MB） |
 | `apps/web/app/admin/*` | 运营后台 | D |
 | `apps/api/src/auth|rbac|audit|common|prisma` | 基座（改前先与组长打招呼） | 组长 |
 | `apps/api/src/pricing` | 价格引擎 | C |
 | `apps/api/src/catalog` | 商品目录切片 | C |
-| `apps/api/src/dealer` | B2B 申请、审核与授权目录 | B |
+| `apps/api/src/dealer` | B2B 申请、审核与授权目录 | 甘文韬（M1/MB） |
 | `apps/api/src/cms|media|contact` | 内容/媒体/工单 API | D |
 | `apps/api/src/cart`；`apps/api/src/order` | 购物车 / 订单与库存事务 | C |
-| `apps/api/prisma/schema.prisma` | 数据表（**改必开会**，迁移随 PR 提交） | 组长统筹 |
+| `apps/api/prisma/schema.prisma` | 数据表（组长协调跨模块影响，迁移随代码提交） | 组长统筹 |
 | `infra/`、`.github/`、`docs/` | 工程与文档 | E / 组长 |
 | `prisma/seed.ts`、测试与压测 | 测试数据与质量 | E |
 
-**平行开发规则**：默认只在自己区域改；要动别人的目录先在该 Issue/PR 里 @ 对方；schema 改动走例会决议。
+**平行开发规则**：默认只在自己区域改；要动别人的目录先在该 Issue/PR 里 @ 对方；schema 改动记录技术决策；本次 M1/MB 承接已由组长明确授权，见 ADR-0002。
 
 ## 四、第一次提交
 

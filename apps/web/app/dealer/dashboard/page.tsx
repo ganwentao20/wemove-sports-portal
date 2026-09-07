@@ -27,9 +27,8 @@ export default function DealerDashboardPage() {
         >
           Quick Order validation
         </a>
+        <a href="/dealer/procurement" className="rounded-2xl border border-[#2B5F8A] bg-[#F0F5FA] p-6 text-center text-sm font-semibold text-[#2B5F8A]">Quotes &amp; Purchase Orders</a>
         {[
-          "RFQ (planned)",
-          "Purchase Orders (planned)",
           "Downloads (awaiting private media)",
           "Company",
         ].map((item) => (

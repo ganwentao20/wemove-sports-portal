@@ -24,6 +24,32 @@ export function QuickOrderWorkbench() {
   const [preview, setPreview] = useState<Preview | null>(null);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+  const [title, setTitle] = useState("");
+
+  async function createRequest() {
+    if (!preview?.valid || !title.trim()) return;
+    setBusy(true);
+    setError("");
+    try {
+      await secureApiFetch("dealer", "/dealer/rfqs", {
+        method: "POST",
+        body: JSON.stringify({
+          title: title.trim(),
+          lines: preview.results.map((line) => ({
+            sku: line.sku,
+            quantity: line.quantity,
+          })),
+        }),
+      });
+      router.push("/dealer/procurement");
+    } catch (cause) {
+      setError(
+        cause instanceof Error ? cause.message : "Unable to create request.",
+      );
+    } finally {
+      setBusy(false);
+    }
+  }
 
   async function validate(event: FormEvent) {
     event.preventDefault();
@@ -77,7 +103,11 @@ export function QuickOrderWorkbench() {
           required
           rows={10}
           value={raw}
-          onChange={(event) => setRaw(event.target.value)}
+          onChange={(event) => {
+            setRaw(event.target.value);
+            setPreview(null);
+          }}
+          aria-label="SKU and quantity rows"
           placeholder={"WM-BALL-RED, 12\nWM-BALANCE-BLUE, 4"}
           className="w-full rounded-xl border border-neutral-300 p-4 font-mono text-sm"
         />
@@ -138,6 +168,32 @@ export function QuickOrderWorkbench() {
               ))}
             </tbody>
           </table>
+        </section>
+      )}
+      {preview?.valid && (
+        <section className="mt-6 rounded-xl border p-5">
+          <h2 className="font-semibold">Request a sales quote</h2>
+          <p className="mt-2 text-sm text-neutral-600">
+            Owners and buyers can save these items as a draft, then submit it
+            for quotation.
+          </p>
+          <label className="mt-3 block text-sm">
+            Request title
+            <input
+              value={title}
+              onChange={(event) => setTitle(event.target.value)}
+              maxLength={160}
+              className="mt-1 block w-full rounded border px-3 py-2"
+              placeholder="September store replenishment"
+            />
+          </label>
+          <button
+            onClick={() => void createRequest()}
+            disabled={busy || !title.trim()}
+            className="mt-4 rounded-lg bg-[var(--wm-dark)] px-4 py-2 text-sm text-white disabled:opacity-50"
+          >
+            Create RFQ draft
+          </button>
         </section>
       )}
     </main>
