@@ -20,7 +20,7 @@ type AuthResult = {
   user: Customer;
 };
 
-const authHeaders = () => {
+const authHeaders = (): HeadersInit => {
   if (typeof window === 'undefined') return {};
   const token = window.localStorage.getItem(AUTH_TOKEN_KEY);
   return token ? { Authorization: `Bearer ${token}` } : {};

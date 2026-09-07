@@ -1,5 +1,6 @@
 'use client';
 
+import Image from 'next/image';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import type { Product } from '../lib/products';
@@ -28,11 +29,12 @@ export function ProductCard({ product }: { product: Product }) {
   return (
     <article className="product-card">
       <Link href={`/products/${product.slug}`}>
-        <img src={product.image} alt={product.name} />
+        <Image src={product.image} alt={product.name} width={520} height={420} />
         <div>
-          <p>{product.age} · {product.scene}</p>
+          <p>{product.categoryLabel} · {product.age}</p>
           <h3>{product.name}</h3>
           <span>{product.description}</span>
+          <strong>{product.price}</strong>
         </div>
       </Link>
       <div className="card-actions">

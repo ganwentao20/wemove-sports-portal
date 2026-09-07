@@ -19,8 +19,11 @@ export const revalidate = 60;
 export default async function ProductsPage() {
   return (
     <div className="catalog">
-      <h1>产品系列</h1>
-      <p>按年龄、材质与使用场景选择适合的 WEMOVE 积木。接口接入前使用原网站素材和本地演示数据。</p>
+      <div className="catalog-heading">
+        <span className="eyebrow">The active play catalog</span>
+        <h1>选择下一款产品</h1>
+        <p>{products.length} 款演示产品，按需求书支持分类、年龄、场景、排序与搜索。接口接入前使用原网站素材和本地演示数据。</p>
+      </div>
       <ProductCatalog products={products} />
     </div>
   );

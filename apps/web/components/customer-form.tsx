@@ -17,8 +17,13 @@ export function CustomerForm({ register = false }: { register?: boolean }) {
     const password = String(form.get('password') ?? '');
     const name = String(form.get('name') || email.split('@')[0]);
 
-    if (register && !form.get('adult')) {
-      setMessage('请确认您已满 18 周岁。');
+    if (register && !form.get('terms')) {
+      setMessage('请先同意服务条款与隐私政策。');
+      return;
+    }
+
+    if (!/[A-Za-z]/.test(password) || !/\d/.test(password)) {
+      setMessage('密码至少 8 位，并需要同时包含字母和数字。');
       return;
     }
 
@@ -44,7 +49,8 @@ export function CustomerForm({ register = false }: { register?: boolean }) {
     {register && <label>姓名<input name="name" required /></label>}
     <label>邮箱<input name="email" type="email" required placeholder="name@example.com" /></label>
     <label>密码<input name="password" type="password" minLength={8} required placeholder="至少 8 位，包含字母和数字" /></label>
-    {register && <label className="check"><input name="adult" type="checkbox" />我确认已满 18 周岁，并同意服务条款与隐私政策。</label>}
+    {register && <label className="check"><input name="terms" type="checkbox" />我同意服务条款与隐私政策。</label>}
+    {register && <label className="check"><input name="marketing" type="checkbox" />订阅新品、活动和玩法灵感邮件。</label>}
     <button type="submit" disabled={loading}>{loading ? '提交中...' : register ? '创建账户' : '登录'}</button>
     {message && <p className="form-message">{message}</p>}
     <p className="hint">{register ? '已按组长接口 POST /api/v1/auth/register 预接线。' : '已按组长接口 POST /api/v1/auth/login 预接线。'}</p>

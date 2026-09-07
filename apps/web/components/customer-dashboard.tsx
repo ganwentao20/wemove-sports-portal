@@ -16,6 +16,7 @@ import type { Address, Customer } from '../lib/customer-store';
 export function CustomerDashboard() {
   const [customer, setCustomer] = useState<Customer | null>(null);
   const [addresses, setAddresses] = useState<Address[]>([]);
+  const [editingAddressId, setEditingAddressId] = useState<string | null>(null);
   const [message, setMessage] = useState('');
 
   useEffect(() => {
@@ -36,11 +37,9 @@ export function CustomerDashboard() {
     setMessage('个人资料已保存。后续有 profile 接口时将自动替换为接口保存。');
   }
 
-  async function addAddress(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    const form = new FormData(event.currentTarget);
-    const address: Address = {
-      id: crypto.randomUUID(),
+  function addressFromForm(form: FormData, id = crypto.randomUUID()): Address {
+    return {
+      id,
       name: String(form.get('name') ?? ''),
       phone: String(form.get('phone') ?? ''),
       province: String(form.get('province') ?? ''),
@@ -48,9 +47,22 @@ export function CustomerDashboard() {
       detail: String(form.get('detail') ?? ''),
       isDefault: addresses.length === 0 || Boolean(form.get('isDefault')),
     };
-    setAddresses(await upsertAddress(address));
+  }
+
+  async function addAddress(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const form = new FormData(event.currentTarget);
+    setAddresses(await upsertAddress(addressFromForm(form)));
     setMessage('地址已新增，可在购物车结算演示中使用。');
     event.currentTarget.reset();
+  }
+
+  async function updateAddress(event: FormEvent<HTMLFormElement>, current: Address) {
+    event.preventDefault();
+    const form = new FormData(event.currentTarget);
+    setAddresses(await upsertAddress(addressFromForm(form, current.id)));
+    setEditingAddressId(null);
+    setMessage('地址已更新。');
   }
 
   async function markDefault(id: string) {
@@ -96,12 +108,30 @@ export function CustomerDashboard() {
             <ul>
               {addresses.map((item) => (
                 <li key={item.id}>
-                  <strong>{item.name} {item.isDefault ? <em>默认</em> : null}</strong>
-                  <span>{item.phone} · {item.province}{item.city}{item.detail}</span>
-                  <div>
-                    <button type="button" onClick={() => markDefault(item.id)}>设为默认</button>
-                    <button type="button" onClick={() => removeAddress(item.id)}>删除</button>
-                  </div>
+                  {editingAddressId === item.id ? (
+                    <form className="address-edit-form" onSubmit={(event) => updateAddress(event, item)}>
+                      <input name="name" required defaultValue={item.name} placeholder="收件人" />
+                      <input name="phone" required defaultValue={item.phone} placeholder="手机号" />
+                      <input name="province" required defaultValue={item.province} placeholder="省/直辖市" />
+                      <input name="city" required defaultValue={item.city} placeholder="城市/区县" />
+                      <input name="detail" required defaultValue={item.detail} placeholder="详细地址" />
+                      <label className="inline-check"><input name="isDefault" type="checkbox" defaultChecked={item.isDefault} />设为默认地址</label>
+                      <div>
+                        <button type="submit">保存地址</button>
+                        <button type="button" onClick={() => setEditingAddressId(null)}>取消</button>
+                      </div>
+                    </form>
+                  ) : (
+                    <>
+                      <strong>{item.name} {item.isDefault ? <em>默认</em> : null}</strong>
+                      <span>{item.phone} · {item.province}{item.city}{item.detail}</span>
+                      <div>
+                        <button type="button" onClick={() => setEditingAddressId(item.id)}>编辑</button>
+                        <button type="button" onClick={() => markDefault(item.id)}>设为默认</button>
+                        <button type="button" onClick={() => removeAddress(item.id)}>删除</button>
+                      </div>
+                    </>
+                  )}
                 </li>
               ))}
             </ul>
