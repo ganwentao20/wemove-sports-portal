@@ -65,9 +65,9 @@
 
 ### 购物车和订单
 
-- 商品详情选择 SKU、数量后加入购物车；未登录会跳转登录并带回原页面。
-- `/customer/account` 可改数量、移除或清空购物车。
-- Place order 会创建 PENDING 订单、保存整数分价格快照并锁定库存。
+- 商品详情选择 SKU、数量后加入购物车；未登录时保存为本机游客购物车，登录后幂等合并到客户购物车。
+- `/cart` 查看购物车并调整数量；登录客户也可从 `/customer/account` 管理购物车、资料、地址、收藏和订单。进入 `/checkout` 填写收货资料并核对税运及优惠。
+- Place order 创建 PENDING 订单，按服务端重新计算的价格保存快照并预留库存；进入订单付款页选择 DEMO 付款完成课程交易演示，可查看订单、下载私有 PDF 及发起售后。DEMO 不会真实扣款。
 - 客户只可取消 PENDING 订单；取消后库存自动返还。
 
 **图 3：客户结算与收货资料界面。** 角色：注册客户；日期：2026-09-08；环境：本机演示库、生产 Web 构建；页面 `/checkout`。
@@ -104,12 +104,12 @@
 - `/admin/b2b` 显示 RFQ/PO 和价格表授权；所有保存操作需当前 MFA。
 - 对 SUBMITTED/QUOTED 询价逐 SKU 填写 USD 单价、税费、运费和本地有效期，发行新报价。旧版本只读，刷新后才能基于最新 revision 继续报价。
 - PO 按 CONFIRMED→PROCESSING→SHIPPED→COMPLETED 操作；确认前可取消；发货才消耗预留库存。
-- Create book 建价目表，在公司下勾选后 Save company access；清空勾选保存即撤销授权。价目表内规则继续使用 `/admin/pricing-rules` API，由商品价格模块维护。
+- Create book 建价目表，在公司下勾选后 Save company access；清空勾选保存即撤销授权。价目表及定价规则可在 `/admin/pricing` 管理，结合市场、币种和有效期配置。
 
 ### 4.3 CMS、媒体和联系工单
 
-- `/admin/cms` 新建草稿，sections 必须是 JSON 数组；发布前草稿不会出现在公共接口。
-- `/admin/media` 仅允许 JPG、PNG、WebP、PDF，单文件不超过 5 MB；私有文件通过 60 秒签名链接下载。
+- `/admin/cms` 点击 New page 或选择既有页面，通过可视化区块和富文本编辑内容，配置语言、市场、Publish state 与发布/下架时间；用 Preview 预览、Save content 保存。草稿不公开，已发布且满足时间及语言/市场条件的内容才展示。
+- `/admin/media` 支持 JPG、PNG、WebP、PDF、MP4、WebM，后台上传单文件不超过 50 MB；企业资质上传仍为 5 MB。可维护标题、替代文本、标签和可见性；私有文件须经授权取得短期签名链接，扫描未通过的资源不可按正常资源使用。
 - `/admin/contacts` 查看访客留言，用 MFA 更新 NEW/IN_PROGRESS/RESOLVED/CLOSED 状态。
 
 **图 6：已发布页面与文章内容管理。** 角色：测试超级管理员；日期：2026-09-08；环境：本机演示库、生产 Web 构建；页面 `/admin/cms`。
@@ -119,8 +119,8 @@
 ---
 ## 5. SEO 与健康检查
 
-- `/robots.txt` 禁止抓取 customer/dealer/admin/api。
-- `/sitemap.xml` 包含公共静态页和最多 100 个当前上架商品。
+- `/robots.txt` 在非生产部署禁止全站抓取；正式生产部署允许公共页并排除 customer/dealer/admin/api 等私有入口。
+- `/sitemap.xml` 按启用的市场和语言分页收集可公开页面，并提供语言替代链接；另有 `/sitemaps/{market}/{locale}.xml` 分区入口，内容随发布状态与语言可用性过滤。
 - `/catalog`、`/help`、`/about-us` 分别永久重定向到新路径。
 - `/api/v1/health/live` 只检查进程；`/api/v1/health/ready` 在 PostgreSQL 或 Redis 不可用时返回 503。
 
@@ -135,7 +135,7 @@
 - 登录后又回到登录页：会话 Cookie 已过期/吊销；重新登录，不要把 JWT 写入 localStorage。
 - MFA 一直失败：校准手机时间，等待下一组 TOTP；锁定后按安全窗口等待。
 - 邮件未收到：本地检查 Mailpit；生产检查 SMTP 与 `APP_BASE_URL`，不要在日志公开令牌。
-- 上传被拒：核对扩展名、真实 MIME 和 5 MB 限制。
+- 上传被拒：核对扩展名、真实 MIME、扫描结果及对应入口限额；企业资质为 5 MB，后台媒体为 50 MB。
 
 
 
