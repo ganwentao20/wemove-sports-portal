@@ -131,3 +131,22 @@ export async function submitResearchInquiry(input: ResearchInquiryInput) {
     return { id: `local-research-${Date.now()}`, status: 'local-demo' };
   }
 }
+
+export type CharityParticipationInput = {
+  organization: string;
+  role: string;
+  contact: string;
+  need: string;
+};
+
+export async function submitCharityParticipation(input: CharityParticipationInput) {
+  // 预留接口：POST /contact/charity（待 CMS/contact 模块接入后替换为真实公益报名流）。
+  try {
+    return await apiFetch<{ id: string; status: string }>('/contact/charity', {
+      method: 'POST',
+      body: JSON.stringify(input),
+    });
+  } catch {
+    return { id: `local-charity-${Date.now()}`, status: 'local-demo' };
+  }
+}
