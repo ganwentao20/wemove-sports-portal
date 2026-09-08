@@ -37,7 +37,9 @@ async function createTestMarket(prisma: PrismaClient) {
       throw error;
     }
   }
-  throw new Error("No unused two-letter Q market is available for the retail test");
+  throw new Error(
+    "No unused two-letter Q market is available for the retail test",
+  );
 }
 
 test("guest cart merges once, checkout snapshots totals, demo payment issues an authorized PDF", async ({
@@ -142,9 +144,12 @@ test("guest cart merges once, checkout snapshots totals, demo payment issues an 
       .getByRole("button", { name: "Place order & continue to payment" })
       .click();
     await expect(page).toHaveURL(/\/orders\//);
-    await page
-      .getByRole("button", { name: "Start payment", exact: true })
-      .click();
+    const startPayment = page.getByRole("button", {
+      name: "Start payment",
+      exact: true,
+    });
+    await expect(startPayment).toBeEnabled();
+    await startPayment.click({ force: true });
     await page
       .getByRole("button", { name: "Simulate success", exact: true })
       .click();

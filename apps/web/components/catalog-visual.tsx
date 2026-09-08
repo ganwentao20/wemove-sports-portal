@@ -24,6 +24,7 @@ export function CatalogVisual({
           unoptimized={
             !(
               imageUrl.startsWith("/images/") ||
+              imageUrl.startsWith("/original-site/") ||
               /^\/api\/v1\/media\/[\w-]+\/download$/.test(imageUrl)
             )
           }

@@ -1,6 +1,7 @@
 /** Reviewed Chinese translations for the original demonstration CMS content. */
 export const demoContentZh: Record<string, string> = {
   'About WEMOVE': '关于 WEMOVE',
+  'Quality and safety': '品质与安全',
   'Wood, movement and open-ended learning': '木材、运动与开放式学习',
   'WEMOVE creates wooden marble runs, mechanism modules and learning experiences that make motion visible. Explore the original product range for age guidance, specifications and available instructions.':
     'WEMOVE 通过原木滚珠轨道、机关模块与学习内容，让运动规律变得可观察、可搭建。浏览原站产品系列，查看适龄建议、规格和现有说明书。',
@@ -43,11 +44,13 @@ export const demoContentZh: Record<string, string> = {
     '请在平整表面搭建，先固定第一段轨道，并在放入滚珠前阅读产品使用提示。',
   'Build, test and adjust': '搭建、测试与调整',
   'Test a short path before adding height.': '增加高度前先测试一段短轨道。',
-  'Change one block at a time when a marble stops.': '滚珠停住时，每次只调整一块积木。',
-  'Keep small balls away from children below the stated age.': '请让低于标示年龄的儿童远离小球。',
+  'Change one block at a time when a marble stops.':
+    '滚珠停住时，每次只调整一块积木。',
+  'Keep small balls away from children below the stated age.':
+    '请让低于标示年龄的儿童远离小球。',
   'Explore WEMOVE marble runs': '探索 WEMOVE 滚珠轨道',
   'Where can I find product instructions?': '在哪里可以找到商品说明书？',
   'Open the product page or browse the Downloads centre. If the document is missing, contact support with the product name or SKU.':
     '请打开商品详情页或浏览下载中心。如果未找到所需文档，请提供商品名称或 SKU 联系客服。',
-  'WEMOVE': 'WEMOVE',
+  WEMOVE: 'WEMOVE',
 };

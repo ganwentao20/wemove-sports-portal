@@ -29,7 +29,11 @@ function Feature({
         src={feature.image}
         alt={feature.alt}
         fill
-        priority={priority}
+        unoptimized={feature.image.endsWith("-lcp.webp")}
+        preload={priority}
+        fetchPriority={priority ? "high" : "auto"}
+        loading={priority ? undefined : "lazy"}
+        quality={60}
         sizes="(max-width: 767px) 100vw, 50vw"
         className="object-cover"
       />
@@ -94,22 +98,6 @@ export function OriginalHome({
   const local = (path: string) => publicUrl(path, locale, market);
   return (
     <div className="wm-original-home">
-      {features.length ? (
-        <div className="relative aspect-[3/2] overflow-hidden md:hidden">
-          <Image
-            src="/original-site/home-wemove-set.png"
-            alt={
-              isZh
-                ? "WEMOVE 原木积木搭建场景"
-                : "Building with WEMOVE wooden blocks"
-            }
-            fill
-            priority
-            sizes="100vw"
-            className="object-cover"
-          />
-        </div>
-      ) : null}
       {features.map((feature, index) => (
         <Feature
           key={feature.id}

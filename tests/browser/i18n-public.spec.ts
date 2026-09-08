@@ -46,11 +46,17 @@ for (const [path, english, chinese] of [
   test(`English and Chinese public page: ${path}`, async ({ page }) => {
     await page.goto(`/en/${path}?market=US`);
     await expect(page.locator("h1")).toHaveText(english);
-    await language(page, "Language").selectOption("zh");
+    await Promise.all([
+      page.waitForURL(new RegExp(`/zh/${path}\\?market=US$`)),
+      language(page, "Language").selectOption("zh"),
+    ]);
     await expect(page.locator("html")).toHaveAttribute("lang", "zh");
     await expect(page.locator("h1")).toHaveText(chinese);
     await expect(language(page, "语言")).toHaveValue("zh");
-    await language(page, "语言").selectOption("en");
+    await Promise.all([
+      page.waitForURL(new RegExp(`/en/${path}\\?market=US$`)),
+      language(page, "语言").selectOption("en"),
+    ]);
     await expect(page.locator("h1")).toHaveText(english);
   });
 }
