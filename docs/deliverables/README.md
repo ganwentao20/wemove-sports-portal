@@ -14,7 +14,7 @@
 | 项目需求文档 | [当前需求 v0.5](下午班-08组-WEMOVE-SPORTS-项目需求文档-v0.5.docx) | [需求](../requirements.md)；[完整规格实现矩阵](../plans/final-requirements-verification-20260907.md) |
 | 成员 A 需求审核补充 | [审核稿 v1.0](成员A-需求分析-审核稿-v1.0.docx) | [来源与需求编号映射](../drafts/member-a-requirements-reviewed-20260908.md) |
 | 系统测试报告 | [最终整合证据 v0.7](下午班-08组-WEMOVE-SPORTS-测试报告-v0.7.docx) | [正文和历史附录](../test-report.md)；CI #54 整合结论、CI #51 性能归档与本机 100 用户证据见报告 |
-| 分工与工作量 | [分工与比例 v1.2](下午班-08组-WEMOVE-SPORTS-分工与工作量报告-v1.2.docx) | [工作量说明](../plans/workload-current.md)，课程提交采用组长确认的 25% + 4 × 18.75% |
+| 分工与工作量 | [分工与比例 v1.2](下午班-08组-WEMOVE-SPORTS-分工与工作量报告-v1.2.docx) | [实际分工与工作量占比](../plans/workload-current.md)：25% + 4 × 18.75% |
 
 独立技术现状/思政报告现有五份，分别署名甘文韬、陈婧琳、周慧莹、倪依玲、龙祖怡；本次补入[周慧莹报告](../individual-reports/周慧莹.md)。五份个人 AI 说明及团队汇总分别归档，与独立课程报告一同提交。
 

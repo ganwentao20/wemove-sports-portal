@@ -1,11 +1,11 @@
 {
   "date": "2026-09-08",
-  "scope": "十份当前 Word 均有逐页检查记录。本次补入甘文韬学号并同步组长确认的工作量口径，个人报告、工作量、测试、需求和 AI 汇总五份共十八页重新检查；其余五份保持已检查字节。另保留两份历史文档前次记录。此记录不代表成员签字或新增软件测试。",
+  "scope": "十份当前 Word 均有逐页检查记录。本轮将分工与工作量统一表述为项目实际分工及实际工作量占比，重新检查分工 v1.1、分工 v1.2、测试、需求和 AI 汇总五份 Word 共十八页；其余文件保留此前检查记录。本次修改未新增软件测试结果。",
   "outputs": [
     {
       "path": "docs/deliverables/下午班-08组-WEMOVE-SPORTS-大模型辅助实践说明-v1.0.docx",
-      "sha256": "783d07d5f974f49b4926a1e8c472db411b07c89e2f3cb3f59d6934ee394f6135",
-      "bytes": 41891,
+      "sha256": "cbd4b539c60bde138dd653a9156b9344e64aef79d372b4b7c52e098b38b42826",
+      "bytes": 41860,
       "pages": 3,
       "allPagesVisuallyReviewed": true
     },
@@ -46,22 +46,22 @@
     },
     {
       "path": "docs/deliverables/下午班-08组-WEMOVE-SPORTS-项目需求文档-v0.5.docx",
-      "sha256": "5c02a1b8542f798195838182b8eadfe30c41caa0ed112dd84d47ecaa27b5edb2",
-      "bytes": 48939,
+      "sha256": "cc4abc2aad494ed80bfb34646704c502ec37a51e6046c35ba88851db163df213",
+      "bytes": 48907,
       "pages": 7,
       "allPagesVisuallyReviewed": true
     },
     {
       "path": "docs/deliverables/下午班-08组-WEMOVE-SPORTS-分工与工作量报告-v1.2.docx",
-      "sha256": "6ec1c1de6e1d18760a84835eda799f950364c46158cfe7165554f2d3bf1591d7",
-      "bytes": 40776,
+      "sha256": "655097a6baa997c616256a0710749a21d08000cfa37bbe745f743f71aeaad048",
+      "bytes": 40595,
       "pages": 2,
       "allPagesVisuallyReviewed": true
     },
     {
       "path": "docs/deliverables/下午班-08组-WEMOVE-SPORTS-测试报告-v0.7.docx",
-      "sha256": "5b1ce2ac9f0fc58e2b5dcb320a7f07803b1a3d1228b58e2fb8767290fff6e70e",
-      "bytes": 45193,
+      "sha256": "66a50403f2fe67e11192a6df56aa0d6bc70612fd6de5e3713820b6a232d52170",
+      "bytes": 45156,
       "pages": 4,
       "allPagesVisuallyReviewed": true
     },
@@ -84,6 +84,13 @@
       "sha256": "0a5f50f197dca56b258fbc09c1c3456c3d634233e18cfed994368f0f30ef35e9",
       "bytes": 42936,
       "pages": 3,
+      "allPagesVisuallyReviewed": true
+    },
+    {
+      "path": "docs/deliverables/下午班-08组-WEMOVE-SPORTS-分工与工作量报告-v1.1.docx",
+      "sha256": "7eaef8b9a5aa0b2dbe43a6e3a260cc7e86a28e841b0d5e2ff5e148335a2a7774",
+      "bytes": 39905,
+      "pages": 2,
       "allPagesVisuallyReviewed": true
     }
   ]
