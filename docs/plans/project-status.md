@@ -1,6 +1,6 @@
 # 项目审计与当前状态
 
-> **2026-09-08 当前入口：**功能整合已由 [CI #54](https://github.com/ganwentao20/wemove-sports-portal/actions/runs/34159152642)全流程验证，PR #10 尚未合并；新收材料见[最新审核与完成度](document-review-20260908.md)和[交付清单](../delivery-readiness.md)。下文保留 9 月 7 日各时点审计过程，旧数量及当时未完成功能不代表当前状态。
+> **2026-09-08 当前入口：**功能整合已由 [CI #54](https://github.com/ganwentao20/wemove-sports-portal/actions/runs/34159152642)全流程验证，PR #10 尚未合并；新收材料见[最新审核与完成度](document-review-20260908.md)和[交付清单](../delivery-readiness.md)。课程工作量采用组长确认的甘文韬 25%、其余四人各 18.75%，不按实际工时重新折算。下文保留 9 月 7 日各时点审计过程，旧数量、计划比例和当时未完成功能不代表当前状态。
 
 快照日期：2026-09-07　基线：`main`；本轮：`feature/b2b-takeover`
 

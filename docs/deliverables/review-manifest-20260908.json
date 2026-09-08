@@ -1,18 +1,18 @@
 {
   "date": "2026-09-08",
-  "scope": "十份当前 Word 均有逐页检查记录。本次补入周慧莹报告并同步测试与工作量报告，三份共九页重新检查；其余七份保持已检查字节。另保留两份历史文档前次记录。此记录不代表成员签字或新增软件测试。",
+  "scope": "十份当前 Word 均有逐页检查记录。本次补入甘文韬学号并同步组长确认的工作量口径，个人报告、工作量、测试、需求和 AI 汇总五份共十八页重新检查；其余五份保持已检查字节。另保留两份历史文档前次记录。此记录不代表成员签字或新增软件测试。",
   "outputs": [
     {
       "path": "docs/deliverables/下午班-08组-WEMOVE-SPORTS-大模型辅助实践说明-v1.0.docx",
-      "sha256": "8ec4df113c8a8f88a13b719ea0ddff3ac5b60bfc83360f56397061fc59ee0b32",
-      "bytes": 41864,
+      "sha256": "783d07d5f974f49b4926a1e8c472db411b07c89e2f3cb3f59d6934ee394f6135",
+      "bytes": 41891,
       "pages": 3,
       "allPagesVisuallyReviewed": true
     },
     {
       "path": "docs/deliverables/Web开发技术现状报告_甘文韬.docx",
-      "sha256": "51b1487c1c218c43ad67e984bb0e8b6e4dc77cb8e994025eb731a69bf2a98c69",
-      "bytes": 40435,
+      "sha256": "225695c0cf125035fe642b350b2daaa58797004dc56642aa48a4b9ce39b5bea6",
+      "bytes": 40452,
       "pages": 2,
       "allPagesVisuallyReviewed": true
     },
@@ -46,22 +46,22 @@
     },
     {
       "path": "docs/deliverables/下午班-08组-WEMOVE-SPORTS-项目需求文档-v0.5.docx",
-      "sha256": "48c12f2c460c15f7538a60a102d03eb947ea138829fef048889d7c7673563ad1",
-      "bytes": 48908,
+      "sha256": "5c02a1b8542f798195838182b8eadfe30c41caa0ed112dd84d47ecaa27b5edb2",
+      "bytes": 48939,
       "pages": 7,
       "allPagesVisuallyReviewed": true
     },
     {
       "path": "docs/deliverables/下午班-08组-WEMOVE-SPORTS-分工与工作量报告-v1.2.docx",
-      "sha256": "e86ee5d05ba1fcf4b8ff8da4279237372274871c3c69eec19f3a7b0889bb5f70",
-      "bytes": 40801,
+      "sha256": "6ec1c1de6e1d18760a84835eda799f950364c46158cfe7165554f2d3bf1591d7",
+      "bytes": 40776,
       "pages": 2,
       "allPagesVisuallyReviewed": true
     },
     {
       "path": "docs/deliverables/下午班-08组-WEMOVE-SPORTS-测试报告-v0.7.docx",
-      "sha256": "744c5ff18610e368a6cfa2d1ad1e2619d924674d7cbccecb8ae6d6303f684fc6",
-      "bytes": 45204,
+      "sha256": "5b1ce2ac9f0fc58e2b5dcb320a7f07803b1a3d1228b58e2fb8767290fff6e70e",
+      "bytes": 45193,
       "pages": 4,
       "allPagesVisuallyReviewed": true
     },
