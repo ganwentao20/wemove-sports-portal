@@ -1,8 +1,14 @@
 "use client";
+import { uiError } from "../../../lib/ui-i18n";
+import { useUiText, useUiLocale } from "../../../components/ui-locale";
+
 import { useEffect, useState, type FormEvent } from "react";
 import { secureApiFetch } from "../../../lib/secure-api";
 const input = "mt-1 block w-full rounded-lg border p-2.5";
 export function ManualOrder() {
+  const t = useUiText();
+  const uiLocale = useUiLocale();
+
   const [customers, setCustomers] = useState<
     Array<{ id: string; name: string; email: string }>
   >([]);
@@ -69,23 +75,23 @@ export function ManualOrder() {
     <section className="mx-auto max-w-7xl px-4 pb-12">
       <details className="rounded-xl border p-5">
         <summary className="cursor-pointer text-xl font-bold">
-          Create an assisted customer order
+          {t("Create an assisted customer order")}
         </summary>
         <p className="mt-3 text-sm">
-          Current catalog prices, stock, tax and shipping rules apply. The
-          customer completes payment from their account; their existing cart is
-          preserved.
+          {t(
+            "Current catalog prices, stock, tax and shipping rules apply. The customer completes payment from their account; their existing cart is preserved.",
+          )}
         </p>
         {error && (
           <p role="alert" className="mt-3 bg-red-50 p-3 text-red-800">
-            {error}
+            {error ? uiError(uiLocale, error) : ""}
           </p>
         )}
         <form onSubmit={submit} className="mt-5 grid gap-4 sm:grid-cols-3">
           <label>
-            Customer
+            {t("Customer")}
             <select name="userId" className={input} required>
-              <option value="">Select customer</option>
+              <option value="">{t("Select customer")}</option>
               {customers.map((c) => (
                 <option key={c.id} value={c.id}>
                   {c.name} · {c.email}
@@ -94,7 +100,7 @@ export function ManualOrder() {
             </select>
           </label>
           <label>
-            Market code
+            {t("Market code")}
             <input
               name="market"
               className={input}
@@ -104,7 +110,7 @@ export function ManualOrder() {
             />
           </label>
           <label>
-            Current MFA code
+            {t("Current MFA code")}
             <input
               name="mfa"
               className={input}
@@ -124,7 +130,7 @@ export function ManualOrder() {
             ["line2", "Address line 2"],
           ].map(([name, label]) => (
             <label key={name}>
-              {label}
+              {t(String(label))}
               <input
                 name={name}
                 className={input}
@@ -133,14 +139,14 @@ export function ManualOrder() {
             </label>
           ))}
           <label>
-            Reason for assisted order
+            {t("Reason for assisted order")}
             <input name="reason" className={input} minLength={3} required />
           </label>
           <div className="space-y-3 sm:col-span-3">
             {lines.map((line, index) => (
               <div key={index} className="flex gap-3">
                 <label className="grow">
-                  SKU
+                  {t("SKU")}
                   <select
                     className={input}
                     value={line.variantId}
@@ -153,7 +159,7 @@ export function ManualOrder() {
                       )
                     }
                   >
-                    <option value="">Select SKU</option>
+                    <option value="">{t("Select SKU")}</option>
                     {variants.map((v) => (
                       <option key={v.id} value={v.id}>
                         {v.sku} · {v.name}
@@ -162,7 +168,7 @@ export function ManualOrder() {
                   </select>
                 </label>
                 <label>
-                  Quantity
+                  {t("Quantity")}
                   <input
                     className={input}
                     type="number"
@@ -186,7 +192,7 @@ export function ManualOrder() {
                   disabled={lines.length === 1}
                   onClick={() => setLines(lines.filter((_, i) => i !== index))}
                 >
-                  Remove
+                  {t("Remove")}
                 </button>
               </div>
             ))}
@@ -197,14 +203,14 @@ export function ManualOrder() {
                 setLines([...lines, { variantId: "", quantity: 1 }])
               }
             >
-              Add line
+              {t("Add line")}
             </button>
           </div>
           <button
             className="rounded-lg bg-neutral-900 px-5 py-3 font-semibold text-white disabled:opacity-40"
             disabled={busy}
           >
-            Create unpaid order
+            {t("Create unpaid order")}
           </button>
         </form>
       </details>

@@ -1,4 +1,7 @@
 "use client";
+import { uiError } from "../../../lib/ui-i18n";
+
+import { useUiText, useUiLocale } from "../../../components/ui-locale";
 
 import { recordEvent } from "../../../components/consent-analytics";
 import { useEffect, useMemo, useState } from "react";
@@ -53,6 +56,10 @@ export function DealerApplicationForm({
   applicationId,
   initialFields,
 }: { applicationId?: string; initialFields?: ApplicationFields } = {}) {
+  const uiLocale = useUiLocale();
+
+  const t = useUiText();
+
   const router = useRouter();
   const [step, setStep] = useState(0);
   const [form, setForm] = useState(initialFields ?? initialForm);
@@ -240,28 +247,31 @@ export function DealerApplicationForm({
       className="mx-auto max-w-3xl px-4 py-10 sm:py-14"
     >
       <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[#2B5F8A]">
-        WEMOVE Sports B2B
+        {t("WEMOVE Business")}
       </p>
       <h1 className="mt-2 text-3xl font-bold tracking-tight sm:text-4xl">
         {applicationId
-          ? "Update your dealer application"
-          : "Become a WEMOVE Dealer"}
+          ? t("Update your dealer application")
+          : t("Become a WEMOVE Dealer")}
       </h1>
       <p className="mt-3 max-w-2xl text-neutral-600">
-        Apply for verified dealer access. Our team will review the submitted
-        business details before approval.
+        {t(
+          "Apply for verified dealer access. Our team will review the submitted business details before approval.",
+        )}
       </p>
       <p className="mt-3 text-sm">
-        Your draft is saved on this device and, when signed in, to your account.{" "}
+        {t(
+          "Your draft is saved on this device and, when signed in, to your account.",
+        )}{" "}
         <a href="/dealer/application" className="underline">
-          Track or claim an application
+          {t("Track or claim an application")}
         </a>
-        . Agreement version: dealer-2026-09.
+        {t(". Agreement version: dealer-2026-09.")}
       </p>
 
       <ol
         className="mt-8 grid grid-cols-3 gap-2"
-        aria-label="Application progress"
+        aria-label={t("Application progress")}
       >
         {steps.map((label, index) => (
           <li
@@ -269,7 +279,7 @@ export function DealerApplicationForm({
             className={index <= step ? "text-[#2B5F8A]" : "text-neutral-400"}
           >
             <span className="block text-xs font-semibold sm:text-sm">
-              {index + 1}. {label}
+              {index + 1}. {t(String(label))}
             </span>
           </li>
         ))}
@@ -291,13 +301,13 @@ export function DealerApplicationForm({
         {step === 0 && (
           <section aria-labelledby="contact-heading">
             <h2 id="contact-heading" className="text-xl font-semibold">
-              Contact details
+              {t("Contact details")}
             </h2>
             <p className="mt-1 text-sm text-neutral-600">
-              Tell us who should receive application updates.
+              {t("Tell us who should receive application updates.")}
             </p>
             <div className="mt-6 grid gap-5 sm:grid-cols-2">
-              <Field label="Contact name" required>
+              <Field label={t("Contact name")} required>
                 <input
                   className={inputClass}
                   value={form.contactName}
@@ -308,7 +318,7 @@ export function DealerApplicationForm({
                   required
                 />
               </Field>
-              <Field label="Business email" required>
+              <Field label={t("Business email")} required>
                 <input
                   className={inputClass}
                   type="email"
@@ -320,7 +330,7 @@ export function DealerApplicationForm({
                   required
                 />
               </Field>
-              <Field label="Phone" required>
+              <Field label={t("Phone")} required>
                 <input
                   className={inputClass}
                   type="tel"
@@ -337,14 +347,15 @@ export function DealerApplicationForm({
         {step === 1 && (
           <section aria-labelledby="business-heading">
             <h2 id="business-heading" className="text-xl font-semibold">
-              Business details
+              {t("Business details")}
             </h2>
             <p className="mt-1 text-sm text-neutral-600">
-              Qualification proof is optional for initial submission and can be
-              provided as a secure link.
+              {t(
+                "Qualification proof is optional for initial submission and can be provided as a secure link.",
+              )}
             </p>
             <div className="mt-6 grid gap-5 sm:grid-cols-2">
-              <Field label="Company name" required>
+              <Field label={t("Company name")} required>
                 <input
                   className={inputClass}
                   value={form.companyName}
@@ -355,7 +366,7 @@ export function DealerApplicationForm({
                   required
                 />
               </Field>
-              <Field label="Registration number" required>
+              <Field label={t("Registration number")} required>
                 <input
                   className={inputClass}
                   value={form.legalRegNo}
@@ -363,7 +374,7 @@ export function DealerApplicationForm({
                   required
                 />
               </Field>
-              <Field label="Country or region" required>
+              <Field label={t("Country or region")} required>
                 <input
                   className={inputClass}
                   value={form.country}
@@ -372,7 +383,7 @@ export function DealerApplicationForm({
                   required
                 />
               </Field>
-              <Field label="Business type" required>
+              <Field label={t("Business type")} required>
                 <select
                   className={inputClass}
                   value={form.businessType}
@@ -381,14 +392,14 @@ export function DealerApplicationForm({
                   }
                   required
                 >
-                  <option value="">Select a type</option>
-                  <option value="RETAILER">Retailer</option>
-                  <option value="DISTRIBUTOR">Distributor</option>
-                  <option value="WHOLESALER">Wholesaler</option>
-                  <option value="OTHER">Other</option>
+                  <option value="">{t("Select a type")}</option>
+                  <option value="RETAILER">{t("Retailer")}</option>
+                  <option value="DISTRIBUTOR">{t("Distributor")}</option>
+                  <option value="WHOLESALER">{t("Wholesaler")}</option>
+                  <option value="OTHER">{t("Other")}</option>
                 </select>
               </Field>
-              <Field label="Qualification document">
+              <Field label={t("Qualification document")}>
                 <input
                   className={inputClass}
                   type="file"
@@ -399,7 +410,9 @@ export function DealerApplicationForm({
                   }}
                 />
                 <p className="mt-2 text-xs text-neutral-500">
-                  Optional. PDF, JPG or PNG; maximum 5 MB. Stored privately.
+                  {t(
+                    "Optional. PDF, JPG or PNG; maximum 5 MB. Stored privately.",
+                  )}
                 </p>
               </Field>
             </div>
@@ -409,23 +422,27 @@ export function DealerApplicationForm({
         {step === 2 && (
           <section aria-labelledby="review-heading">
             <h2 id="review-heading" className="text-xl font-semibold">
-              Review application
+              {t("Review application")}
             </h2>
             <p className="mt-1 text-sm text-neutral-600">
-              Check the details below before submitting for administrator
-              review.
+              {t(
+                "Check the details below before submitting for administrator review.",
+              )}
             </p>
             <dl className="mt-6 grid gap-x-8 gap-y-5 rounded-xl bg-neutral-50 p-5 sm:grid-cols-2">
-              <Review label="Company" value={form.companyName} />
-              <Review label="Registration number" value={form.legalRegNo} />
-              <Review label="Contact" value={form.contactName} />
-              <Review label="Email" value={form.contactEmail} />
-              <Review label="Phone" value={form.phone} />
-              <Review label="Country or region" value={form.country} />
-              <Review label="Business type" value={form.businessType} />
+              <Review label={t("Company")} value={form.companyName} />
               <Review
-                label="Qualification"
-                value={documentFile?.name ?? "Not provided"}
+                label={t("Registration number")}
+                value={form.legalRegNo}
+              />
+              <Review label={t("Contact")} value={form.contactName} />
+              <Review label={t("Email")} value={form.contactEmail} />
+              <Review label={t("Phone")} value={form.phone} />
+              <Review label={t("Country or region")} value={form.country} />
+              <Review label={t("Business type")} value={t(form.businessType)} />
+              <Review
+                label={t("Qualification")}
+                value={documentFile?.name ?? t("Not provided")}
               />
             </dl>
             <label className="mt-6 flex items-start gap-3 text-sm text-neutral-700">
@@ -439,17 +456,20 @@ export function DealerApplicationForm({
                 className="mt-0.5 h-4 w-4 accent-[#2B5F8A]"
               />
               <span>
-                I confirm that the information is accurate and that I am
-                authorized to apply for this business. I agree to the{" "}
+                {t(
+                  "I confirm that the information is accurate and that I am authorized to apply for this business. I agree to the",
+                )}{" "}
                 <a
                   href="/privacy"
                   className="underline"
                   target="_blank"
                   rel="noreferrer"
                 >
-                  privacy policy
+                  {t("privacy policy")}
                 </a>{" "}
-                and dealer application declaration (version dealer-2026-09).
+                {t(
+                  "and dealer application declaration (version dealer-2026-09).",
+                )}
               </span>
             </label>
           </section>
@@ -460,7 +480,7 @@ export function DealerApplicationForm({
             role="alert"
             className="mt-5 rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700"
           >
-            {error}
+            {error ? uiError(uiLocale, error) : ""}
           </p>
         )}
 
@@ -474,7 +494,7 @@ export function DealerApplicationForm({
             disabled={step === 0 || submitting}
             className="rounded-xl border border-neutral-300 px-5 py-2.5 font-medium disabled:cursor-not-allowed disabled:opacity-40"
           >
-            Back
+            {t("Back")}
           </button>
           {step < steps.length - 1 ? (
             <button
@@ -482,7 +502,7 @@ export function DealerApplicationForm({
               onClick={nextStep}
               className="rounded-xl bg-[#2B5F8A] px-5 py-2.5 font-semibold text-white hover:bg-[#204b70]"
             >
-              Continue
+              {t("Continue")}
             </button>
           ) : (
             <button
@@ -490,7 +510,7 @@ export function DealerApplicationForm({
               disabled={submitting}
               className="rounded-xl bg-[#2B5F8A] px-5 py-2.5 font-semibold text-white hover:bg-[#204b70] disabled:cursor-wait disabled:opacity-60"
             >
-              {submitting ? "Submitting…" : "Submit application"}
+              {submitting ? t("Submitting…") : t("Submit application")}
             </button>
           )}
         </div>
@@ -508,9 +528,11 @@ function Field({
   required?: boolean;
   children: ReactNode;
 }) {
+  const t = useUiText();
+
   return (
     <label className="block text-sm font-medium text-neutral-800">
-      {label}
+      {t(String(label))}
       {required && (
         <span className="ml-1 text-red-600" aria-hidden="true">
           *
@@ -522,10 +544,12 @@ function Field({
 }
 
 function Review({ label, value }: { label: string; value: string }) {
+  const t = useUiText();
+
   return (
     <div>
       <dt className="text-xs font-semibold uppercase tracking-wide text-neutral-500">
-        {label}
+        {t(String(label))}
       </dt>
       <dd className="mt-1 break-words text-sm text-neutral-900">{value}</dd>
     </div>

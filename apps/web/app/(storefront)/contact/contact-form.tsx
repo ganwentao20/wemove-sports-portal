@@ -1,4 +1,6 @@
 "use client";
+import { uiError } from "../../../lib/ui-i18n";
+import { useUiText, useUiLocale } from "../../../components/ui-locale";
 
 import { FormEvent, useState, useRef } from "react";
 import { ApiError, apiFetch } from "../../../lib/api";
@@ -6,6 +8,8 @@ import Link from "next/link";
 import { recordEvent } from "../../../components/consent-analytics";
 
 export function ContactForm() {
+  const t = useUiText();
+  const uiLocale = useUiLocale();
   const submission = useRef<{
     fingerprint: string;
     key: string;
@@ -103,42 +107,42 @@ export function ContactForm() {
     <form className="mt-8 space-y-4" onSubmit={submit}>
       <div className="grid gap-4 sm:grid-cols-2">
         <label className="grid gap-2">
-          Your name
+          {t("Your name")}
           <input
             required
             minLength={2}
             maxLength={80}
             name="name"
             autoComplete="name"
-            placeholder="Your name"
+            placeholder={t("Your name")}
             className="rounded-xl border border-neutral-300 px-4 py-3 text-sm outline-none focus:border-[var(--wm-primary)]"
           />
         </label>
         <label className="grid gap-2">
-          Email
+          {t("Email")}
           <input
             required
             maxLength={160}
             name="email"
             type="email"
             autoComplete="email"
-            placeholder="Email"
+            placeholder={t("Email")}
             className="rounded-xl border border-neutral-300 px-4 py-3 text-sm outline-none focus:border-[var(--wm-primary)]"
           />
         </label>
       </div>
       <label className="grid gap-2">
-        Country (optional)
+        {t("Country (optional)")}
         <input
           maxLength={80}
           name="country"
           autoComplete="country-name"
-          placeholder="Country (optional)"
+          placeholder={t("Country (optional)")}
           className="w-full rounded-xl border border-neutral-300 px-4 py-3 text-sm outline-none focus:border-[var(--wm-primary)]"
         />
       </label>
       <label className="grid gap-2">
-        Request type
+        {t("Request type")}
         <select name="source" className="rounded-xl border px-4 py-3">
           {[
             ["CONTACT", "General question"],
@@ -148,36 +152,38 @@ export function ContactForm() {
             ["PRIVACY", "Privacy request"],
           ].map(([value, label]) => (
             <option value={value} key={value}>
-              {label}
+              {t(String(label))}
             </option>
           ))}
         </select>
       </label>
       <label className="grid gap-2">
-        Subject
+        {t("Subject")}
         <input
           required
           minLength={2}
           maxLength={160}
           name="subject"
-          placeholder="Subject"
+          placeholder={t("Subject")}
           className="w-full rounded-xl border border-neutral-300 px-4 py-3 text-sm outline-none focus:border-[var(--wm-primary)]"
         />
       </label>
       <label className="grid gap-2">
-        Message
+        {t("Message")}
         <textarea
           required
           minLength={10}
           maxLength={4000}
           name="content"
           rows={5}
-          placeholder="Message"
+          placeholder={t("Message")}
           className="w-full rounded-xl border border-neutral-300 px-4 py-3 text-sm outline-none focus:border-[var(--wm-primary)]"
         />
       </label>
       <label className="grid gap-2">
-        Attachments (optional, up to five JPG/PNG/WebP/PDF files, 5 MB each)
+        {t(
+          "Attachments (optional, up to five JPG/PNG/WebP/PDF files, 5 MB each)",
+        )}
         <input
           type="file"
           name="attachments"
@@ -189,16 +195,17 @@ export function ContactForm() {
       <label className="flex items-start gap-3">
         <input required type="checkbox" name="consent" className="mt-1" />
         <span>
-          I agree to the{" "}
+          {t("I agree to the")}{" "}
           <Link href="/privacy" className="underline">
-            Privacy Policy
+            {t("Privacy Policy")}
           </Link>{" "}
-          and consent to processing this request. Do not include payment
-          credentials or information about children.
+          {t(
+            "and consent to processing this request. Do not include payment credentials or information about children.",
+          )}
         </span>
       </label>
       <label className="absolute -left-[10000px]" aria-hidden="true">
-        Website
+        {t("Website")}
         <input name="website" tabIndex={-1} autoComplete="off" />
       </label>
       {error && (
@@ -206,7 +213,7 @@ export function ContactForm() {
           role="alert"
           className="rounded-lg bg-red-50 p-3 text-sm text-red-700"
         >
-          {error}
+          {uiError(uiLocale, error)}
         </p>
       )}
       {notice && (
@@ -214,14 +221,14 @@ export function ContactForm() {
           role="status"
           className="rounded-lg bg-emerald-50 p-3 text-sm text-emerald-800"
         >
-          {notice}
+          {t(String(notice))}
         </p>
       )}
       <button
         disabled={busy}
         className="rounded-full bg-[var(--wm-primary)] px-6 py-3 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-50"
       >
-        {busy ? "Sending…" : "Send message"}
+        {busy ? t("Sending…") : t("Send message")}
       </button>
     </form>
   );

@@ -1,4 +1,4 @@
-import { redirect } from "next/navigation";
+import { getUiText } from "../../../lib/ui-i18n-server";
 import { publicUrl } from "../../../lib/public-url";
 import Link from "next/link";
 import { serverApiGet } from "../../../lib/server-api";
@@ -6,10 +6,13 @@ import { getLocale, getMarket } from "../../../lib/locale";
 import { SearchBox } from "../../../components/search-box";
 import { SearchAnalytics } from "../../../components/search-analytics";
 export const dynamic = "force-dynamic";
-export const metadata = {
-  title: "Search",
-  robots: { index: false, follow: true },
-};
+export async function generateMetadata() {
+  const t = await getUiText();
+  return {
+    title: t("Search"),
+    robots: { index: false, follow: true },
+  };
+}
 type Results = {
   locale: string;
   items: Array<{
@@ -29,6 +32,7 @@ export default async function Page({
 }: {
   searchParams: Promise<{ q?: string; type?: string; page?: string }>;
 }) {
+  const t = await getUiText();
   const input = await searchParams,
     locale = await getLocale(),
     market = await getMarket();
@@ -40,22 +44,20 @@ export default async function Page({
     market,
   });
   const result = await serverApiGet<Results>(`/search?${params}`);
-  if (result.ok && result.data.locale !== locale)
-    redirect(`/en/search?${params}`);
   return (
     <div className="mx-auto max-w-5xl px-4 py-14">
       <h1 className="mb-6 text-4xl font-bold">
-        {locale === "zh" ? "搜索" : "Search"}
+        {locale === "zh" ? "搜索" : t("Search")}
       </h1>
       <SearchBox initial={input.q ?? ""} locale={locale} market={market} />
-      <nav className="my-6 flex flex-wrap gap-3" aria-label="Result type">
+      <nav className="my-6 flex flex-wrap gap-3" aria-label={t("Result type")}>
         {["ALL", "PRODUCT", "ARTICLE", "FAQ", "DOWNLOAD"].map((type) => (
           <Link
             key={type}
             href={`?q=${encodeURIComponent(input.q ?? "")}&type=${type}&market=${market}`}
             className={`rounded-lg border px-4 py-2 ${type === (input.type ?? "ALL") ? "bg-sky-50" : ""}`}
           >
-            {type}
+            {t(type)}
           </Link>
         ))}
       </nav>
@@ -63,11 +65,11 @@ export default async function Page({
         <>
           <SearchAnalytics query={input.q ?? ""} total={result.data.total} />
           <p className="mb-5" role="status">
-            {result.data.total} results
+            {t("{count} results", { count: result.data.total })}
           </p>
           <ul data-search-results className="divide-y">
             {result.data.items.map((item) => (
-              <li key={`${item.type}-${item.id}`} className="py-6">
+              <li key={`${t(item.type)}-${item.id}`} className="py-6">
                 <small>{item.type}</small>
                 <h2 className="mt-1 text-xl font-semibold">
                   <Link
@@ -89,11 +91,11 @@ export default async function Page({
           {result.data.total === 0 && (
             <section className="rounded-xl border p-6">
               <h2 className="font-bold">
-                Try a broader phrase or browse these products
+                {t("Try a broader phrase or browse these products")}
               </h2>
               {result.data.suggestions.length > 0 && (
                 <p className="my-3">
-                  Did you mean:{" "}
+                  {t("Did you mean:")}{" "}
                   {result.data.suggestions.map((suggestion) => (
                     <Link
                       key={suggestion}
@@ -109,13 +111,13 @@ export default async function Page({
                 href={`?q=${encodeURIComponent(input.q ?? "")}&market=${market}`}
                 className="mr-4 underline"
               >
-                Clear type filters
+                {t("Clear type filters")}
               </Link>
               <Link
                 href={`/${locale}/search?market=${market}`}
                 className="underline"
               >
-                Clear search
+                {t("Clear search")}
               </Link>
               <ul className="my-4 space-y-2">
                 {result.data.recommendations.map((p) => (
@@ -130,29 +132,31 @@ export default async function Page({
                 ))}
               </ul>
               <Link href="/contact" className="underline">
-                Contact support
+                {t("Contact support")}
               </Link>
             </section>
           )}
-          <nav className="mt-6 flex gap-4" aria-label="Search pages">
+          <nav className="mt-6 flex gap-4" aria-label={t("Search pages")}>
             {result.data.page > 1 && (
               <Link
                 href={`?${new URLSearchParams({ ...Object.fromEntries(params), page: String(result.data.page - 1) })}`}
               >
-                Previous
+                {t("Previous")}
               </Link>
             )}
             {result.data.page * 20 < result.data.total && (
               <Link
                 href={`?${new URLSearchParams({ ...Object.fromEntries(params), page: String(result.data.page + 1) })}`}
               >
-                Next
+                {t("Next")}
               </Link>
             )}
           </nav>
         </>
       ) : (
-        <p role="alert">Search temporarily unavailable. Please try again.</p>
+        <p role="alert">
+          {t("Search temporarily unavailable. Please try again.")}
+        </p>
       )}
     </div>
   );

@@ -1,4 +1,7 @@
 "use client";
+import { uiError } from "../../../lib/ui-i18n";
+
+import { useUiText, useUiLocale } from "../../../components/ui-locale";
 
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -47,6 +50,10 @@ const sourceLabels: Record<PriceSource, string> = {
 };
 
 export function DealerCatalog() {
+  const uiLocale = useUiLocale();
+
+  const t = useUiText();
+
   const router = useRouter();
   const [quantity, setQuantity] = useState(1);
   const [products, setProducts] = useState<CatalogProduct[]>([]);
@@ -91,7 +98,7 @@ export function DealerCatalog() {
       setProducts(
         await secureApiFetch<CatalogProduct[]>(
           "dealer",
-          `/dealer/catalog?quantity=${quantity}`,
+          `/dealer/catalog?quantity=${quantity}&locale=${encodeURIComponent(uiLocale)}`,
         ),
       );
     } catch (cause) {
@@ -108,7 +115,7 @@ export function DealerCatalog() {
     } finally {
       setLoading(false);
     }
-  }, [quantity, router]);
+  }, [quantity, router, uiLocale]);
 
   async function signOut() {
     await sessionLogout("dealer");
@@ -127,21 +134,23 @@ export function DealerCatalog() {
     >
       <div className="flex items-center justify-between gap-4">
         <p className="text-sm font-semibold text-[#2B5F8A]">
-          APPROVED DEALER CATALOG
+          {t("APPROVED DEALER CATALOG")}
         </p>
         <button
           onClick={() => void signOut()}
           className="text-sm text-neutral-500 underline"
         >
-          Sign out
+          {t("Sign out")}
         </button>
       </div>
-      <h1 className="mt-1 text-3xl font-bold">Your wholesale prices</h1>
+      <h1 className="mt-1 text-3xl font-bold">{t("Your wholesale prices")}</h1>
       <p className="mt-2 text-sm text-neutral-500">
-        Prices are resolved for your company and update with order quantity.
+        {t(
+          "Prices are resolved for your company and update with order quantity.",
+        )}
       </p>
       <label className="mt-6 block max-w-xs text-sm font-medium">
-        Planned quantity
+        {t("Planned quantity")}
         <input
           type="number"
           min={1}
@@ -161,26 +170,26 @@ export function DealerCatalog() {
           onClick={() => void addSelected()}
           className="rounded bg-neutral-900 px-4 py-2 text-white disabled:opacity-50"
         >
-          Add selected variants ({selected.length})
+          {t("Add selected variants ({count})", { count: selected.length })}
         </button>
         <Link href="/dealer/quick-order" className="underline">
-          Review procurement cart
+          {t("Review procurement cart")}
         </Link>
-        <span role="status">{notice}</span>
+        <span role="status">{notice ? uiError(uiLocale, notice) : ""}</span>
       </div>
       {error && (
         <p
           role="alert"
           className="mt-5 rounded-lg bg-red-50 p-3 text-sm text-red-700"
         >
-          {error}
+          {error ? uiError(uiLocale, error) : ""}
         </p>
       )}
       {loading ? (
-        <p className="mt-8 text-neutral-500">Resolving prices…</p>
+        <p className="mt-8 text-neutral-500">{t("Resolving prices…")}</p>
       ) : products.length === 0 ? (
         <p className="mt-8 rounded-xl border border-dashed p-8 text-center text-neutral-500">
-          No authorized products are available.
+          {t("No authorized products are available.")}
         </p>
       ) : (
         <div className="mt-8 grid gap-5 md:grid-cols-2">
@@ -204,7 +213,9 @@ export function DealerCatalog() {
                     <div>
                       <p className="font-medium">
                         <input
-                          aria-label={`Select ${variant.sku}`}
+                          aria-label={t("Select {v0}", {
+                            v0: String(variant.sku),
+                          })}
                           type="checkbox"
                           className="mr-2"
                           checked={selected.includes(variant.sku)}
@@ -219,52 +230,64 @@ export function DealerCatalog() {
                         {variant.name || variant.sku}
                       </p>
                       <p className="text-xs text-neutral-500">
-                        SKU {variant.sku} · {sourceLabels[variant.price.source]}
+                        {t("SKU")} {variant.sku} ·{" "}
+                        {t(sourceLabels[variant.price.source])}
                       </p>
                       <p className="mt-1 text-xs">
-                        MOQ {variant.purchaseRules.moq} · multiple{" "}
-                        {variant.purchaseRules.multiple} · case{" "}
+                        {t("MOQ")} {variant.purchaseRules.moq} {t("· multiple")}{" "}
+                        {variant.purchaseRules.multiple} {t("· case")}{" "}
                         {variant.purchaseRules.caseSize}
                         {variant.purchaseRules.caseWeightGrams
-                          ? " · case gross weight " +
+                          ? t(" · case gross weight ") +
                             variant.purchaseRules.caseWeightGrams +
-                            " g"
+                            t(" g")
                           : ""}{" "}
-                        · lead time {variant.purchaseRules.leadTimeDays} days
+                        {t("· lead time")} {variant.purchaseRules.leadTimeDays}{" "}
+                        {t("days")}{" "}
                         {variant.weightGrams
-                          ? ` · ${variant.weightGrams} g each`
+                          ? t(" · {v0} g each", {
+                              v0: String(variant.weightGrams),
+                            })
                           : ""}
                       </p>
                       {variant.msrpCents != null && (
                         <p className="text-xs">
-                          MSRP USD {(variant.msrpCents / 100).toFixed(2)}
+                          {t("MSRP USD")} {(variant.msrpCents / 100).toFixed(2)}
                           {variant.salePriceCents != null
-                            ? ` · Retail sale USD ${(variant.salePriceCents / 100).toFixed(2)}`
+                            ? t(" · Retail sale USD {v0}", {
+                                v0: String(
+                                  (variant.salePriceCents / 100).toFixed(2),
+                                ),
+                              })
                             : ""}
                         </p>
                       )}
                       {variant.quantity > quantity && (
                         <p className="text-xs">
-                          Price shown for {variant.quantity}+ units; lower
-                          quantities have no current company price.
+                          {t("Price shown for")} {variant.quantity}{" "}
+                          {t(
+                            "+ units; lower quantities have no current company price.",
+                          )}
                         </p>
                       )}
                       {variant.price.validUntil && (
                         <p className="text-xs">
-                          Price valid until{" "}
+                          {t("Price valid until")}{" "}
                           {new Date(
                             variant.price.validUntil,
-                          ).toLocaleDateString()}
+                          ).toLocaleDateString(uiLocale)}
                         </p>
                       )}
                       <p className="text-xs">
                         {variant.availability === "CHECK_AVAILABILITY"
-                          ? "Contact sales to confirm inventory"
+                          ? t("Contact sales to confirm inventory")
                           : variant.available != null
-                            ? `${variant.available} units available`
+                            ? t("{v0} units available", {
+                                v0: String(variant.available),
+                              })
                             : variant.availability === "IN_STOCK"
-                              ? "In stock"
-                              : "Contact sales for lead time"}
+                              ? t("In stock")
+                              : t("Contact sales for lead time")}
                       </p>
                     </div>
                     <p className="whitespace-nowrap text-lg font-bold">

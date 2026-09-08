@@ -3,7 +3,7 @@ import { generateSecret, generateURI, verify } from 'otplib';
 import { RedisService } from '../redis/redis.service.js';
 import { BizException, ERROR_CODES } from '../common/errors.js';
 
-const ISSUER = 'WEMOVE SPORTS Admin';
+const ISSUER = 'WEMOVE Admin';
 
 /**
  * TOTP 二次认证服务（组长，otplib v13）：

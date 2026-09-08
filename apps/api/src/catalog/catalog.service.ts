@@ -12,6 +12,9 @@ import {
   publishedProductLanguages,
   productSeoForLanguage,
   indexableProductLanguages,
+  localizedCategory,
+  localizedVariant,
+  productDisplayLabels,
 } from './product-locales.js';
 import { galleryFor } from './gallery-policy.js';
 export { publishedProductLanguages } from './product-locales.js';
@@ -55,7 +58,9 @@ const publicSelect = {
   associations: true,
   resources: true,
   createdAt: true,
-  category: { select: { slug: true, name: true } },
+  category: {
+    select: { slug: true, name: true, description: true, seo: true },
+  },
   variants: {
     where: { status: true },
     orderBy: { sortOrder: 'asc' as const },
@@ -100,6 +105,9 @@ export interface ProductCardDto {
   ageMin: number | null;
   ageMax: number | null;
   tags: string[];
+  tagLabels: Record<string, string>;
+  skillLabels: Record<string, string>;
+  sceneLabels: Record<string, string>;
   availability?: string;
   purchasable: boolean;
   locale: string;
@@ -114,7 +122,11 @@ export class CatalogService {
   private localized(row: PublicRow, locale = 'en'): PublicRow {
     const raw = row.specifications as Prisma.JsonObject;
     const { translations, reviews: _reviews, ...specifications } = raw ?? {};
-    const base = { ...row, specifications };
+    const base = {
+      ...row,
+      specifications,
+      category: row.category ? localizedCategory(row.category, locale) : null,
+    };
     if (locale === 'en' || !this.publishedLanguages(row).includes(locale))
       return base;
     const t = (translations as Record<string, Record<string, unknown>>)[locale];
@@ -194,6 +206,7 @@ export class CatalogService {
       enabledLanguages.includes(lang),
     );
     const resolvedLocale = publishedLanguages.includes(locale) ? locale : 'en';
+    const labels = productDisplayLabels(row, resolvedLocale);
     row = this.localized(row, resolvedLocale);
     const states = row.variants.map((v) => inventoryAvailability(v, market));
     const prices = row.variants
@@ -218,6 +231,7 @@ export class CatalogService {
       ageMin: row.ageMin,
       ageMax: row.ageMax,
       tags: row.tags,
+      ...labels,
       purchasable: states.some((s) => s.purchasable),
       availability:
         market.inventoryDisplay === 'HIDDEN'
@@ -265,24 +279,6 @@ export class CatalogService {
       ...publicProductWhere(market.code),
       ...(query.ids ? { id: { in: [...new Set(query.ids.split(','))] } } : {}),
       ...(query.categorySlug ? { category: { slug: query.categorySlug } } : {}),
-      ...(query.search
-        ? {
-            OR: [
-              { name: { contains: query.search, mode: 'insensitive' } },
-              { summary: { contains: query.search, mode: 'insensitive' } },
-              {
-                variants: {
-                  some: {
-                    sku: { contains: query.search, mode: 'insensitive' },
-                  },
-                },
-              },
-            ],
-          }
-        : {}),
-      ...(query.scene ? { scenes: { has: query.scene } } : {}),
-      ...(query.skill ? { skills: { has: query.skill } } : {}),
-      ...(query.tag ? { tags: { has: query.tag } } : {}),
       ...(query.age !== undefined
         ? { ageMin: { lte: query.age }, ageMax: { gte: query.age } }
         : {}),
@@ -313,6 +309,39 @@ export class CatalogService {
       orderBy: query.sort === 'name' ? { name: 'asc' } : { createdAt: 'desc' },
     });
     let cards = rows
+      .filter((row) => {
+        const labels = productDisplayLabels(row, locale);
+        const matches = (
+          value: string | undefined,
+          codes: string[],
+          values: Record<string, string>,
+        ) => {
+          if (!value?.trim()) return true;
+          const needle = value.trim().toLocaleLowerCase(locale);
+          return codes.some(
+            (code) =>
+              code.toLocaleLowerCase(locale) === needle ||
+              values[code]?.toLocaleLowerCase(locale) === needle,
+          );
+        };
+        return (
+          matches(query.skill, row.skills, labels.skillLabels) &&
+          matches(query.scene, row.scenes, labels.sceneLabels) &&
+          matches(query.tag, row.tags, labels.tagLabels)
+        );
+      })
+      .filter((row) => {
+        if (!query.search?.trim()) return true;
+        const displayed = this.localized(row, locale);
+        const needle = query.search.trim().toLocaleLowerCase(locale);
+        return [
+          row.name,
+          row.summary,
+          displayed.name,
+          displayed.summary,
+          ...row.variants.map((v) => v.sku),
+        ].some((value) => value?.toLocaleLowerCase(locale).includes(needle));
+      })
       .filter(
         (r) =>
           localePolicy.fallback !== 'HIDE' ||
@@ -347,6 +376,8 @@ export class CatalogService {
           Number(b.tags.includes('Featured')) -
           Number(a.tags.includes('Featured')),
       );
+    if (query.sort === 'name')
+      cards.sort((a, b) => a.name.localeCompare(b.name, locale));
     return {
       ...toPaged(
         cards.slice(
@@ -458,6 +489,7 @@ export class CatalogService {
       gallery: galleryFor(product.gallery, resolvedLocale, market.code),
       locale: resolvedLocale,
       publishedLanguages,
+      ...productDisplayLabels(row, resolvedLocale),
       indexableLanguages: indexableProductLanguages(row).filter((language) =>
         localePolicy.languages.includes(language),
       ),
@@ -487,40 +519,45 @@ export class CatalogService {
           ),
         ),
       ),
-      variants: variants.map((v) => ({
-        id: v.id,
-        sku: v.sku,
-        name: v.name,
-        attrs:
-          v.attrs && typeof v.attrs === 'object' && !Array.isArray(v.attrs)
-            ? {
-                ...v.attrs,
-                ...('gallery' in v.attrs
-                  ? {
-                      gallery: galleryFor(
-                        v.attrs.gallery,
-                        resolvedLocale,
-                        market.code,
-                      ),
-                    }
-                  : {}),
-              }
-            : v.attrs,
-        weightGrams: v.weightGrams,
-        price: this.price(v, market),
-        ...(() => {
-          const {
-            available: _,
-            capacity: __,
-            backorderLimit: ___,
-            ...visible
-          } = inventoryAvailability(v, market);
-          return visible;
-        })(),
-      })),
+      variants: variants.map((variant) => {
+        const v = localizedVariant(variant, row, resolvedLocale);
+        return {
+          id: v.id,
+          sku: v.sku,
+          name: v.name,
+          attrs:
+            v.attrs && typeof v.attrs === 'object' && !Array.isArray(v.attrs)
+              ? {
+                  ...v.attrs,
+                  ...('gallery' in v.attrs
+                    ? {
+                        gallery: galleryFor(
+                          v.attrs.gallery,
+                          resolvedLocale,
+                          market.code,
+                        ),
+                      }
+                    : {}),
+                }
+              : v.attrs,
+          weightGrams: v.weightGrams,
+          price: this.price(v, market),
+          ...(() => {
+            const {
+              available: _,
+              capacity: __,
+              backorderLimit: ___,
+              ...visible
+            } = inventoryAvailability(v, market);
+            return visible;
+          })(),
+        };
+      }),
     };
   }
-  async categories(market = 'US') {
+  async categories(market = 'US', locale = 'en') {
+    const localePolicy = await readLocalePolicy(this.prisma);
+    if (!localePolicy.languages.includes(locale)) locale = 'en';
     const cats = await this.prisma.productCategory.findMany({
       where: { active: true },
       select: {
@@ -537,17 +574,20 @@ export class CatalogService {
       },
       orderBy: { sortOrder: 'asc' },
     });
-    return cats.map((c) => ({
-      code: c.code,
-      slug: c.slug,
-      name: c.name,
-      description: c.description,
-      coverImage: c.coverImage,
-      seo: c.seo,
-      parentId: c.parentId,
-      id: c.id,
-      productCount: c._count.products,
-      filterableFields: c.filterableFields,
-    }));
+    return cats.map((category) => {
+      const c = localizedCategory(category, locale);
+      return {
+        code: c.code,
+        slug: c.slug,
+        name: c.name,
+        description: c.description,
+        coverImage: c.coverImage,
+        seo: c.seo,
+        parentId: c.parentId,
+        id: c.id,
+        productCount: c._count.products,
+        filterableFields: c.filterableFields,
+      };
+    });
   }
 }

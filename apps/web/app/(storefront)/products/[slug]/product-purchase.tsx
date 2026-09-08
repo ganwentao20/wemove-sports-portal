@@ -6,6 +6,7 @@ import { ApiError } from "../../../../lib/api";
 import { secureApiFetch } from "../../../../lib/secure-api";
 import { useProductSelection } from "../../../../components/product-selection";
 import { recordEvent } from "../../../../components/consent-analytics";
+import { publicUrl } from "../../../../lib/public-url";
 
 type Variant = {
   id: string;
@@ -89,17 +90,21 @@ export function ProductPurchase({
           localStorage.getItem("wm-guest-cart") ?? "[]",
         ) as Array<{
           variantId: string;
+          productSlug?: string;
           sku: string;
           name: string;
           quantity: number;
           unitPriceCents: number;
         }>;
         const existing = cart.find((item) => item.variantId === selected.id);
-        if (existing)
+        if (existing) {
           existing.quantity = Math.min(99, existing.quantity + quantity);
+          existing.productSlug = productSlug;
+        }
         else
           cart.push({
             variantId: selected.id,
+            productSlug,
             sku: selected.sku,
             name: selected.name || productSlug,
             quantity,
@@ -209,7 +214,10 @@ export function ProductPurchase({
           className="rounded-xl border border-emerald-300 bg-emerald-50 p-3 text-sm text-emerald-900"
         >
           {message}{" "}
-          <a href="/checkout" className="font-semibold underline">
+          <a
+            href={publicUrl("/checkout", locale, market)}
+            className="font-semibold underline"
+          >
             {copy.viewCart}
           </a>
         </p>

@@ -1,4 +1,7 @@
 "use client";
+import { uiError } from "../../../lib/ui-i18n";
+import { useUiText, useUiLocale } from "../../../components/ui-locale";
+
 import { useState } from "react";
 import { secureApiFetch } from "../../../lib/secure-api";
 export function ProductRatingEditor({
@@ -12,6 +15,9 @@ export function ProductRatingEditor({
   mfa: string;
   onSaved: () => Promise<void>;
 }) {
+  const t = useUiText();
+  const uiLocale = useUiLocale();
+
   const [message, setMessage] = useState(""),
     [error, setError] = useState(""),
     [busy, setBusy] = useState(false);
@@ -22,11 +28,11 @@ export function ProductRatingEditor({
   const input = "mt-1 block w-full rounded border border-neutral-300 p-2";
   return (
     <section className="mt-8 rounded-xl border p-5">
-      <h3 className="text-xl font-bold">Product rating display</h3>
+      <h3 className="text-xl font-bold">{t("Product rating display")}</h3>
       <p className="mt-2 text-sm text-neutral-600">
-        This is an optional aggregate of existing reviews. Enter a real source
-        and its actual five-point average and count. The default is hidden;
-        empty review sets are never presented as a rating.
+        {t(
+          "This is an optional aggregate of existing reviews. Enter a real source and its actual five-point average and count. The default is hidden; empty review sets are never presented as a rating.",
+        )}
       </p>
       <form
         key={productId + JSON.stringify(value)}
@@ -76,10 +82,10 @@ export function ProductRatingEditor({
             name="enabled"
             defaultChecked={current.enabled === true}
           />{" "}
-          Show the aggregate rating on this product page
+          {t("Show the aggregate rating on this product page")}
         </label>
         <label>
-          Average out of five
+          {t("Average out of five")}
           <input
             className={input}
             name="average"
@@ -92,7 +98,7 @@ export function ProductRatingEditor({
           />
         </label>
         <label>
-          Number of reviews
+          {t("Number of reviews")}
           <input
             className={input}
             name="count"
@@ -105,33 +111,35 @@ export function ProductRatingEditor({
           />
         </label>
         <label>
-          Review source
+          {t("Review source")}
           <input
             className={input}
             name="source"
             maxLength={300}
             defaultValue={String(current.source ?? "")}
-            placeholder="Verified review provider or source record"
+            placeholder={t("Verified review provider or source record")}
           />
         </label>
         <label className="sm:col-span-3">
-          <input type="checkbox" name="authentic" /> I confirm these values
-          match authentic reviews for this product from the stated source.
+          <input type="checkbox" name="authentic" />{" "}
+          {t(
+            "I confirm these values match authentic reviews for this product from the stated source.",
+          )}
         </label>
         <button
           className="rounded border px-4 py-2 text-sm font-semibold disabled:opacity-40"
           disabled={busy}
         >
-          Save rating display
+          {t("Save rating display")}
         </button>
         {error && (
           <p role="alert" className="text-red-700 sm:col-span-3">
-            {error}
+            {error ? uiError(uiLocale, error) : ""}
           </p>
         )}
         {message && (
           <p role="status" className="sm:col-span-3">
-            {message}
+            {message ? uiError(uiLocale, message) : ""}
           </p>
         )}
       </form>

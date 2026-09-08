@@ -1,4 +1,6 @@
 "use client";
+import { useUiText } from "../../../components/ui-locale";
+
 type Pool = {
   market: string;
   available: number;
@@ -25,11 +27,13 @@ export function VariantInventory({
   busy: boolean;
   save: (path: string, body: unknown, method?: string) => Promise<unknown>;
 }) {
+  const t = useUiText();
+
   const pools: Array<Pool | null> = [...(variant.marketInventory ?? []), null];
   return (
     <section className="my-5 rounded-xl border p-5">
       <h4 className="font-semibold">
-        {variant.sku} · Market allocation & advance orders
+        {variant.sku} {t("· Market allocation & advance orders")}
       </h4>
       <form
         className="my-4 grid gap-3 sm:grid-cols-4"
@@ -44,19 +48,19 @@ export function VariantInventory({
         }}
       >
         <label>
-          When available stock reaches zero
+          {t("When available stock reaches zero")}
           <select
             className={input}
             name="policy"
             defaultValue={variant.availabilityPolicy}
           >
-            <option value="IN_STOCK_ONLY">Stop new purchases</option>
-            <option value="PREORDER">Preorder</option>
-            <option value="BACKORDER">Backorder</option>
+            <option value="IN_STOCK_ONLY">{t("Stop new purchases")}</option>
+            <option value="PREORDER">{t("Preorder")}</option>
+            <option value="BACKORDER">{t("Backorder")}</option>
           </select>
         </label>
         <label>
-          Maximum advance order units
+          {t("Maximum advance order units")}
           <input
             className={input}
             name="limit"
@@ -67,7 +71,7 @@ export function VariantInventory({
           />
         </label>
         <label>
-          Estimated dispatch days
+          {t("Estimated dispatch days")}
           <input
             className={input}
             name="lead"
@@ -81,14 +85,13 @@ export function VariantInventory({
           className="self-end rounded-lg border px-4 py-3"
           disabled={busy}
         >
-          Save purchase policy
+          {t("Save purchase policy")}
         </button>
       </form>
       <p className="text-sm text-neutral-600">
-        Market allocations also consume the global stock pool. The marketplace
-        must allow advance orders. Unfilled backorders cannot ship until stock
-        is replenished. Create new market allocations when global reservations
-        are zero.
+        {t(
+          "Market allocations also consume the global stock pool. The marketplace must allow advance orders. Unfilled backorders cannot ship until stock is replenished. Create new market allocations when global reservations are zero.",
+        )}
       </p>
       {pools.map((pool) => (
         <form
@@ -113,7 +116,7 @@ export function VariantInventory({
           }}
         >
           <label>
-            Market code
+            {t("Market code")}
             <input
               className={input}
               required
@@ -122,11 +125,11 @@ export function VariantInventory({
               minLength={2}
               readOnly={!!pool}
               defaultValue={pool?.market ?? ""}
-              placeholder="US"
+              placeholder={t("US")}
             />
           </label>
           <label>
-            Available to sell after reservations
+            {t("Available to sell after reservations")}
             <input
               className={input}
               name="available"
@@ -136,7 +139,7 @@ export function VariantInventory({
             />
           </label>
           <label>
-            Low stock threshold
+            {t("Low stock threshold")}
             <input
               className={input}
               name="threshold"
@@ -146,7 +149,7 @@ export function VariantInventory({
             />
           </label>
           <label>
-            Source
+            {t("Source")}
             <input
               className={input}
               required
@@ -155,7 +158,7 @@ export function VariantInventory({
             />
           </label>
           <label>
-            Source error (blank = healthy)
+            {t("Source error (blank = healthy)")}
             <input
               className={input}
               name="error"
@@ -165,11 +168,19 @@ export function VariantInventory({
           <div className="self-end">
             <p className="mb-2 text-sm">
               {pool
-                ? `${pool.reserved} reserved${pool.available < 0 ? ` · ${-pool.available} awaiting replenishment` : ""}`
-                : "New market allocation"}
+                ? t("{value1} reserved{value2}", {
+                    value1: pool.reserved,
+                    value2:
+                      pool.available < 0
+                        ? t(" · {value1} awaiting replenishment", {
+                            value1: -pool.available,
+                          })
+                        : "",
+                  })
+                : t("New market allocation")}
             </p>
             <button className="rounded-lg border px-4 py-3" disabled={busy}>
-              Save market inventory
+              {t("Save market inventory")}
             </button>
           </div>
         </form>

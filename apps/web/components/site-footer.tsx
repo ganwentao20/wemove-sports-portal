@@ -2,6 +2,9 @@ import { ui } from "../lib/ui-strings";
 import Link from "next/link";
 import { serverApiGet } from "../lib/server-api";
 import { getLocale } from "../lib/locale";
+import { getMarket } from "../lib/locale";
+import { publicUrl } from "../lib/public-url";
+import type { NavigationItem } from "../lib/navigation";
 import { NewsletterForm } from "./newsletter-form";
 
 /**
@@ -10,6 +13,7 @@ import { NewsletterForm } from "./newsletter-form";
  */
 export async function SiteFooter() {
   const locale = await getLocale();
+  const market = await getMarket();
   const config = await serverApiGet<{
     brand: {
       name: string;
@@ -18,17 +22,32 @@ export async function SiteFooter() {
       address?: string;
       socials?: Array<{ label: string; href: string }>;
     };
+    navigation: { items: NavigationItem[] };
   }>("/site/config");
-  const brand = config.ok ? config.data.brand : { name: "WEMOVE SPORTS" };
+  const brand = config.ok ? config.data.brand : { name: "WEMOVE" };
+  const managedNavigation = config.ok ? config.data.navigation.items : [];
+  const footerNavigation = managedNavigation
+    .filter((item) => !item.markets?.length || item.markets.includes(market))
+    .slice(0, 6)
+    .map((item) => ({
+      href: publicUrl(item.href, locale, market),
+      label:
+        item.labels?.[locale] ??
+        (locale.startsWith("zh")
+          ? item.labels?.zh ?? item.zh ?? item.label
+          : item.label),
+    }));
   return (
-    <footer className="mt-20 border-t border-[var(--wm-border)] bg-[var(--wm-surface)] text-[var(--wm-muted)]">
+    <footer className="mt-0 border-t border-[#deded8] bg-[#f7f8f3] text-[#6c706c]">
       <div className="mx-auto grid max-w-7xl gap-10 px-4 py-14 text-sm sm:grid-cols-2 sm:px-6 lg:grid-cols-[1.5fr_1fr_1fr_1fr]">
         <div className="max-w-xs">
           <p className="mb-4 text-base font-extrabold tracking-[-0.035em]">
             <span className="text-[var(--wm-dark)]">{brand.name}</span>
           </p>
           <p className="leading-6">
-            {ui(locale, "Active play toys for kids & families.")}
+            {locale.startsWith("zh")
+              ? "原木滚珠轨道积木、STEM 教育与木作创新。"
+              : "Wooden marble runs, STEM learning and craft innovation."}
             <br />
             {brand.address}
           </p>
@@ -91,46 +110,21 @@ export async function SiteFooter() {
             {ui(locale, "Company")}
           </p>
           <ul className="space-y-3">
-            <li>
-              <Link
-                href={`/${locale}/play-learn`}
-                className="hover:text-[var(--wm-primary)]"
-              >
-                {ui(locale, "Play & Learn")}
-              </Link>
-            </li>
-            <li>
-              <Link
-                href={`/${locale}/support`}
-                className="hover:text-[var(--wm-primary)]"
-              >
-                {ui(locale, "Support & Downloads")}
-              </Link>
-            </li>
-            <li>
-              <Link
-                href={`/${locale}/about`}
-                className="hover:text-[var(--wm-primary)]"
-              >
-                {ui(locale, "About")}
-              </Link>
-            </li>
-            <li>
-              <Link
-                href={`/${locale}/quality-safety`}
-                className="hover:text-[var(--wm-primary)]"
-              >
-                {ui(locale, "Quality & Safety")}
-              </Link>
-            </li>
-            <li>
-              <Link
-                href={`/${locale}/contact`}
-                className="hover:text-[var(--wm-primary)]"
-              >
-                {ui(locale, "Contact Us")}
-              </Link>
-            </li>
+            {(footerNavigation.length
+              ? footerNavigation
+              : [
+                  { href: publicUrl("/play-learn", locale, market), label: ui(locale, "Play & Learn") },
+                  { href: publicUrl("/support", locale, market), label: ui(locale, "Support & Downloads") },
+                  { href: publicUrl("/about", locale, market), label: ui(locale, "About") },
+                  { href: publicUrl("/contact", locale, market), label: ui(locale, "Contact Us") },
+                ]
+            ).map((item) => (
+              <li key={item.href}>
+                <Link href={item.href} className="hover:text-[var(--wm-primary)]">
+                  {item.label}
+                </Link>
+              </li>
+            ))}
           </ul>
         </div>
         <div>
@@ -148,10 +142,10 @@ export async function SiteFooter() {
             </li>
             <li>
               <Link
-                href="/dealer/login"
+                href={`/${locale}/login`}
                 className="hover:text-[var(--wm-primary)]"
               >
-                {ui(locale, "Dealer Sign in")}
+                {ui(locale, "Unified sign in")}
               </Link>
             </li>
           </ul>

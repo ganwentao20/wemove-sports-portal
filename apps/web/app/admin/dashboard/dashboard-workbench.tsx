@@ -1,4 +1,6 @@
 "use client";
+import { uiError } from "../../../lib/ui-i18n";
+import { useUiText, useUiLocale } from "../../../components/ui-locale";
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
@@ -76,6 +78,9 @@ const modules = [
 type Access = { roles: string[]; permissions: string[] };
 
 export function DashboardWorkbench() {
+  const t = useUiText();
+  const uiLocale = useUiLocale();
+
   const router = useRouter();
   const [access, setAccess] = useState<Access | null>(null);
   const [stats, setStats] = useState<Stats | null>(null);
@@ -134,53 +139,58 @@ export function DashboardWorkbench() {
       className="min-h-screen bg-neutral-100 px-4 py-10"
     >
       <div className="mx-auto max-w-6xl">
-        <p className="text-sm font-semibold text-[#2B5F8A]">WEMOVE ADMIN</p>
-        <h1 className="mt-1 text-3xl font-bold">Operations dashboard</h1>
+        <p className="text-sm font-semibold text-[#2B5F8A]">
+          {t("WEMOVE ADMIN")}
+        </p>
+        <h1 className="mt-1 text-3xl font-bold">{t("Operations dashboard")}</h1>
         <p className="mt-2 text-sm text-neutral-500">
-          Live content and support metrics, with direct access to operational
-          workbenches.
+          {t(
+            "Live content and support metrics, with direct access to operational workbenches.",
+          )}
         </p>
         {error && (
           <p
             role="alert"
             className="mt-5 rounded-xl bg-red-50 p-4 text-sm text-red-700"
           >
-            {error}
+            {error ? uiError(uiLocale, error) : ""}
           </p>
         )}
         {!access && !error && (
           <p role="status" className="mt-6">
-            Loading your workbench access…
+            {t("Loading your workbench access…")}
           </p>
         )}
         {access && !can(["reports:read"]) && (
           <p role="status" className="mt-6 text-sm">
-            Your role does not include dashboard reporting. Available
-            workbenches are listed below.
+            {t(
+              "Your role does not include dashboard reporting. Available workbenches are listed below.",
+            )}
           </p>
         )}
         {can(["reports:read"]) && (
           <section
             className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4"
-            aria-label="Dashboard metrics"
+            aria-label={t("Dashboard metrics")}
           >
             {metrics.map(([label, value]) => (
               <article
                 key={label}
                 className="rounded-2xl border border-neutral-200 bg-white p-5"
               >
-                <p className="text-xs text-neutral-500">{label}</p>
+                <p className="text-xs text-neutral-500">{t(String(label))}</p>
                 <p className="mt-2 text-3xl font-bold">{value ?? "…"}</p>
               </article>
             ))}
           </section>
         )}
         <section className="mt-8">
-          <h2 className="text-xl font-semibold">Workbenches</h2>
+          <h2 className="text-xl font-semibold">{t("Workbenches")}</h2>
           {access && visibleModules.length === 1 && (
             <p className="mt-3 text-sm" role="status">
-              No operational permissions are assigned. Contact an administrator
-              if you need additional access.
+              {t(
+                "No operational permissions are assigned. Contact an administrator if you need additional access.",
+              )}
             </p>
           )}
           <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -190,7 +200,7 @@ export function DashboardWorkbench() {
                 href={href}
                 className="rounded-2xl border border-neutral-200 bg-white p-5 font-semibold transition hover:border-[#2B5F8A] hover:shadow-sm"
               >
-                {label} <span aria-hidden="true">→</span>
+                {t(String(label))} <span aria-hidden="true">→</span>
               </Link>
             ))}
           </div>

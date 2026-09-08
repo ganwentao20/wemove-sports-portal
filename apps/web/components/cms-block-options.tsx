@@ -1,4 +1,6 @@
 "use client";
+import { useUiText } from "./ui-locale";
+
 type Props = {
   type: string;
   value: Record<string, unknown>;
@@ -13,6 +15,8 @@ export function CmsBlockOptions({
   articles,
   announcement,
 }: Props) {
+  const t = useUiText();
+
   const field =
     "mt-1 w-full rounded-lg border border-neutral-300 bg-white px-3 py-2";
   const chosen = Array.isArray(value.articleIds)
@@ -26,13 +30,13 @@ export function CmsBlockOptions({
           checked={value.enabled !== false}
           onChange={(e) => onChange({ enabled: e.target.checked })}
         />
-        Module enabled
+        {t("Module enabled")}
       </label>
       {(["publishAt", "unpublishAt"] as const).map((key) => (
         <label key={key}>
           {key === "publishAt"
-            ? "Module starts at (UTC)"
-            : "Module ends at (UTC)"}
+            ? t("Module starts at (UTC)")
+            : t("Module ends at (UTC)")}
           <input
             type="datetime-local"
             className={field}
@@ -58,25 +62,25 @@ export function CmsBlockOptions({
             checked={value.dismissible !== false}
             onChange={(e) => onChange({ dismissible: e.target.checked })}
           />
-          Visitors may dismiss this announcement
+          {t("Visitors may dismiss this announcement")}
         </label>
       )}
       {type === "hero" && (
         <>
           <label>
-            Text alignment
+            {t("Text alignment")}
             <select
               className={field}
               value={String(value.align ?? "left")}
               onChange={(e) => onChange({ align: e.target.value })}
             >
-              <option value="left">Left</option>
-              <option value="center">Center</option>
-              <option value="right">Right</option>
+              <option value="left">{t("Left")}</option>
+              <option value="center">{t("Center")}</option>
+              <option value="right">{t("Right")}</option>
             </select>
           </label>
           <label>
-            Second button label
+            {t("Second button label")}
             <input
               className={field}
               value={String(value.secondaryLabel ?? "")}
@@ -84,7 +88,7 @@ export function CmsBlockOptions({
             />
           </label>
           <label>
-            Second button URL
+            {t("Second button URL")}
             <input
               className={field}
               value={String(value.secondaryHref ?? "")}
@@ -96,7 +100,9 @@ export function CmsBlockOptions({
       {type === "articles" && (
         <section className="sm:col-span-2">
           <label>
-            Manually selected articles (up to 24; blank uses the category rule)
+            {t(
+              "Manually selected articles (up to 24; blank uses the category rule)",
+            )}
             <select
               multiple
               size={Math.min(6, Math.max(2, articles.length))}
@@ -127,7 +133,9 @@ export function CmsBlockOptions({
                   <button
                     type="button"
                     disabled={index === 0}
-                    aria-label={`Move selected article ${index + 1} up`}
+                    aria-label={t("Move selected article {value1} up", {
+                      value1: index + 1,
+                    })}
                     className="rounded border px-3 py-1"
                     onClick={() => {
                       const next = [...chosen];

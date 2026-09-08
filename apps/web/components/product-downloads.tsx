@@ -3,6 +3,8 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { secureApiFetch } from "../lib/secure-api";
 import { recordEvent } from "./consent-analytics";
+import { translateUi, uiError } from "../lib/ui-i18n";
+import { languageName } from "../lib/language-code";
 export type ProductFile = {
   id: string;
   title: string;
@@ -98,7 +100,7 @@ export function ProductDownloads({
         visibility: file.visibility,
       });
     } catch (error) {
-      setError((error as Error).message);
+      setError(uiError(locale, error));
     } finally {
       setBusy(null);
     }
@@ -118,7 +120,7 @@ export function ProductDownloads({
             <div>
               <h3 className="font-semibold">{file.title || file.fileName}</h3>
               <p className="text-sm text-[var(--wm-muted)]">
-                {file.language} · {file.resourceType} · v{file.version} ·{" "}
+                {languageName(file.language)} · {translateUi(locale, file.resourceType)} · v{file.version} ·{" "}
                 {Math.ceil(file.sizeBytes / 1024)} KB
               </p>
             </div>

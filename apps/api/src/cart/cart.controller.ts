@@ -6,6 +6,7 @@ import {
   Param,
   Patch,
   Post,
+  Query,
   UseGuards,
 } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard.js';
@@ -24,8 +25,8 @@ export class CartController {
   constructor(private readonly cart: CartService) {}
 
   @Get()
-  getMyCart(@CurrentUser() actor: JwtPayload) {
-    return this.cart.getMyCart(actor);
+  getMyCart(@CurrentUser() actor: JwtPayload, @Query('locale') locale = 'en') {
+    return this.cart.getMyCart(actor, locale);
   }
 
   @Post('merge') merge(

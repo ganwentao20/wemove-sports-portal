@@ -6,6 +6,7 @@ import { ApiError } from "@/lib/api";
 import { unifiedSessionLogin, type SessionKind } from "@/lib/secure-api";
 import { loginDestination } from "@/lib/login-destination";
 import { loginCopy } from "@/lib/login-copy";
+import { uiError } from "@/lib/ui-i18n";
 import { useHydrated } from "@/lib/use-hydrated";
 
 type Challenge = {
@@ -169,7 +170,7 @@ export function LoginForm({ locale }: { locale: string }) {
             role="alert"
             className="rounded-lg bg-red-50 p-3 text-sm leading-6 text-red-800"
           >
-            {error}
+            {uiError(locale, error)}
           </p>
         )}
         <button

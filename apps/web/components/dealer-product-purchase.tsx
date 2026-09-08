@@ -5,6 +5,7 @@ import { useCallback, useEffect, useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { ApiError } from "../lib/api";
 import { secureApiFetch } from "../lib/secure-api";
+import { useProductSelection } from "./product-selection";
 
 type Variant = {
   id: string;
@@ -191,12 +192,14 @@ function minimum(variant: Variant) {
 export function DealerProductPurchase({
   productId,
   productSlug,
+  productName,
   market,
   children,
   locale = "en",
 }: {
   productId: string;
   productSlug: string;
+  productName?: string;
   market: string;
   children: ReactNode;
   locale?: string;
@@ -208,6 +211,7 @@ export function DealerProductPurchase({
       : "en";
   const formatLocale = baseLanguage in dealerCopy ? locale : "en";
   const t = dealerCopy[language];
+  const selection = useProductSelection();
   const money = (cents: number, currency: string) =>
     new Intl.NumberFormat(formatLocale, { style: "currency", currency }).format(
       cents / 100,
@@ -261,7 +265,7 @@ export function DealerProductPurchase({
         }>("dealer", "/dealer/company");
         const products = await secureApiFetch<CatalogProduct[]>(
           "dealer",
-          "/dealer/catalog?productId=" + encodeURIComponent(productId),
+          "/dealer/catalog?productId=" + encodeURIComponent(productId) + "&locale=" + encodeURIComponent(locale),
         );
         if (!current) return;
         setCompany(profile.company);
@@ -288,7 +292,7 @@ export function DealerProductPurchase({
     return () => {
       current = false;
     };
-  }, [productId, t.denied, errorMessage]);
+  }, [productId, locale, t.denied, errorMessage]);
   useEffect(() => {
     setPreview(null);
     if (
@@ -352,7 +356,10 @@ export function DealerProductPurchase({
           {
             method: "POST",
             body: JSON.stringify({
-              title: (t.quoteFor + " " + product?.name).slice(0, 160),
+              title: (t.quoteFor + " " + (productName ?? product?.name)).slice(
+                0,
+                160,
+              ),
               note: "Requested from /products/" + productSlug,
               lines: [{ sku: variant.sku, quantity }],
             }),
@@ -425,7 +432,11 @@ export function DealerProductPurchase({
         >
           {product?.variants.map((item) => (
             <option key={item.id} value={item.id}>
-              {item.name ?? item.sku} · {item.sku}
+              {selection?.variants.find((variant) => variant.id === item.id)
+                ?.name ??
+                item.name ??
+                item.sku}{" "}
+              · {item.sku}
             </option>
           ))}
         </select>

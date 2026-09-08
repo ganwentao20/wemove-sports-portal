@@ -1,4 +1,3 @@
-import { ui } from "../lib/ui-strings";
 import Link from "next/link";
 import Image from "next/image";
 import { cookies } from "next/headers";
@@ -13,16 +12,23 @@ import {
   DesktopNavigation,
   MobileNavigation,
 } from "./site-navigation";
-const NAV: NavigationItem[] = [
-  { href: "/products", label: "Products" },
-  { href: "/play-learn", label: "Play & Learn" },
-  { href: "/support", label: "Support" },
-  { href: "/contact", label: "Contact" },
-];
+
+const ORIGINAL_NAV = [
+  ["/", "首页", "Home"],
+  ["/workshop", "玩具品类", "Toys"],
+  ["/furniture", "家具定制", "Furniture"],
+  ["/woodlab", "中试打样", "Prototyping"],
+  ["/stem", "STEM教育", "STEM"],
+  ["/library", "科研研发", "Research"],
+  ["/public-benefit", "公益项目", "Public Benefit"],
+  ["/craft-dream", "匠心筑梦", "Craft Stories"],
+  ["/support/downloads", "电子说明书", "Manuals"],
+] as const;
+
 export async function SiteHeader() {
-  const locale = await getLocale(),
-    market = await getMarket(),
-    jar = await cookies();
+  const locale = await getLocale();
+  const market = await getMarket();
+  const jar = await cookies();
   const [config, markets] = await Promise.all([
     serverApiGet<{
       locale: { languages: string[] };
@@ -33,33 +39,36 @@ export async function SiteHeader() {
       "/commerce/markets",
     ),
   ]);
-  const brand = config.ok ? config.data.brand : { name: "WEMOVE SPORTS" };
-  const localized = (items: NavigationItem[]): NavigationItem[] =>
+  const isZh = locale.startsWith("zh");
+  const local = (path: string) => publicUrl(path, locale, market);
+  const configured = config.ok ? config.data.navigation.items : [];
+  const sourceNav: NavigationItem[] = configured.length
+    ? configured
+    : ORIGINAL_NAV.map(([href, zh, en]) => ({ href, label: en, zh }));
+  const localizeNavigation = (items: NavigationItem[]): NavigationItem[] =>
     items
-      .filter((item) => !item.markets?.length || item.markets.includes(market))
+      .filter(
+        (item) => !item.markets?.length || item.markets.includes(market),
+      )
       .map((item) => ({
         ...item,
-        href: publicUrl(item.href, locale, market),
+        href: item.href.startsWith("/") ? local(item.href) : item.href,
         label:
-          item.labels?.[locale] ||
-          item.labels?.[locale.split("-")[0]] ||
-          (locale.split("-")[0] === "zh" && item.zh) ||
-          ui(locale, item.label),
-        children: item.children ? localized(item.children) : undefined,
+          item.labels?.[locale] ??
+          (isZh ? item.labels?.zh ?? item.zh ?? item.label : item.label),
+        children: item.children
+          ? localizeNavigation(item.children)
+          : undefined,
       }));
-  const nav = localized(config.ok ? config.data.navigation.items : NAV);
-  const announcements = await serverApiGet<
-    Array<{
-      id: string;
-      title: string;
-      sections: Array<{ props?: { href?: string; dismissible?: boolean } }>;
-    }>
-  >(`/cms/pages?kind=BANNER&locale=${locale}&market=${market}`);
-  const banner = announcements.ok ? announcements.data[0] : undefined;
+  const nav = localizeNavigation(sourceNav);
   const dealer = jar.has("wm_dealer_session");
   const staff = jar.has("wm_staff_session");
   const customer = jar.has("wm_customer_session");
   const portals: NavigationItem[] = [
+    { href: local("/products"), label: isZh ? "产品中心" : "Product Center" },
+    { href: local("/search"), label: isZh ? "搜索" : "Search" },
+    { href: local("/compare"), label: isZh ? "产品对比" : "Compare" },
+    { href: local("/cart"), label: isZh ? "购物车" : "Cart" },
     {
       href: staff
         ? "/admin/dashboard"
@@ -68,31 +77,48 @@ export async function SiteHeader() {
           : customer
             ? "/customer/account"
             : `/${locale}/login`,
-      label: ui(
-        locale,
-        staff ? "Administration" : dealer ? "Dealer Portal" : "Account",
-      ),
+      label: staff
+        ? isZh
+          ? "管理后台"
+          : "Admin"
+        : dealer
+          ? isZh
+            ? "经销商门户"
+            : "Dealer Portal"
+          : isZh
+            ? "账户"
+            : "Account",
     },
-    ...(!dealer
-      ? [{ href: "/dealer/login", label: ui(locale, "Dealer Sign in") }]
-      : []),
-    { href: "/cart", label: ui(locale, "Cart") },
-    { href: `/${locale}/search?market=${market}`, label: ui(locale, "Search") },
   ];
-  const preferences = () => (
+  nav.push({
+    href: local("/products"),
+    label: isZh ? "购买与服务" : "Shop & Service",
+    children: portals.slice(0, 5),
+  });
+  const announcements = await serverApiGet<
+    Array<{
+      id: string;
+      title: string;
+      sections: Array<{ props?: { href?: string; dismissible?: boolean } }>;
+    }>
+  >(`/cms/pages?kind=BANNER&locale=${locale}&market=${market}`);
+  const banner = announcements.ok ? announcements.data[0] : undefined;
+  const preferences = (
     <SitePreferences
       languages={config.ok ? config.data.locale.languages : undefined}
       locale={locale}
       market={market}
       markets={
         markets.ok
-          ? markets.data
+          ? markets.data.filter(
+              (item) => !/^browser verification/i.test(item.label),
+            )
           : [{ code: "US", label: "United States", currency: "USD" }]
       }
     />
   );
   return (
-    <header className="sticky top-0 z-40 border-b border-[var(--wm-border)] bg-[color:color-mix(in_srgb,var(--wm-surface)_92%,transparent)] backdrop-blur-xl">
+    <header className="sticky top-0 z-40 border-b border-[#e9e9e9] bg-white/95 backdrop-blur-md">
       {banner && (
         <AnnouncementBanner
           id={banner.id}
@@ -104,42 +130,24 @@ export async function SiteHeader() {
       )}
       <HeaderBar>
         <Link
-          href={`/${locale}`}
-          className="flex shrink-0 items-baseline gap-1.5 text-[17px] font-extrabold tracking-[-0.04em]"
-          aria-label={brand.name}
+          href={local("/")}
+          aria-label={isZh ? "WEMOVE 首页" : "WEMOVE home"}
+          className="flex shrink-0 items-center gap-2 text-[20px] font-semibold tracking-[-0.03em] text-[#222]"
         >
-          {brand.logo ? (
-            <Image
-              src={brand.logo}
-              width={180}
-              height={48}
-              alt={brand.name}
-              unoptimized={brand.logo.startsWith("https:")}
-              className="max-h-12 w-auto max-w-44 object-contain"
-            />
-          ) : (
-            <span className="max-w-48 truncate text-[var(--wm-dark)]">
-              {brand.name}
-            </span>
-          )}
+          <Image
+            src="/original-site/logo.png"
+            width={32}
+            height={32}
+            priority
+            alt="WEMOVE"
+            className="h-8 w-8 object-contain"
+          />
+          <span>WeMove</span>
         </Link>
         <DesktopNavigation items={nav} locale={locale} />
-        <div className="hidden items-center gap-3 text-sm xl:flex">
-          {portals
-            .filter((item) => item.href !== "/dealer/login")
-            .map((item) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                className="whitespace-nowrap text-[var(--wm-muted)] hover:text-[var(--wm-primary)]"
-              >
-                {item.label}
-              </Link>
-            ))}
-        </div>
-        <div className="hidden xl:block">{preferences()}</div>
+        <div className="hidden 2xl:block">{preferences}</div>
         <MobileNavigation items={nav} portals={portals} locale={locale}>
-          {preferences()}
+          {preferences}
         </MobileNavigation>
       </HeaderBar>
     </header>

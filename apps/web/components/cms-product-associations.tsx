@@ -1,4 +1,7 @@
 "use client";
+import { uiError } from "../lib/ui-i18n";
+import { useUiText, useUiLocale } from "./ui-locale";
+
 import { useEffect, useState } from "react";
 import { secureApiFetch } from "../lib/secure-api";
 type Product = { id: string; name: string; slug: string; status: string };
@@ -9,6 +12,9 @@ export function CmsProductAssociations({
   ids: string[];
   onChange: (ids: string[]) => void;
 }) {
+  const t = useUiText();
+  const uiLocale = useUiLocale();
+
   const [query, setQuery] = useState(""),
     [results, setResults] = useState<Product[]>([]),
     [selected, setSelected] = useState<Record<string, Product>>({}),
@@ -53,13 +59,14 @@ export function CmsProductAssociations({
   }, [key]);
   return (
     <fieldset className="sm:col-span-2 rounded-xl border p-4">
-      <legend className="px-2 font-semibold">Associated products</legend>
+      <legend className="px-2 font-semibold">{t("Associated products")}</legend>
       <p className="text-sm text-neutral-600">
-        Article pages show these product cards automatically. FAQ entries appear
-        on each selected product; leave the selection empty for a general FAQ.
+        {t(
+          "Article pages show these product cards automatically. FAQ entries appear on each selected product; leave the selection empty for a general FAQ.",
+        )}
       </p>
       <label className="mt-3 block">
-        Find products
+        {t("Find products")}
         <input
           className="mt-1 w-full rounded-lg border p-2.5"
           value={query}
@@ -67,10 +74,10 @@ export function CmsProductAssociations({
             setQuery(e.target.value);
             setError("");
           }}
-          placeholder="Product name or slug"
+          placeholder={t("Product name or slug")}
         />
       </label>
-      {error && <p role="alert">{error}</p>}
+      {error && <p role="alert">{error ? uiError(uiLocale, error) : ""}</p>}
       <ul className="mt-3 flex flex-wrap gap-2">
         {results
           .filter((p) => !ids.includes(p.id))
@@ -86,14 +93,16 @@ export function CmsProductAssociations({
                 }}
               >
                 + {p.name}{" "}
-                <span className="text-neutral-600">({p.status})</span>
+                <span className="text-neutral-600">
+                  ({t(String(p.status))})
+                </span>
               </button>
             </li>
           ))}
       </ul>
       {!results.length && (
         <p className="mt-2 text-sm" role="status">
-          No matching products.
+          {t("No matching products.")}
         </p>
       )}
       <ol className="mt-4 space-y-2">
@@ -105,7 +114,9 @@ export function CmsProductAssociations({
             <span className="flex-1">{selected[id]?.name ?? id}</span>
             <button
               type="button"
-              aria-label={`Move associated product ${index + 1} up`}
+              aria-label={t("Move associated product {value1} up", {
+                value1: index + 1,
+              })}
               disabled={index === 0}
               className="rounded border px-3 py-2"
               onClick={() => {
@@ -121,12 +132,15 @@ export function CmsProductAssociations({
               className="rounded border px-3 py-2"
               onClick={() => onChange(ids.filter((v) => v !== id))}
             >
-              Remove
+              {t("Remove")}
             </button>
           </li>
         ))}
       </ol>
-      <p className="mt-2 text-sm text-neutral-600">{ids.length}/24 selected</p>
+      <p className="mt-2 text-sm text-neutral-600">
+        {ids.length}
+        {t("/24 selected")}
+      </p>
     </fieldset>
   );
 }

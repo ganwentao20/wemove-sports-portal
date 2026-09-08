@@ -1,4 +1,6 @@
 "use client";
+import { uiError } from "../../../lib/ui-i18n";
+import { useUiText, useUiLocale } from "../../../components/ui-locale";
 
 import { useCallback, useEffect, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
@@ -35,6 +37,9 @@ type Category = {
 type ProductPage = { items: Product[]; total: number };
 
 export function ProductWorkbench() {
+  const t = useUiText();
+  const uiLocale = useUiLocale();
+
   const router = useRouter();
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
@@ -162,7 +167,11 @@ export function ProductWorkbench() {
     if (!headers) return;
     if (
       !window.confirm(
-        `Change ${product.name} from ${product.status} to ${status}?`,
+        t("Change {value1} from {value2} to {value3}?", {
+          value1: product.name,
+          value2: t(product.status),
+          value3: t(status),
+        }),
       )
     )
       return;
@@ -192,7 +201,7 @@ export function ProductWorkbench() {
         body: JSON.stringify({ available }),
       });
       setMfaCode("");
-      setNotice(`Stock updated for ${variant.sku}.`);
+      setNotice(t("Stock updated for {value1}.", { value1: variant.sku }));
       await load();
     } catch (cause) {
       setError(
@@ -205,14 +214,18 @@ export function ProductWorkbench() {
     <div className="mx-auto max-w-7xl px-4 py-10">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <p className="text-sm font-semibold text-[#2B5F8A]">WEMOVE ADMIN</p>
-          <h1 className="mt-1 text-3xl font-bold">Products & SKUs</h1>
+          <p className="text-sm font-semibold text-[#2B5F8A]">
+            {t("WEMOVE ADMIN")}
+          </p>
+          <h1 className="mt-1 text-3xl font-bold">{t("Products & SKUs")}</h1>
           <p className="mt-2 text-sm text-neutral-500">
-            Manage publish status, retail/wholesale prices and available stock.
+            {t(
+              "Manage publish status, retail/wholesale prices and available stock.",
+            )}
           </p>
         </div>
         <label className="text-sm">
-          MFA code
+          {t("MFA code")}
           <input
             value={mfaCode}
             onChange={(event) =>
@@ -230,7 +243,7 @@ export function ProductWorkbench() {
           role="alert"
           className="mt-5 rounded-lg bg-red-50 p-3 text-sm text-red-700"
         >
-          {error}
+          {error ? uiError(uiLocale, error) : ""}
         </p>
       )}
       {notice && (
@@ -238,19 +251,19 @@ export function ProductWorkbench() {
           role="status"
           className="mt-5 rounded-lg bg-emerald-50 p-3 text-sm text-emerald-800"
         >
-          {notice}
+          {notice ? uiError(uiLocale, notice) : ""}
         </p>
       )}
 
       <div className="mt-8 grid gap-6 lg:grid-cols-2">
         <form onSubmit={createProduct} className="rounded-2xl border p-5">
-          <h2 className="text-lg font-semibold">Create product</h2>
+          <h2 className="text-lg font-semibold">{t("Create product")}</h2>
           <div className="mt-4 grid gap-3 sm:grid-cols-2">
             <input
               name="name"
               required
               maxLength={160}
-              placeholder="Product name"
+              placeholder={t("Product name")}
               className="rounded-lg border px-3 py-2"
             />
             <input
@@ -258,14 +271,14 @@ export function ProductWorkbench() {
               required
               pattern="[a-z0-9]+(?:-[a-z0-9]+)*"
               maxLength={120}
-              placeholder="product-slug"
+              placeholder={t("product-slug")}
               className="rounded-lg border px-3 py-2"
             />
             <select
               name="categoryId"
               className="rounded-lg border bg-white px-3 py-2"
             >
-              <option value="">No category</option>
+              <option value="">{t("No category")}</option>
               {categories.map((category) => (
                 <option key={category.id} value={category.id}>
                   {category.name}
@@ -275,31 +288,31 @@ export function ProductWorkbench() {
             <textarea
               name="ageGuidance"
               maxLength={500}
-              placeholder="Age and adult supervision guidance"
+              placeholder={t("Age and adult supervision guidance")}
               className="min-h-20 rounded-lg border px-3 py-2 sm:col-span-2"
             />
             <select
               name="status"
               className="rounded-lg border bg-white px-3 py-2"
             >
-              <option>DRAFT</option>
-              <option>ACTIVE</option>
+              <option value="DRAFT">{t("DRAFT")}</option>
+              <option value="ACTIVE">{t("ACTIVE")}</option>
             </select>
           </div>
           <button className="mt-4 rounded-lg bg-[var(--wm-dark)] px-4 py-2 text-sm font-semibold text-white">
-            Create product
+            {t("Create product")}
           </button>
         </form>
 
         <form onSubmit={createVariant} className="rounded-2xl border p-5">
-          <h2 className="text-lg font-semibold">Add SKU</h2>
+          <h2 className="text-lg font-semibold">{t("Add SKU")}</h2>
           <select
             value={selectedProductId}
             onChange={(event) => setSelectedProductId(event.target.value)}
             required
             className="mt-4 w-full rounded-lg border bg-white px-3 py-2"
           >
-            <option value="">Select product</option>
+            <option value="">{t("Select product")}</option>
             {products.map((product) => (
               <option key={product.id} value={product.id}>
                 {product.name}
@@ -311,34 +324,34 @@ export function ProductWorkbench() {
               name="sku"
               required
               maxLength={80}
-              placeholder="SKU"
+              placeholder={t("SKU")}
               className="rounded-lg border px-3 py-2"
             />
             <input
               name="name"
               maxLength={120}
-              placeholder="Variant name"
+              placeholder={t("Variant name")}
               className="rounded-lg border px-3 py-2"
             />
             <input
               name="msrpCents"
               type="number"
               min={0}
-              placeholder="MSRP cents"
+              placeholder={t("MSRP cents")}
               className="rounded-lg border px-3 py-2"
             />
             <input
               name="salePriceCents"
               type="number"
               min={0}
-              placeholder="Sale cents"
+              placeholder={t("Sale cents")}
               className="rounded-lg border px-3 py-2"
             />
             <input
               name="b2bDefaultPriceCents"
               type="number"
               min={0}
-              placeholder="B2B cents"
+              placeholder={t("B2B cents")}
               className="rounded-lg border px-3 py-2"
             />
             <input
@@ -346,7 +359,7 @@ export function ProductWorkbench() {
               type="number"
               min={0}
               defaultValue={0}
-              placeholder="Available stock"
+              placeholder={t("Available stock")}
               className="rounded-lg border px-3 py-2"
             />
           </div>
@@ -354,13 +367,13 @@ export function ProductWorkbench() {
             disabled={!selectedProductId}
             className="mt-4 rounded-lg bg-[var(--wm-dark)] px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
           >
-            Add SKU
+            {t("Add SKU")}
           </button>
         </form>
       </div>
 
       {loading ? (
-        <p className="mt-8 text-neutral-500">Loading products…</p>
+        <p className="mt-8 text-neutral-500">{t("Loading products…")}</p>
       ) : (
         <div className="mt-8 space-y-4">
           {products.map((product) => (
@@ -370,7 +383,7 @@ export function ProductWorkbench() {
                   <h2 className="font-semibold">{product.name}</h2>
                   <p className="text-xs text-neutral-500">
                     /{product.slug} ·{" "}
-                    {product.category?.name ?? "Uncategorized"}
+                    {product.category?.name ?? t("Uncategorized")}
                   </p>
                 </div>
                 <select
@@ -383,22 +396,22 @@ export function ProductWorkbench() {
                   }
                   className="rounded-lg border bg-white px-3 py-2 text-sm"
                 >
-                  <option>DRAFT</option>
-                  <option>ACTIVE</option>
-                  <option>ARCHIVED</option>
+                  <option value="DRAFT">{t("DRAFT")}</option>
+                  <option value="ACTIVE">{t("ACTIVE")}</option>
+                  <option value="ARCHIVED">{t("ARCHIVED")}</option>
                 </select>
               </div>
               <div className="mt-4 overflow-x-auto">
                 <table className="w-full min-w-[700px] text-left text-sm">
                   <thead className="text-xs text-neutral-500">
                     <tr>
-                      <th className="py-2">SKU</th>
-                      <th>Name</th>
-                      <th>MSRP</th>
-                      <th>Sale</th>
-                      <th>B2B</th>
-                      <th>Reserved</th>
-                      <th>Available</th>
+                      <th className="py-2">{t("SKU")}</th>
+                      <th>{t("Name")}</th>
+                      <th>{t("MSRP")}</th>
+                      <th>{t("Sale")}</th>
+                      <th>{t("B2B")}</th>
+                      <th>{t("Reserved")}</th>
+                      <th>{t("Available")}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -422,7 +435,9 @@ export function ProductWorkbench() {
                                 void updateStock(variant, next);
                             }}
                             className="w-24 rounded border px-2 py-1"
-                            aria-label={`Available stock for ${variant.sku}`}
+                            aria-label={t("Available stock for {value1}", {
+                              value1: variant.sku,
+                            })}
                           />
                         </td>
                       </tr>

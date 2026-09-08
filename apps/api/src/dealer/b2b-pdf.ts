@@ -38,7 +38,7 @@ export async function purchaseOrderPdf(
     pdf
       .fillColor('#172b3a')
       .fontSize(18)
-      .text('WEMOVE SPORTS', 42, 36, { width });
+      .text('WEMOVE', 42, 36, { width });
     pdf
       .fontSize(10)
       .fillColor('#476376')

@@ -1,4 +1,8 @@
 "use client";
+import { uiError } from "../lib/ui-i18n";
+
+import { useUiText, useUiLocale } from "./ui-locale";
+
 import { useState } from "react";
 const fields = [
   ["publicLogo", "Public logo URL"],
@@ -21,22 +25,28 @@ export function DirectoryProfileFields({
     submissionId: string,
   ) => Promise<void>;
 }) {
+  const uiLocale = useUiLocale();
+
+  const t = useUiText();
+
   const [reason, setReason] = useState(""),
     [message, setMessage] = useState("");
   const pending = profile.directorySubmission as
     Record<string, unknown> | undefined;
   return (
     <fieldset className="space-y-4 rounded border p-4 sm:col-span-2">
-      <legend className="px-2 font-semibold">Public dealer directory</legend>
+      <legend className="px-2 font-semibold">
+        {t("Public dealer directory")}
+      </legend>
       <p className="text-sm text-neutral-700">
-        Public details require platform review before publishing. Authorized
-        categories come from the company catalog policy. Turning off publication
-        hides the current listing immediately.
+        {t(
+          "Public details require platform review before publishing. Authorized categories come from the company catalog policy. Turning off publication hides the current listing immediately.",
+        )}
       </p>
       <div className="grid gap-3 sm:grid-cols-2">
         {fields.map(([key, label]) => (
           <label key={key}>
-            {label}
+            {t(String(label))}
             {["publicDescription", "publicHours"].includes(key) ? (
               <textarea
                 name={key}
@@ -65,23 +75,23 @@ export function DirectoryProfileFields({
               name={key}
               defaultChecked={profile[key] === true}
             />{" "}
-            {label}
+            {t(String(label))}
           </label>
         ))}
       </div>
       {pending && (
         <div className="rounded bg-amber-50 p-3">
           <p className="font-semibold">
-            Directory changes awaiting platform review
+            {t("Directory changes awaiting platform review")}
           </p>
           <details className="mt-3">
-            <summary>Review submitted public content</summary>
+            <summary>{t("Review submitted public content")}</summary>
             <dl className="mt-2 space-y-1">
               {Object.entries(pending)
                 .filter(([key]) => !["id", "submittedBy"].includes(key))
                 .map(([key, value]) => (
                   <div key={key}>
-                    <dt className="font-semibold">{key}</dt>
+                    <dt className="font-semibold">{t(key)}</dt>
                     <dd className="whitespace-pre-wrap break-words">
                       {String(value ?? "")}
                     </dd>
@@ -92,7 +102,7 @@ export function DirectoryProfileFields({
           {admin && (
             <div className="mt-4">
               <label>
-                Review reason
+                {t("Review reason")}
                 <textarea
                   value={reason}
                   onChange={(e) => setReason(e.target.value)}
@@ -117,7 +127,9 @@ export function DirectoryProfileFields({
                       await onReview(approve, reason, String(pending.id));
                     }}
                   >
-                    {approve ? "Approve public changes" : "Reject changes"}
+                    {approve
+                      ? t("Approve public changes")
+                      : t("Reject changes")}
                   </button>
                 ))}
               </div>
@@ -127,12 +139,14 @@ export function DirectoryProfileFields({
       )}
       {profile.directoryReview && (
         <p className="text-sm">
-          Last review:{" "}
-          {profile.directoryReview.approved ? "Approved" : "Rejected"} —{" "}
+          {t("Last review:")}{" "}
+          {profile.directoryReview.approved ? t("Approved") : t("Rejected")} —{" "}
           {profile.directoryReview.reason}
         </p>
       )}
-      {message && <p role="alert">{message}</p>}
+      {message && (
+        <p role="alert">{message ? uiError(uiLocale, message) : ""}</p>
+      )}
     </fieldset>
   );
 }

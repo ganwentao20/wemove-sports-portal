@@ -1,4 +1,7 @@
 "use client";
+import { uiError } from "../../../lib/ui-i18n";
+import { useUiText, useUiLocale } from "../../../components/ui-locale";
+
 import { useState, type FormEvent } from "react";
 import { ProductSeoFields } from "./product-seo-fields";
 import { secureApiFetch } from "../../../lib/secure-api";
@@ -24,6 +27,9 @@ export function CategoryEditor({
   mfa: string;
   onSaved: () => Promise<void>;
 }) {
+  const t = useUiText();
+  const uiLocale = useUiLocale();
+
   const [selected, setSelected] = useState(""),
     [message, setMessage] = useState(""),
     [busy, setBusy] = useState(false);
@@ -85,9 +91,9 @@ export function CategoryEditor({
   }
   return (
     <section className="mt-8 rounded-xl border p-5">
-      <h3 className="text-xl font-bold">Category pages</h3>
+      <h3 className="text-xl font-bold">{t("Category pages")}</h3>
       <label className="mt-4 block">
-        Edit category
+        {t("Edit category")}
         <select
           className={field}
           value={selected}
@@ -96,17 +102,17 @@ export function CategoryEditor({
             setMessage("");
           }}
         >
-          <option value="">Create a new category</option>
+          <option value="">{t("Create a new category")}</option>
           {categories.map((c) => (
             <option key={c.id} value={c.id}>
               {c.name}
-              {c.active ? "" : " (hidden)"}
+              {c.active ? "" : t(" (hidden)")}
             </option>
           ))}
         </select>
       </label>
       <p role="status" className="mt-3">
-        {message}
+        {message ? uiError(uiLocale, message) : ""}
       </p>
       <form
         key={category?.id ?? "new"}
@@ -119,7 +125,7 @@ export function CategoryEditor({
           ["slug", "URL slug", category?.slug],
         ].map(([name, label, value]) => (
           <label key={name}>
-            {label}
+            {t(String(label))}
             <input
               required
               maxLength={name === "name" ? 100 : 80}
@@ -130,13 +136,13 @@ export function CategoryEditor({
           </label>
         ))}
         <label>
-          Parent category
+          {t("Parent category")}
           <select
             name="parentId"
             defaultValue={category?.parentId ?? ""}
             className={field}
           >
-            <option value="">Top-level category</option>
+            <option value="">{t("Top-level category")}</option>
             {categories
               .filter((c) => c.id !== category?.id)
               .map((c) => (
@@ -147,7 +153,7 @@ export function CategoryEditor({
           </select>
         </label>
         <label>
-          Display order
+          {t("Display order")}
           <input
             type="number"
             name="sortOrder"
@@ -162,10 +168,10 @@ export function CategoryEditor({
             type="checkbox"
             defaultChecked={category?.active ?? true}
           />{" "}
-          Show category
+          {t("Show category")}
         </label>
         <label className="sm:col-span-2">
-          Description
+          {t("Description")}
           <textarea
             className={field}
             rows={4}
@@ -175,7 +181,7 @@ export function CategoryEditor({
           />
         </label>
         <label>
-          Cover image URL
+          {t("Cover image URL")}
           <input
             name="coverUrl"
             className={field}
@@ -183,7 +189,7 @@ export function CategoryEditor({
           />
         </label>
         <label>
-          Cover image description
+          {t("Cover image description")}
           <input
             name="coverAlt"
             maxLength={400}
@@ -196,7 +202,11 @@ export function CategoryEditor({
           disabled={busy}
           className="rounded-lg border px-5 py-3 font-semibold disabled:opacity-50"
         >
-          {busy ? "Saving…" : category ? "Save category" : "Create category"}
+          {busy
+            ? t("Saving…")
+            : category
+              ? t("Save category")
+              : t("Create category")}
         </button>
       </form>
     </section>

@@ -23,6 +23,26 @@
   --wm-shadow: 20 42 54;
 }
 
+.wm-storefront-shell {
+  --wm-primary: #40553a;
+  --wm-primary-strong: #273824;
+  --wm-bg: #ffffff;
+  --wm-surface: #ffffff;
+  --wm-surface-soft: #eef4e3;
+  --wm-text: #343634;
+  --wm-dark: #292b29;
+  --wm-muted: #6c706c;
+  --wm-border: #deded8;
+  --wm-shadow: 45 53 42;
+  background: #ffffff;
+}
+
+.wm-storefront-shell h1,
+.wm-storefront-shell h2,
+.wm-storefront-shell h3 {
+  text-wrap: balance;
+}
+
 html {
   -webkit-text-size-adjust: 100%;
   scroll-behavior: smooth;

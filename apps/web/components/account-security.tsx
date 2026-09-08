@@ -1,4 +1,8 @@
 "use client";
+import { uiError } from "../lib/ui-i18n";
+
+import { useUiText, useUiLocale } from "./ui-locale";
+
 import { useCallback, useEffect, useState, type FormEvent } from "react";
 import {
   secureApiFetch,
@@ -23,6 +27,10 @@ export function AccountSecurity({
   kind?: SessionKind;
   mfaEnabled?: boolean;
 }) {
+  const uiLocale = useUiLocale();
+
+  const t = useUiText();
+
   const [enabled, setEnabled] = useState(mfaEnabled);
   const [devices, setDevices] = useState<Device[]>([]);
   const [message, setMessage] = useState("");
@@ -107,16 +115,18 @@ export function AccountSecurity({
   }
   return (
     <section className="mt-6 space-y-5 rounded-2xl border p-5">
-      <h2 className="text-xl font-semibold">Security and devices</h2>
+      <h2 className="text-xl font-semibold">{t("Security and devices")}</h2>
       {error && (
         <p role="alert" className="text-red-700">
-          {error}
+          {error ? uiError(uiLocale, error) : ""}
         </p>
       )}
-      {message && <p role="status">{message}</p>}
+      {message && (
+        <p role="status">{message ? uiError(uiLocale, message) : ""}</p>
+      )}
       <form onSubmit={password} className="grid gap-3 sm:grid-cols-2">
         <label>
-          Current password
+          {t("Current password")}
           <input
             name="oldPassword"
             autoComplete="current-password"
@@ -126,7 +136,7 @@ export function AccountSecurity({
           />
         </label>
         <label>
-          New password
+          {t("New password")}
           <input
             name="newPassword"
             autoComplete="new-password"
@@ -139,26 +149,31 @@ export function AccountSecurity({
           />
         </label>
         <p className="text-sm sm:col-span-2">
-          Use at least eight characters with letters and numbers. Changing your
-          password signs out every device.
+          {t(
+            "Use at least eight characters with letters and numbers. Changing your password signs out every device.",
+          )}
         </p>
         <button disabled={busy} className={button}>
-          Change password
+          {t("Change password")}
         </button>
       </form>
       <div className="border-t pt-4">
-        <h3 className="font-semibold">Two-factor authentication</h3>
+        <h3 className="font-semibold">{t("Two-factor authentication")}</h3>
         <p className="my-2 text-sm">
           {kind === "staff"
-            ? "Required for every staff login. Resetting signs you out and requires enrolling an authenticator at the next login."
+            ? t(
+                "Required for every staff login. Resetting signs you out and requires enrolling an authenticator at the next login.",
+              )
             : enabled
-              ? "Enabled. A code is required at every login."
-              : "Add an authenticator to protect your customer and dealer access."}
+              ? t("Enabled. A code is required at every login.")
+              : t(
+                  "Add an authenticator to protect your customer and dealer access.",
+                )}
         </p>
         {kind !== "staff" && !enabled && !secret && (
           <form onSubmit={setup} className="flex flex-wrap items-end gap-3">
             <label>
-              Current password
+              {t("Current password")}
               <input
                 name="password"
                 type="password"
@@ -168,20 +183,20 @@ export function AccountSecurity({
               />
             </label>
             <button disabled={busy} className={button}>
-              Set up authenticator
+              {t("Set up authenticator")}
             </button>
           </form>
         )}
         {secret && (
           <p className="my-3 break-all rounded bg-neutral-100 p-3">
-            Add this key to your authenticator:{" "}
+            {t("Add this key to your authenticator:")}{" "}
             <code className="select-all">{secret}</code>
           </p>
         )}
         {(enabled || secret || kind === "staff") && (
           <form onSubmit={verify} className="flex flex-wrap items-end gap-3">
             <label>
-              Authenticator code
+              {t("Authenticator code")}
               <input
                 name="code"
                 autoComplete="one-time-code"
@@ -193,16 +208,16 @@ export function AccountSecurity({
             </label>
             <button disabled={busy} className={button}>
               {kind === "staff"
-                ? "Reset authenticator"
+                ? t("Reset authenticator")
                 : enabled
-                  ? "Disable authenticator"
-                  : "Confirm authenticator"}
+                  ? t("Disable authenticator")
+                  : t("Confirm authenticator")}
             </button>
           </form>
         )}
       </div>
       <div className="border-t pt-4">
-        <h3 className="font-semibold">Active sessions</h3>
+        <h3 className="font-semibold">{t("Active sessions")}</h3>
         <button
           disabled={busy}
           className={`${button} my-3`}
@@ -216,7 +231,7 @@ export function AccountSecurity({
             })
           }
         >
-          Sign out other devices
+          {t("Sign out other devices")}
         </button>
         <ul className="divide-y">
           {devices.map((d) => (
@@ -226,15 +241,17 @@ export function AccountSecurity({
             >
               <div>
                 <p>
-                  {d.current ? "This device" : "Other device"} ·{" "}
-                  {d.ip ?? "IP unavailable"}
+                  {d.current ? t("This device") : t("Other device")} ·{" "}
+                  {d.ip ?? t("IP unavailable")}
                 </p>
                 <p className="max-w-lg break-words text-xs">
-                  {d.userAgent ?? "Browser session"}
+                  {d.userAgent ?? t("Browser session")}
                 </p>
                 <p className="text-xs">
-                  Last active {new Date(d.lastSeenAt).toLocaleString()} ·
-                  Expires {new Date(d.expiresAt).toLocaleString()}
+                  {t("Last active")}{" "}
+                  {new Date(d.lastSeenAt).toLocaleString(uiLocale)}{" "}
+                  {t("· Expires")}{" "}
+                  {new Date(d.expiresAt).toLocaleString(uiLocale)}
                 </p>
               </div>
               <button
@@ -250,7 +267,7 @@ export function AccountSecurity({
                   })
                 }
               >
-                Sign out
+                {t("Sign out")}
               </button>
             </li>
           ))}

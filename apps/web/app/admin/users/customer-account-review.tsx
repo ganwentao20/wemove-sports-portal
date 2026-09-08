@@ -1,4 +1,7 @@
 "use client";
+import { uiError } from "../../../lib/ui-i18n";
+import { useUiText, useUiLocale } from "../../../components/ui-locale";
+
 import { useState } from "react";
 import Link from "next/link";
 import { secureApiFetch } from "../../../lib/secure-api";
@@ -48,6 +51,9 @@ export function CustomerAccountReview({
   canWrite: boolean;
   code: string;
 }) {
+  const t = useUiText();
+  const uiLocale = useUiLocale();
+
   const [data, setData] = useState<Review | null>(null),
     [error, setError] = useState(""),
     [notice, setNotice] = useState(""),
@@ -90,72 +96,75 @@ export function CustomerAccountReview({
       }}
     >
       <summary className="cursor-pointer font-medium">
-        Profile, addresses and orders
+        {t("Profile, addresses and orders")}
       </summary>
       {busy && (
         <p role="status" className="mt-3">
-          Loading…
+          {t("Loading…")}
         </p>
       )}
       {error && (
         <p role="alert" className="mt-3 text-red-700">
-          {error}
+          {error ? uiError(uiLocale, error) : ""}
         </p>
       )}
       {notice && (
         <p role="status" className="mt-3 text-emerald-800">
-          {notice}
+          {notice ? uiError(uiLocale, notice) : ""}
         </p>
       )}
       {data && (
         <div className="mt-4 space-y-5 text-sm">
           <dl className="grid gap-2 sm:grid-cols-2">
             <div>
-              <dt className="font-semibold">Contact</dt>
+              <dt className="font-semibold">{t("Contact")}</dt>
               <dd>
-                {data.profile.email} · {data.profile.phone || "No phone"}
+                {data.profile.email} · {data.profile.phone || t("No phone")}
               </dd>
             </div>
             <div>
-              <dt className="font-semibold">Profile</dt>
+              <dt className="font-semibold">{t("Profile")}</dt>
               <dd>
                 {data.profile.name} ·{" "}
-                {data.profile.displayName || "No display name"} ·{" "}
-                {data.profile.country || "No country"} · {data.profile.locale}
+                {data.profile.displayName || t("No display name")} ·{" "}
+                {data.profile.country || t("No country")} ·{" "}
+                {data.profile.locale}
               </dd>
             </div>
             <div>
-              <dt className="font-semibold">Email verification</dt>
+              <dt className="font-semibold">{t("Email verification")}</dt>
               <dd>
                 {data.profile.status === "PENDING"
-                  ? "Awaiting verification"
-                  : "Email verified"}
+                  ? t("Awaiting verification")
+                  : t("Email verified")}
               </dd>
             </div>
             <div>
-              <dt className="font-semibold">Preferences</dt>
+              <dt className="font-semibold">{t("Preferences")}</dt>
               <dd>
-                Email offers: {data.profile.marketingEmail ? "yes" : "no"}; SMS:{" "}
-                {data.profile.marketingSms ? "yes" : "no"}; product updates:{" "}
-                {data.profile.productUpdates ? "yes" : "no"}
+                {t("Email offers:")}
+                {data.profile.marketingEmail ? t("yes") : t("no")}
+                {t("; SMS:")} {data.profile.marketingSms ? t("yes") : t("no")}
+                {t("; product updates:")}{" "}
+                {data.profile.productUpdates ? t("yes") : t("no")}
               </dd>
             </div>
             <div>
-              <dt className="font-semibold">Newsletter</dt>
-              <dd>{data.subscription?.status || "Not subscribed"}</dd>
+              <dt className="font-semibold">{t("Newsletter")}</dt>
+              <dd>{data.subscription?.status || t("Not subscribed")}</dd>
             </div>
             <div>
-              <dt className="font-semibold">Policy consent</dt>
+              <dt className="font-semibold">{t("Policy consent")}</dt>
               <dd>
-                {data.profile.termsVersion || "Not recorded"} /{" "}
-                {data.profile.privacyVersion || "Not recorded"}
+                {data.profile.termsVersion || t("Not recorded")} /{" "}
+                {data.profile.privacyVersion || t("Not recorded")}
                 {data.profile.policiesAgreedAt &&
-                  ` · ${new Date(data.profile.policiesAgreedAt).toLocaleString()}`}
+                  ` · ${new Date(data.profile.policiesAgreedAt).toLocaleString(uiLocale === "zh" ? "zh-CN" : "en-US")}`}
               </dd>
             </div>
           </dl>
           <section>
-            <h3 className="font-semibold">Addresses</h3>
+            <h3 className="font-semibold">{t("Addresses")}</h3>
             {data.addresses.length ? (
               data.addresses.map((a) => (
                 <address key={a.id} className="mt-2 border-l-2 pl-3 not-italic">
@@ -166,11 +175,11 @@ export function CustomerAccountReview({
                 </address>
               ))
             ) : (
-              <p>No saved addresses.</p>
+              <p>{t("No saved addresses.")}</p>
             )}
           </section>
           <section>
-            <h3 className="font-semibold">Recent orders (up to 100)</h3>
+            <h3 className="font-semibold">{t("Recent orders (up to 100)")}</h3>
             {data.orders.length ? (
               <ul className="mt-2 space-y-2">
                 {data.orders.map((o) => (
@@ -178,13 +187,15 @@ export function CustomerAccountReview({
                     <Link className="underline" href={`/admin/orders/${o.id}`}>
                       {o.orderNo}
                     </Link>{" "}
-                    · {o.status} · {o.paymentStatus} ·{" "}
-                    {new Date(o.createdAt).toLocaleDateString()}
+                    · {t(String(o.status))} · {t(String(o.paymentStatus))} ·{" "}
+                    {new Date(o.createdAt).toLocaleDateString(
+                      uiLocale === "zh" ? "zh-CN" : "en-US",
+                    )}
                   </li>
                 ))}
               </ul>
             ) : (
-              <p>No orders.</p>
+              <p>{t("No orders.")}</p>
             )}
           </section>
           {canWrite && data.profile.status === "ACTIVE" && (
@@ -194,7 +205,7 @@ export function CustomerAccountReview({
               onClick={() => void reset()}
               className="rounded-lg border px-3 py-2 font-medium disabled:opacity-50"
             >
-              Send password reset email
+              {t("Send password reset email")}
             </button>
           )}
         </div>

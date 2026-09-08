@@ -1,9 +1,13 @@
 "use client";
+import { uiError } from "../../../lib/ui-i18n";
+import { useUiText, useUiLocale } from "../../../components/ui-locale";
 
 import { FormEvent, useState } from "react";
 import { ApiError, apiFetch } from "../../../lib/api";
 
 export function ForgotPasswordForm() {
+  const t = useUiText();
+  const uiLocale = useUiLocale();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [sent, setSent] = useState(false);
@@ -20,22 +24,60 @@ export function ForgotPasswordForm() {
       });
       setSent(true);
     } catch (cause) {
-      setError(cause instanceof ApiError ? cause.message : "Unable to process the request.");
+      setError(
+        cause instanceof ApiError
+          ? cause.message
+          : "Unable to process the request.",
+      );
     } finally {
       setBusy(false);
     }
   }
 
-  if (sent) return <p role="status" className="mt-8 rounded-xl bg-emerald-50 p-4 text-sm text-emerald-800">If an eligible account exists, reset instructions are on the way.</p>;
+  if (sent)
+    return (
+      <p
+        role="status"
+        className="mt-8 rounded-xl bg-emerald-50 p-4 text-sm text-emerald-800"
+      >
+        {t("If an eligible account exists, reset instructions are on the way.")}
+      </p>
+    );
 
   return (
     <form onSubmit={submit} className="mt-8 space-y-4">
       <div className="space-y-2">
-        <label htmlFor="forgot-password-email" className="block text-sm font-medium">Email</label>
-        <input id="forgot-password-email" required type="email" name="email" autoComplete="email" maxLength={160} placeholder="Email" className="w-full rounded-xl border border-neutral-300 px-4 py-3 text-sm" />
+        <label
+          htmlFor="forgot-password-email"
+          className="block text-sm font-medium"
+        >
+          {t("Email")}
+        </label>
+        <input
+          id="forgot-password-email"
+          required
+          type="email"
+          name="email"
+          autoComplete="email"
+          maxLength={160}
+          placeholder={t("Email")}
+          className="w-full rounded-xl border border-neutral-300 px-4 py-3 text-sm"
+        />
       </div>
-      {error && <p role="alert" className="rounded-lg bg-red-50 p-3 text-sm text-red-700">{error}</p>}
-      <button disabled={busy} className="w-full rounded-full bg-[var(--wm-dark)] py-3 text-sm font-semibold text-white disabled:opacity-50">{busy ? "Sending…" : "Send reset instructions"}</button>
+      {error && (
+        <p
+          role="alert"
+          className="rounded-lg bg-red-50 p-3 text-sm text-red-700"
+        >
+          {uiError(uiLocale, error)}
+        </p>
+      )}
+      <button
+        disabled={busy}
+        className="w-full rounded-full bg-[var(--wm-dark)] py-3 text-sm font-semibold text-white disabled:opacity-50"
+      >
+        {busy ? t("Sending…") : t("Send reset instructions")}
+      </button>
     </form>
   );
 }

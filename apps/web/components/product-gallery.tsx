@@ -54,7 +54,7 @@ export function ProductGallery({
   return (
     <div>
       <div
-        className="overflow-hidden rounded-2xl"
+        className="overflow-hidden rounded-[6px]"
         onTouchStart={(e) => {
           e.currentTarget.dataset.start = String(e.touches[0].clientX);
         }}

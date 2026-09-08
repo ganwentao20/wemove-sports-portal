@@ -1,4 +1,8 @@
 "use client";
+import { uiError } from "../../../lib/ui-i18n";
+
+import { useUiText, useUiLocale } from "../../../components/ui-locale";
+
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { secureApiFetch } from "../../../lib/secure-api";
@@ -17,6 +21,10 @@ type File = {
   version: number;
 };
 export default function Downloads() {
+  const uiLocale = useUiLocale();
+
+  const t = useUiText();
+
   const [files, setFiles] = useState<File[]>([]);
   const [error, setError] = useState("");
   const [query, setQuery] = useState("");
@@ -52,22 +60,22 @@ export default function Downloads() {
         className="underline"
         href={kind === "dealer" ? "/dealer/dashboard" : "/customer/account"}
       >
-        Dashboard
+        {t("Dashboard")}
       </Link>
       <h1 className="my-5 text-3xl font-bold">
         {kind === "dealer"
-          ? "Company downloads"
-          : "Registered customer downloads"}
+          ? t("Company downloads")
+          : t("Registered customer downloads")}
       </h1>
       <label>
-        Search files
+        {t("Search files")}
         <input
           className="ml-3 rounded border p-2"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
         />
       </label>
-      <p role="alert">{error}</p>
+      <p role="alert">{error ? uiError(uiLocale, error) : ""}</p>
       <ul className="mt-6 space-y-3">
         {files
           .filter((f) =>
@@ -84,19 +92,22 @@ export default function Downloads() {
               <div>
                 <strong>{f.title || f.fileName}</strong>
                 <p>
-                  {f.alt} · {f.language} · {f.resourceType} ·{" "}
-                  {new Date(f.publishedAt).toLocaleDateString()} · v{f.version}{" "}
-                  · {Math.ceil(f.sizeBytes / 1024)} KB · {f.visibility}
+                  {f.alt} · {f.language} · {t(f.resourceType)} ·{" "}
+                  {new Date(f.publishedAt).toLocaleDateString(uiLocale)}{" "}
+                  {t("· v")} {f.version} · {Math.ceil(f.sizeBytes / 1024)}{" "}
+                  {t("KB ·")} {t(f.visibility)}
                 </p>
               </div>
               <button onClick={() => void download(f.id)} className="underline">
-                Download
+                {t("Download")}
               </button>
             </li>
           ))}
       </ul>
       {!files.length && !error && (
-        <p className="mt-4">No authorized downloads are published yet.</p>
+        <p className="mt-4">
+          {t("No authorized downloads are published yet.")}
+        </p>
       )}
     </main>
   );

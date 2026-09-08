@@ -21,6 +21,8 @@ import { ProductSelectionProvider } from "../../../../components/product-selecti
 import { ShareLink } from "../../../../components/share-link";
 import { getLocale, getMarket, SITE_URL } from "../../../../lib/locale";
 import { contentText } from "../../../../lib/content-text";
+import { publicUrl } from "../../../../lib/public-url";
+import ProductsPage from "../page";
 
 export const dynamic = "force-dynamic";
 
@@ -48,6 +50,9 @@ type ProductDetail = {
   scenes: string[];
   skills: string[];
   tags: string[];
+  tagLabels?: Record<string, string>;
+  sceneLabels?: Record<string, string>;
+  skillLabels?: Record<string, string>;
   specifications: Record<string, unknown>;
   playGuide: string | null;
   productFaq: Array<{ question: string; answer: string }>;
@@ -118,7 +123,7 @@ export async function generateMetadata({
   const result = await serverApiGet<ProductDetail>(
     `/products/${encodeURIComponent(slug)}?market=${market}&locale=${locale}`,
   );
-  if (!result.ok) return { title: "Product" };
+  if (!result.ok) return { title: productCopy(locale).products };
   const seo = result.data.seo ?? {},
     fallback = `${SITE_URL}/${result.data.locale}/products/${slug}?market=${market}`;
   const canonical =
@@ -168,7 +173,17 @@ export default async function ProductDetailPage({ params }: PageProps) {
   const result = await serverApiGet<ProductDetail>(
     `/products/${encodeURIComponent(slug)}?market=${market}&locale=${locale}`,
   );
-  if (!result.ok && result.status === 404) notFound();
+  if (!result.ok && result.status === 404) {
+    const categories = await serverApiGet<Array<{ slug: string }>>(
+      `/categories?market=${market}&locale=${locale}`,
+    );
+    if (categories.ok && categories.data.some((item) => item.slug === slug)) {
+      return ProductsPage({
+        searchParams: Promise.resolve({ category: slug, market }),
+      });
+    }
+    notFound();
+  }
   if (result.ok && result.data.locale !== locale)
     redirect(
       `/${result.data.locale}/products/${encodeURIComponent(slug)}?market=${market}`,
@@ -184,7 +199,7 @@ export default async function ProductDetailPage({ params }: PageProps) {
         </h1>
         <p className="mt-3 text-[var(--wm-muted)]">{copy.notAvailable}</p>
         <Link
-          href="/products"
+          href={`/${locale}/products?market=${market}`}
           className="mt-7 inline-flex rounded-xl bg-[var(--wm-dark)] px-5 py-3 text-sm font-bold text-[var(--wm-surface)]"
         >
           {copy.back}
@@ -306,7 +321,7 @@ export default async function ProductDetailPage({ params }: PageProps) {
               ? "CHECK_AVAILABILITY"
               : "OUT_OF_STOCK"
         }
-        className="mx-auto grid max-w-7xl gap-10 px-4 py-12 sm:px-6 lg:grid-cols-[1.1fr_0.9fr] lg:gap-16 lg:py-16"
+        className="wm-original-product mx-auto grid max-w-[1600px] gap-10 px-4 py-12 sm:px-6 lg:grid-cols-[1.05fr_0.95fr] lg:gap-16 lg:py-16"
       >
         <script
           type="application/ld+json"
@@ -320,14 +335,17 @@ export default async function ProductDetailPage({ params }: PageProps) {
           gallery={product.gallery}
         />
         <div>
-          <nav className="text-xs font-semibold text-[var(--wm-muted)]">
-            <Link href="/products" className="hover:text-[var(--wm-primary)]">
+          <nav className="text-sm font-normal text-[#777]">
+            <Link
+              href={`/${locale}/products?market=${market}`}
+              className="hover:text-[var(--wm-primary)]"
+            >
               {copy.products}
             </Link>
             {product.category ? ` / ${product.category.name}` : ""} /{" "}
             {product.name}
           </nav>
-          <h1 className="mt-5 text-4xl font-extrabold leading-tight tracking-[-0.05em] text-[var(--wm-dark)] sm:text-5xl">
+          <h1 className="mt-6 border-b border-[#deded8] pb-6 text-4xl font-normal leading-tight tracking-[-0.035em] text-[#333] sm:text-5xl">
             {product.name}
           </h1>
           <ProductRating rating={product.rating} locale={product.locale} />
@@ -337,7 +355,7 @@ export default async function ProductDetailPage({ params }: PageProps) {
                 key={tag}
                 className="rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold"
               >
-                {tag}
+                {product.tagLabels?.[tag] ?? tag}
               </span>
             ))}
           </div>
@@ -345,16 +363,20 @@ export default async function ProductDetailPage({ params }: PageProps) {
             {product.ageMin !== null
               ? `${copy.ages} ${product.ageMin}–${product.ageMax ?? "+"} · `
               : ""}
-            {product.scenes?.join(", ")}
-            {product.skills?.length ? ` · ${product.skills.join(", ")}` : ""}
+            {product.scenes
+              ?.map((scene) => product.sceneLabels?.[scene] ?? scene)
+              .join(", ")}
+            {product.skills?.length
+              ? ` · ${product.skills.map((skill) => product.skillLabels?.[skill] ?? skill).join(", ")}`
+              : ""}
           </p>
           {product.summary && (
-            <p className="mt-4 text-lg leading-7 text-[var(--wm-muted)]">
+            <p className="mt-6 text-lg leading-8 text-[#676b67]">
               {product.summary}
             </p>
           )}
           {product.description && (
-            <div className="mt-6 whitespace-pre-line border-t border-[var(--wm-border)] pt-6 text-sm leading-7 text-[var(--wm-text)]">
+            <div className="mt-8 whitespace-pre-line border-t border-[#deded8] pt-7 text-base leading-8 text-[#444]">
               {product.description}
             </div>
           )}
@@ -367,6 +389,7 @@ export default async function ProductDetailPage({ params }: PageProps) {
             locale={product.locale}
             productId={product.id}
             productSlug={product.slug}
+            productName={product.name}
             market={market}
           >
             <ProductPurchase
@@ -380,7 +403,11 @@ export default async function ProductDetailPage({ params }: PageProps) {
             />
           </DealerProductPurchase>
           <Link
-            href={`/compare?ids=${encodeURIComponent(product.slug)}`}
+            href={publicUrl(
+              `/compare?ids=${encodeURIComponent(product.slug)}`,
+              locale,
+              market,
+            )}
             className="mt-3 inline-flex rounded-xl border border-[var(--wm-border)] bg-[var(--wm-surface)] px-5 py-2.5 text-sm font-bold hover:border-[var(--wm-primary)] hover:text-[var(--wm-primary)]"
           >
             {copy.compare}

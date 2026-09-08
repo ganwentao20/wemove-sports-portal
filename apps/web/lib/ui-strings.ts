@@ -1,5 +1,6 @@
 const messages: Record<string, Record<string, string>> = {
   zh: {
+    "Cookie consent": "Cookie 使用偏好",
     Products: "产品",
     "Play & Learn": "玩乐与学习",
     Dealers: "经销商",
@@ -22,18 +23,20 @@ const messages: Record<string, Record<string, string>> = {
     "For Business": "合作伙伴",
     "Become a Dealer": "申请成为经销商",
     "Dealer Sign in": "经销商登录",
+    "Unified sign in": "统一账号登录",
     Privacy: "隐私政策",
     Terms: "使用条款",
     "Cookie settings": "Cookie 设置",
     "Currency is shown with each price.": "币种随价格显示。",
     "Adult-purchase only.": "仅限成年人购买。",
-    "Active play toys for kids & families.": "为儿童和家庭设计的运动玩具。",
+    "Wooden marble runs, STEM learning and craft innovation.":
+      "原木滚珠轨道积木、STEM 教育与木作创新。",
     "Your privacy choices": "隐私选择",
     "Essential only": "仅必要 Cookie",
     "Allow analytics": "允许统计",
     "Essential cookies keep sign-in and your cart working. Optional analytics help us improve the site. You can change this in Cookie settings.":
       "必要 Cookie 用于登录和购物车。可选统计帮助改进网站，可随时在 Cookie 设置中更改。",
-    "Ideas for active play": "订阅玩乐资讯",
+    "WEMOVE ideas and updates": "订阅 WEMOVE 灵感与动态",
     Email: "邮箱",
     Subscribe: "订阅",
     "I agree to the privacy policy and to receive marketing emails.":
@@ -63,6 +66,7 @@ const messages: Record<string, Record<string, string>> = {
     "For Business": "Professionnels",
     "Become a Dealer": "Devenir revendeur",
     "Dealer Sign in": "Connexion revendeur",
+    "Unified sign in": "Connexion au compte",
     Privacy: "Confidentialité",
     Terms: "Conditions",
     "Cookie settings": "Paramètres des cookies",
@@ -75,7 +79,7 @@ const messages: Record<string, Record<string, string>> = {
     "Allow analytics": "Autoriser les statistiques",
     "Essential cookies keep sign-in and your cart working. Optional analytics help us improve the site. You can change this in Cookie settings.":
       "Les cookies nécessaires assurent la connexion et le panier. Les statistiques facultatives nous aident à améliorer le site. Vous pouvez modifier votre choix dans les paramètres des cookies.",
-    "Ideas for active play": "Des idées pour jouer",
+    "WEMOVE ideas and updates": "Idées et actualités WEMOVE",
     Email: "Adresse e-mail",
     Subscribe: "Recevoir les actualités",
     "I agree to the privacy policy and to receive marketing emails.":
@@ -106,6 +110,7 @@ const messages: Record<string, Record<string, string>> = {
     "For Business": "Geschäftskunden",
     "Become a Dealer": "Händler werden",
     "Dealer Sign in": "Händleranmeldung",
+    "Unified sign in": "Kontoanmeldung",
     Privacy: "Datenschutz",
     Terms: "Bedingungen",
     "Cookie settings": "Cookie-Einstellungen",
@@ -118,7 +123,7 @@ const messages: Record<string, Record<string, string>> = {
     "Allow analytics": "Statistik erlauben",
     "Essential cookies keep sign-in and your cart working. Optional analytics help us improve the site. You can change this in Cookie settings.":
       "Notwendige Cookies ermöglichen Anmeldung und Warenkorb. Freiwillige Statistiken helfen uns, die Website zu verbessern. Ihre Auswahl können Sie in den Cookie-Einstellungen ändern.",
-    "Ideas for active play": "Ideen für Bewegungsspiele",
+    "WEMOVE ideas and updates": "WEMOVE-Ideen und Neuigkeiten",
     Email: "E-Mail",
     Subscribe: "Abonnieren",
     "I agree to the privacy policy and to receive marketing emails.":

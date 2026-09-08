@@ -2,7 +2,7 @@
 
 > 本目录存放**过程性/规范类**材料。课程最终提交件（④需求文档、⑤测试报告、⑥项目汇报 PPT 等）见下方「课程交付清单」。
 
-2026-09-08 更新：[当前 Word 交付件索引](deliverables/README.md)、[材料审核与项目完成度](plans/document-review-20260908.md)、[交付就绪清单](delivery-readiness.md)。五人 AI 汇总和五份个人 AI 说明已齐；独立技术现状/思政报告已归档 5/5，本次补入[周慧莹报告](individual-reports/周慧莹.md)。首次实际会议纪要已归档，测试报告 v0.7 已核对 CI #54 的完整整合结论，保留 CI #51 性能原始样本、100 用户负载与实际截图；当前[图文汇报 PPT v1.3](deliverables/下午班-08组-WEMOVE-SPORTS-项目汇报-v1.3.pptx)共十五页。
+2026-09-08 更新：[当前 Word 交付件索引](deliverables/README.md)、[材料审核与项目完成度](plans/document-review-20260908.md)、[交付就绪清单](delivery-readiness.md)。五人 AI 汇总和五份个人 AI 说明已齐；独立技术现状/思政报告已归档 5/5，本次补入[周慧莹报告](individual-reports/周慧莹.md)。首次实际会议纪要已归档；当前需求 v0.7、测试 v0.9、工作量 v1.3、AI 汇总 v1.1 与项目汇报均按“保留原网站前端与图片、复用既有后端”重新校订。
 
 ## 成员花名册（命名与分工引用，2026-09 确认）
 

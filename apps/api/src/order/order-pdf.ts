@@ -8,7 +8,7 @@ export function orderPdf(data: DocumentData): Promise<Buffer> {
         size: 'A4',
         margin: 48,
         bufferPages: true,
-        info: { Title: data.number, Author: 'WEMOVE SPORTS' },
+        info: { Title: data.number, Author: 'WEMOVE' },
       }),
       chunks: Buffer[] = [];
     doc.on('data', (chunk: Buffer) => chunks.push(chunk));
@@ -36,7 +36,7 @@ export function orderPdf(data: DocumentData): Promise<Buffer> {
           : data.kind === 'receipt'
             ? 'Payment receipt'
             : 'Order invoice';
-      doc.fillColor('#18323e').fontSize(11).text('WEMOVE SPORTS').moveDown(1);
+      doc.fillColor('#18323e').fontSize(11).text('WEMOVE').moveDown(1);
       doc
         .fontSize(25)
         .text(title)

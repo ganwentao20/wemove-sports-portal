@@ -24,8 +24,8 @@ export class EmailService {
     const link = `${this.appBaseUrl}/verify-email?token=${encodeURIComponent(token)}`;
     await this.dispatch(
       to,
-      'Verify your WEMOVE SPORTS account',
-      `Welcome to WEMOVE SPORTS!<br/><br/>Please confirm you are the owner of this email address by clicking the link below (valid for 24 hours):<br/><a href="${link}">Verify my email</a><br/><br/>If you did not create this account, you can safely ignore this email.`,
+      'Verify your WEMOVE account',
+      `Welcome to WEMOVE!<br/><br/>Please confirm you are the owner of this email address by clicking the link below (valid for 24 hours):<br/><a href="${link}">Verify my email</a><br/><br/>If you did not create this account, you can safely ignore this email.`,
       `Verify link (24h): ${link}`,
     );
   }
@@ -35,7 +35,7 @@ export class EmailService {
     const link = `${this.appBaseUrl}/reset-password?token=${encodeURIComponent(token)}`;
     await this.dispatch(
       to,
-      'Reset your WEMOVE SPORTS password',
+      'Reset your WEMOVE password',
       `We received a request to reset your password. Click the link below to choose a new one (valid for 1 hour):<br/><a href="${link}">Reset password</a><br/><br/>If you did not request this, you can safely ignore this email.`,
       `Reset link (1h): ${link}`,
     );

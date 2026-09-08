@@ -4,7 +4,21 @@ export async function proxy(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
   const match = pathname.match(LANGUAGE_PREFIX);
   const headers = new Headers(request.headers);
-  headers.set("x-wemove-locale", match?.[1] ?? "en");
+  const remembered = request.cookies.get("wm_locale")?.value;
+  const locale =
+    match?.[1] ??
+    (["en", "zh", "fr", "de"].includes(remembered ?? "") ? remembered! : "en");
+  headers.set("x-wemove-locale", locale);
+  const remember = (response: NextResponse) => {
+    if (match && ["en", "zh", "fr", "de"].includes(locale)) {
+      response.cookies.set("wm_locale", locale, {
+        path: "/",
+        maxAge: 31536000,
+        sameSite: "lax",
+      });
+    }
+    return response;
+  };
   const market =
     request.nextUrl.searchParams.get("market") ??
     request.cookies.get("wm_market")?.value ??
@@ -20,11 +34,11 @@ export async function proxy(request: NextRequest) {
     target.pathname = `/en${contentPath === "/" ? "" : contentPath}`;
     return NextResponse.redirect(target, 307);
   }
-  // These application templates currently have an English UI. Keep the entire
-  // page in its available language instead of rendering English under /zh.
+  // Application screens have complete English and Chinese UI dictionaries.
+  // Other configured content languages still use the English application UI.
   if (
     match &&
-    match[1] !== "en" &&
+    !["en", "zh"].includes(match[1]) &&
     /^\/(admin|customer|dealer|cart|checkout|orders|compare|contact|support|play-learn|dealers|cookies|newsletter)(\/|$)/.test(
       contentPath,
     )
@@ -33,7 +47,7 @@ export async function proxy(request: NextRequest) {
     target.pathname = `/en${contentPath}`;
     return NextResponse.redirect(target, 307);
   }
-  if (match && match[1] !== "en") {
+  if (match && !["en", "zh"].includes(match[1])) {
     try {
       const response = await fetch(
         `${process.env.API_PROXY_TARGET ?? "http://localhost:8080"}/api/v1/site/config`,
@@ -63,9 +77,11 @@ export async function proxy(request: NextRequest) {
           match && !LANGUAGE_PREFIX.test(redirect.destination)
             ? `${match[0]}${redirect.destination}`
             : redirect.destination;
-        return NextResponse.redirect(
-          new URL(destination, request.url),
-          redirect.status === 302 ? 302 : 301,
+        return remember(
+          NextResponse.redirect(
+            new URL(destination, request.url),
+            redirect.status === 302 ? 302 : 301,
+          ),
         );
       }
     } catch {
@@ -75,8 +91,8 @@ export async function proxy(request: NextRequest) {
   if (match) {
     const url = request.nextUrl.clone();
     url.pathname = contentPath;
-    return NextResponse.rewrite(url, { request: { headers } });
+    return remember(NextResponse.rewrite(url, { request: { headers } }));
   }
-  return NextResponse.next({ request: { headers } });
+  return remember(NextResponse.next({ request: { headers } }));
 }
 export const config = { matcher: ["/((?!_next|api|.*\\..*).*)"] };

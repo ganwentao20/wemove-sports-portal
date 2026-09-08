@@ -1,4 +1,8 @@
 "use client";
+import { uiError } from "../../../lib/ui-i18n";
+
+import { useUiText, useUiLocale } from "../../../components/ui-locale";
+
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { secureApiFetch, sessionLogout } from "../../../lib/secure-api";
@@ -14,6 +18,10 @@ type Terms = {
   sections: Array<{ title: string; text: string }>;
 };
 export default function DealerTermsPage() {
+  const uiLocale = useUiLocale();
+
+  const t = useUiText();
+
   const ready = useHydrated(),
     [terms, setTerms] = useState<Terms | null>(null),
     [error, setError] = useState(""),
@@ -38,56 +46,60 @@ export default function DealerTermsPage() {
       className="mx-auto max-w-3xl px-4 py-12"
     >
       <h1 className="text-3xl font-bold">
-        {terms?.title ?? "Dealer portal terms"}
+        {t(terms?.title ?? "Dealer portal terms")}
       </h1>
       {error && (
         <p
           role="alert"
           className="mt-4 rounded border border-red-300 p-3 text-red-700"
         >
-          {error}
+          {error ? uiError(uiLocale, error) : ""}
         </p>
       )}
       {terms ? (
         <>
           <p className="mt-4">
-            Company: <strong>{terms.companyName}</strong>
+            {t("Company:")}
+            <strong>{terms.companyName}</strong>
           </p>
           <p className="mt-2 text-sm text-neutral-700">
-            Version {terms.version}. Review these terms before using company
-            prices, orders and private dealer resources.
+            {t("Version")} {terms.version}{" "}
+            {t(
+              ". Review these terms before using company prices, orders and private dealer resources.",
+            )}
           </p>
           <div className="my-8 space-y-6">
             {terms.sections.map((section) => (
-              <section key={section.title}>
-                <h2 className="text-xl font-semibold">{section.title}</h2>
-                <p className="mt-3 leading-7">{section.text}</p>
+              <section key={t(section.title)}>
+                <h2 className="text-xl font-semibold">{t(section.title)}</h2>
+                <p className="mt-3 leading-7">{t(section.text)}</p>
               </section>
             ))}
           </div>
           <p className="mb-6">
             <Link className="underline" href="/privacy">
-              Privacy policy
+              {t("Privacy policy")}
             </Link>{" "}
             ·{" "}
             <Link className="underline" href="/terms">
-              Website terms
+              {t("Website terms")}
             </Link>{" "}
             ·{" "}
             <Link className="underline" href="/contact">
-              Contact support
+              {t("Contact support")}
             </Link>
           </p>
           {terms.accepted ? (
             <div>
               <p role="status">
-                Accepted on {new Date(terms.acceptedAt!).toLocaleString()}.
+                {t("Accepted on")}{" "}
+                {new Date(terms.acceptedAt!).toLocaleString(uiLocale)}.
               </p>
               <Link
                 href={destination}
                 className="mt-4 inline-block rounded border px-5 py-3"
               >
-                Continue to dealer portal
+                {t("Continue to dealer portal")}
               </Link>
             </div>
           ) : (
@@ -125,13 +137,15 @@ export default function DealerTermsPage() {
                     className="mt-1"
                   />
                   <span>
-                    I have read version {terms.version}, am authorized to use
-                    this company account, and accept these dealer portal terms.
+                    {t("I have read version")} {terms.version}{" "}
+                    {t(
+                      ", am authorized to use this company account, and accept these dealer portal terms.",
+                    )}
                   </span>
                 </label>
                 <div className="mt-5 flex flex-wrap gap-3">
                   <button className="rounded bg-[var(--wm-primary)] px-5 py-3 font-semibold text-white">
-                    Accept and continue
+                    {t("Accept and continue")}
                   </button>
                   <button
                     type="button"
@@ -141,7 +155,7 @@ export default function DealerTermsPage() {
                       window.location.assign("/dealer/login");
                     }}
                   >
-                    Decline and sign out
+                    {t("Decline and sign out")}
                   </button>
                 </div>
               </fieldset>
@@ -150,7 +164,7 @@ export default function DealerTermsPage() {
         </>
       ) : (
         <p role="status" className="mt-6">
-          Loading the current terms…
+          {t("Loading the current terms…")}
         </p>
       )}
     </main>

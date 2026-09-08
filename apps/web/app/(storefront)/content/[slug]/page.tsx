@@ -1,5 +1,6 @@
+import { getUiText } from "../../../../lib/ui-i18n-server";
 import type { Metadata } from "next";
-import { notFound, redirect } from "next/navigation";
+import { notFound } from "next/navigation";
 import { ContentCollection } from "../../../../components/content-collection";
 import { ContentBlocks } from "../../../../components/content-blocks";
 import { serverApiGet } from "../../../../lib/server-api";
@@ -38,10 +39,11 @@ export async function generateMetadata({
 }: {
   params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
+  const t = await getUiText();
   const { slug } = await params,
     result = await read(slug);
   if (!result.ok)
-    return { title: "Content unavailable", robots: { index: false } };
+    return { title: t("Content unavailable"), robots: { index: false } };
   const p = result.data,
     seo = p.seo ?? {},
     market = await getMarket(),
@@ -84,25 +86,24 @@ export default async function ContentPage({
 }: {
   params: Promise<{ slug: string }>;
 }) {
+  const t = await getUiText();
   const { slug } = await params,
     result = await read(slug);
   if (!result.ok) {
     if (result.status === 404) notFound();
     return (
       <div className="mx-auto max-w-5xl px-4 py-16">
-        <h1 className="text-3xl font-bold">Content temporarily unavailable</h1>
+        <h1 className="text-3xl font-bold">
+          {t("Content temporarily unavailable")}
+        </h1>
         <p className="mt-4" role="status">
-          Please try again shortly.
+          {t("Please try again shortly.")}
         </p>
       </div>
     );
   }
   const p = result.data,
     requested = await getLocale();
-  if (p.locale !== requested)
-    redirect(
-      "/" + p.locale + contentPath(p.slug) + "?market=" + (await getMarket()),
-    );
   const schema = {
     "@context": "https://schema.org",
     "@type": p.kind === "ARTICLE" ? "Article" : "WebPage",
@@ -114,6 +115,13 @@ export default async function ContentPage({
   };
   return (
     <div lang={p.locale} className="mx-auto max-w-6xl px-4 py-12 sm:px-6">
+      {p.locale !== requested && (
+        <p role="status" className="mb-6 rounded-xl border p-4">
+          {t(
+            "This content is available in English while its translation is being prepared.",
+          )}
+        </p>
+      )}
       <header className="mb-10">
         <h1 className="text-4xl font-extrabold tracking-tight">{p.title}</h1>
         {p.author && (

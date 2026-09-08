@@ -1,9 +1,13 @@
 "use client";
+import { uiError } from "../../../lib/ui-i18n";
+import { useUiText, useUiLocale } from "../../../components/ui-locale";
+
 import Link from "next/link";
 import { useEffect, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { apiFetch, ApiError } from "../../../lib/api";
 import { secureApiFetch } from "../../../lib/secure-api";
+import { localizeGuestCart } from "../../../lib/guest-cart-locale";
 import { recordEvent } from "../../../components/consent-analytics";
 
 type Address = {
@@ -28,6 +32,7 @@ type Market = {
 type Cart = {
   items: Array<{
     variantId: string;
+    productSlug?: string;
     sku: string;
     name: string;
     quantity: number;
@@ -60,6 +65,8 @@ const empty: Address = {
 };
 const input = "mt-1 w-full rounded-lg border border-neutral-300 p-3";
 export function Checkout() {
+  const t = useUiText();
+  const uiLocale = useUiLocale();
   const router = useRouter();
   const [cart, setCart] = useState<Cart>({ items: [] });
   const [markets, setMarkets] = useState<Market[]>([]);
@@ -80,13 +87,13 @@ export function Checkout() {
     n: number,
     c = quote?.currency ?? current?.currency ?? "USD",
   ) =>
-    new Intl.NumberFormat("en", { style: "currency", currency: c }).format(
+    new Intl.NumberFormat(uiLocale, { style: "currency", currency: c }).format(
       n / 100,
     );
   async function load() {
     try {
       const [c, a] = await Promise.all([
-        secureApiFetch<Cart>("customer", "/cart"),
+        secureApiFetch<Cart>("customer", `/cart?locale=${uiLocale}`),
         secureApiFetch<Address[]>("customer", "/account/addresses"),
       ]);
       setCart(c);
@@ -102,7 +109,7 @@ export function Checkout() {
           key = crypto.randomUUID();
           localStorage.setItem("wm-guest-merge-key", key);
         }
-        const merged = await secureApiFetch<Cart>("customer", "/cart/merge", {
+        await secureApiFetch<Cart>("customer", "/cart/merge", {
           method: "POST",
           body: JSON.stringify({
             market:
@@ -119,7 +126,9 @@ export function Checkout() {
             })),
           }),
         });
-        setCart(merged);
+        setCart(
+          await secureApiFetch<Cart>("customer", `/cart?locale=${uiLocale}`),
+        );
         setUnmerged([]);
         localStorage.removeItem("wm-guest-cart");
         localStorage.removeItem("wm-guest-merge-key");
@@ -128,7 +137,21 @@ export function Checkout() {
       if (e instanceof ApiError && e.status === 401) {
         setGuest(true);
         const rows = JSON.parse(localStorage.getItem("wm-guest-cart") ?? "[]");
-        setCart({ items: rows });
+        const savedMarket =
+          new URLSearchParams(location.search).get("market") ??
+          document.cookie
+            .split("; ")
+            .find((cookie) => cookie.startsWith("wm_market="))
+            ?.split("=")[1] ??
+          market;
+        const localized = await localizeGuestCart(
+          rows,
+          uiLocale,
+          savedMarket,
+          apiFetch,
+        );
+        setCart({ items: localized });
+        localStorage.setItem("wm-guest-cart", JSON.stringify(localized));
       } else setError(e instanceof Error ? e.message : "Cart unavailable");
     }
   }
@@ -144,7 +167,7 @@ export function Checkout() {
         ?.split("=")[1];
     if (m) setMarket(m);
     void load();
-  }, []);
+  }, [uiLocale]);
   function body() {
     const snap = (a: Address) => ({
       recipient: a.recipient,
@@ -225,13 +248,15 @@ export function Checkout() {
           .filter((r) => r.quantity > 0);
         localStorage.setItem("wm-guest-cart", JSON.stringify(rows));
         setCart({ items: rows });
-      } else
+      } else {
+        await secureApiFetch<Cart>("customer", `/cart/items/${id}`, {
+          method: "PATCH",
+          body: JSON.stringify({ quantity: q, market }),
+        });
         setCart(
-          await secureApiFetch<Cart>("customer", `/cart/items/${id}`, {
-            method: "PATCH",
-            body: JSON.stringify({ quantity: q, market }),
-          }),
+          await secureApiFetch<Cart>("customer", `/cart?locale=${uiLocale}`),
         );
+      }
       setQuote(null);
     } catch (e) {
       setError((e as Error).message);
@@ -256,8 +281,8 @@ export function Checkout() {
         ] as const
       ).map((k) => (
         <label key={k} className="text-sm font-medium">
-          {prefix}{" "}
-          {
+          {t(prefix)}{" "}
+          {t(
             {
               recipient: "recipient",
               phone: "phone",
@@ -267,8 +292,8 @@ export function Checkout() {
               postalCode: "postal code",
               line1: "address line 1",
               line2: "address line 2 (optional)",
-            }[k]
-          }
+            }[k],
+          )}
           <input
             className={input}
             value={value[k] ?? ""}
@@ -291,18 +316,19 @@ export function Checkout() {
   );
   return (
     <div className="mx-auto max-w-6xl px-4 py-10">
-      <h1 className="text-4xl font-bold">Your cart & checkout</h1>
+      <h1 className="text-4xl font-bold">{t("Your cart & checkout")}</h1>
       {error && (
         <p role="alert" className="my-4 rounded bg-red-50 p-4 text-red-800">
-          {error}
+          {uiError(uiLocale, error)}
         </p>
       )}
       {!guest && unmerged.length > 0 && (
         <section className="my-5 rounded-xl border border-amber-300 bg-amber-50 p-5">
-          <h2 className="font-semibold">Guest items awaiting merge</h2>
+          <h2 className="font-semibold">{t("Guest items awaiting merge")}</h2>
           <p className="my-2 text-sm">
-            Reduce unavailable quantities or remove an item, then retry. Your
-            signed-in cart is shown below.
+            {t(
+              "Reduce unavailable quantities or remove an item, then retry. Your signed-in cart is shown below.",
+            )}
           </p>
           {unmerged.map((line) => (
             <div
@@ -311,7 +337,7 @@ export function Checkout() {
             >
               <span>{line.name || line.sku || line.variantId}</span>
               <label>
-                Quantity{" "}
+                {t("Quantity")}{" "}
                 <input
                   className="w-20 rounded border p-2"
                   type="number"
@@ -328,7 +354,7 @@ export function Checkout() {
                 className="underline"
                 onClick={() => editUnmerged(line.variantId, 0)}
               >
-                Remove
+                {t("Remove")}
               </button>
             </div>
           ))}
@@ -340,7 +366,7 @@ export function Checkout() {
               void load();
             }}
           >
-            Retry merge
+            {t("Retry merge")}
           </button>
         </section>
       )}
@@ -355,7 +381,7 @@ export function Checkout() {
                 >
                   <span>{line.name || line.sku || line.variantId}</span>
                   <label>
-                    Quantity{" "}
+                    {t("Quantity")}{" "}
                     <input
                       className="w-20 rounded border p-2"
                       type="number"
@@ -374,28 +400,28 @@ export function Checkout() {
               ))
             ) : (
               <p>
-                Your cart is empty.{" "}
+                {t("Your cart is empty.")}{" "}
                 <Link className="underline" href="/products">
-                  Browse products
+                  {t("Browse products")}
                 </Link>
               </p>
             )}
           </section>
           {guest ? (
             <p className="mt-6 rounded bg-blue-50 p-5">
-              Your cart is saved on this device.{" "}
+              {t("Your cart is saved on this device.")}{" "}
               <Link
                 className="font-bold underline"
                 href="/customer/login?next=%2Fcheckout"
               >
-                Sign in to merge it and check out
+                {t("Sign in to merge it and check out")}
               </Link>
               .
             </p>
           ) : (
             <form onSubmit={preview} className="mt-8 space-y-6">
               <label className="block">
-                Market
+                {t("Market")}
                 <select
                   className={input}
                   value={market}
@@ -406,28 +432,30 @@ export function Checkout() {
                 >
                   {markets.map((m) => (
                     <option key={m.code} value={m.code}>
-                      {m.label} · {m.currency}
+                      {t(m.label)} · {m.currency}
                     </option>
                   ))}
                 </select>
               </label>
               {current && !current.retailEnabled ? (
                 <p>
-                  Online retail is closed in this market.{" "}
+                  {t("Online retail is closed in this market.")}{" "}
                   <Link className="underline" href="/dealers">
-                    Where to Buy
+                    {t("Where to Buy")}
                   </Link>{" "}
                   ·{" "}
                   <Link className="underline" href="/contact">
-                    Contact us
+                    {t("Contact us")}
                   </Link>
                 </p>
               ) : (
                 <>
-                  <h2 className="text-xl font-semibold">Shipping address</h2>
+                  <h2 className="text-xl font-semibold">
+                    {t("Shipping address")}
+                  </h2>
                   {addresses.length > 0 && (
                     <label className="block">
-                      Use saved address
+                      {t("Use saved address")}
                       <select
                         className={input}
                         onChange={(e) => {
@@ -438,7 +466,7 @@ export function Checkout() {
                           setQuote(null);
                         }}
                       >
-                        <option value="">Enter address</option>
+                        <option value="">{t("Enter address")}</option>
                         {addresses.map((a) => (
                           <option key={a.id} value={a.id}>
                             {a.label || a.recipient} · {a.line1}
@@ -457,11 +485,11 @@ export function Checkout() {
                         setQuote(null);
                       }}
                     />
-                    Billing address is the same
+                    {t("Billing address is the same")}
                   </label>
                   {!same && addressForm(billing, setBilling, "Billing")}
                   <label className="block">
-                    Delivery
+                    {t("Delivery")}
                     <select
                       className={input}
                       value={method}
@@ -470,12 +498,12 @@ export function Checkout() {
                         setQuote(null);
                       }}
                     >
-                      <option value="STANDARD">Standard</option>
-                      <option value="EXPRESS">Express</option>
+                      <option value="STANDARD">{t("Standard")}</option>
+                      <option value="EXPRESS">{t("Express")}</option>
                     </select>
                   </label>
                   <label className="block">
-                    Discount code
+                    {t("Discount code")}
                     <input
                       className={input}
                       value={coupon}
@@ -489,7 +517,9 @@ export function Checkout() {
                     disabled={busy || !cart.items.length || unmerged.length > 0}
                     className="rounded bg-[var(--wm-primary)] px-6 py-3 font-semibold text-white disabled:opacity-50"
                   >
-                    {busy ? "Calculating…" : "Review current prices & totals"}
+                    {busy
+                      ? t("Calculating…")
+                      : t("Review current prices & totals")}
                   </button>
                 </>
               )}
@@ -497,7 +527,7 @@ export function Checkout() {
           )}
         </div>
         <aside className="h-fit rounded-xl border p-6">
-          <h2 className="text-xl font-semibold">Order review</h2>
+          <h2 className="text-xl font-semibold">{t("Order review")}</h2>
           {quote ? (
             <>
               <dl className="mt-4 space-y-3">
@@ -508,8 +538,8 @@ export function Checkout() {
                   ["Tax", quote.taxCents],
                   ["Total", quote.totalCents],
                 ].map(([label, value]) => (
-                  <div key={label} className="flex justify-between">
-                    <dt>{label}</dt>
+                  <div key={t(String(label))} className="flex justify-between">
+                    <dt>{t(String(label))}</dt>
                     <dd>{money(Number(value))}</dd>
                   </div>
                 ))}
@@ -518,27 +548,31 @@ export function Checkout() {
                 (l) => l.unitPriceCents !== l.previousUnitPriceCents,
               ) && (
                 <p role="status" className="mt-3 text-amber-800">
-                  Prices changed since items were added. These are the current
-                  prices.
+                  {t(
+                    "Prices changed since items were added. These are the current prices.",
+                  )}
                 </p>
               )}
               <p className="mt-4 text-sm">
                 {quote.paymentMode === "DEMO"
-                  ? "Demo payment: no real money is charged."
-                  : "Payment is confirmed by the configured provider integration."}
+                  ? t("Demo payment: no real money is charged.")
+                  : t(
+                      "Payment is confirmed by the configured provider integration.",
+                    )}
               </p>
               <button
                 disabled={busy}
                 onClick={() => void place()}
                 className="mt-5 w-full rounded bg-neutral-900 p-3 font-semibold text-white"
               >
-                Place order & continue to payment
+                {t("Place order & continue to payment")}
               </button>
             </>
           ) : (
             <p className="mt-4 text-sm text-neutral-600">
-              Enter your address and review current prices, tax and delivery
-              charges before placing the order.
+              {t(
+                "Enter your address and review current prices, tax and delivery charges before placing the order.",
+              )}
             </p>
           )}
         </aside>

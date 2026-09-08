@@ -1,4 +1,7 @@
 "use client";
+import { uiError } from "../../../lib/ui-i18n";
+import { useUiText, useUiLocale } from "../../../components/ui-locale";
+
 import Link from "next/link";
 import { ContactThread } from "../../../components/contact-thread";
 import {
@@ -51,6 +54,9 @@ const sources = [
 const field =
   "mt-1 block w-full rounded-lg border border-neutral-300 px-3 py-2";
 export function ContactWorkbench() {
+  const t = useUiText();
+  const uiLocale = useUiLocale();
+
   const router = useRouter();
   const [result, setResult] = useState<Page>({
       items: [],
@@ -160,17 +166,17 @@ export function ContactWorkbench() {
       className="mx-auto max-w-6xl px-4 py-10"
     >
       <Link href="/admin/dashboard" className="underline">
-        Operations dashboard
+        {t("Operations dashboard")}
       </Link>
       <div className="my-6 flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold">Contact inbox</h1>
+          <h1 className="text-3xl font-bold">{t("Contact inbox")}</h1>
           <p className="mt-2 text-sm text-neutral-700">
-            Customer messages, assignments and handling history.
+            {t("Customer messages, assignments and handling history.")}
           </p>
         </div>
         <label>
-          MFA code
+          {t("MFA code")}
           <input
             value={mfa}
             onChange={(e) =>
@@ -197,50 +203,56 @@ export function ContactWorkbench() {
         }}
       >
         <label>
-          Search name, email or message
+          {t("Search name, email or message")}
           <input name="search" maxLength={160} className={field} />
         </label>
         <label>
-          Status
+          {t("Status")}
           <select name="status" className={field}>
-            <option value="">All statuses</option>
+            <option value="">{t("All statuses")}</option>
             {statuses.map((v) => (
-              <option key={v}>{v}</option>
+              <option key={v} value={v}>
+                {t(String(v))}
+              </option>
             ))}
           </select>
         </label>
         <label>
-          Priority
+          {t("Priority")}
           <select name="priority" className={field}>
-            <option value="">All priorities</option>
+            <option value="">{t("All priorities")}</option>
             {["LOW", "NORMAL", "HIGH", "URGENT"].map((v) => (
-              <option key={v}>{v}</option>
+              <option key={v} value={v}>
+                {t(String(v))}
+              </option>
             ))}
           </select>
         </label>
         <label>
-          Source
+          {t("Source")}
           <select name="source" className={field}>
-            <option value="">All sources</option>
+            <option value="">{t("All sources")}</option>
             {sources.map((v) => (
-              <option key={v}>{v}</option>
+              <option key={v} value={v}>
+                {t(String(v))}
+              </option>
             ))}
           </select>
         </label>
         <label>
-          Team
+          {t("Team")}
           <input name="assignedTeam" maxLength={100} className={field} />
         </label>
         <label>
-          Assignment
+          {t("Assignment")}
           <select name="assignedTo" className={field}>
-            <option value="">All staff</option>
-            <option value="UNASSIGNED">Unassigned</option>
+            <option value="">{t("All staff")}</option>
+            <option value="UNASSIGNED">{t("Unassigned")}</option>
           </select>
         </label>
         <div className="flex flex-wrap gap-3 sm:col-span-3">
           <button disabled={loading} className="rounded-lg border px-4 py-2">
-            Apply filters
+            {t("Apply filters")}
           </button>
           <button
             type="reset"
@@ -250,7 +262,7 @@ export function ContactWorkbench() {
               setPage(1);
             }}
           >
-            Clear filters
+            {t("Clear filters")}
           </button>
           <button
             type="button"
@@ -258,28 +270,33 @@ export function ContactWorkbench() {
             className="rounded-lg border px-4 py-2"
             onClick={() => void download()}
           >
-            Export filtered CSV
+            {t("Export filtered CSV")}
           </button>
         </div>
         <p className="text-sm text-neutral-700 sm:col-span-3">
-          CSV includes all matching requests and omits customer emails, names,
-          messages and internal notes.
+          {t(
+            "CSV includes all matching requests and omits customer emails, names, messages and internal notes.",
+          )}
         </p>
       </form>
       {error && (
         <p role="alert" className="mt-4 rounded bg-red-50 p-3 text-red-700">
-          {error}
+          {error ? uiError(uiLocale, error) : ""}
         </p>
       )}
       <p role="status" className="mt-4">
         {loading
-          ? "Loading requests…"
-          : `${result.total} matching requests · Page ${result.page} of ${Math.max(1, Math.ceil(result.total / result.pageSize))}`}
+          ? t("Loading requests…")
+          : t("{value1} matching requests · Page {value2} of {value3}", {
+              value1: result.total,
+              value2: result.page,
+              value3: Math.max(1, Math.ceil(result.total / result.pageSize)),
+            })}
       </p>
       <div className="mt-6 space-y-4">
         {!loading && !result.items.length && (
           <p className="rounded-xl border p-6">
-            No requests match these filters.
+            {t("No requests match these filters.")}
           </p>
         )}
         {result.items.map((item) => (
@@ -293,31 +310,38 @@ export function ContactWorkbench() {
                 <p className="mt-1 text-sm text-neutral-700">
                   {item.name} · {item.email}
                   {item.country ? ` · ${item.country}` : ""} ·{" "}
-                  {new Date(item.createdAt).toLocaleString()}
+                  {new Date(item.createdAt).toLocaleString(
+                    uiLocale === "zh" ? "zh-CN" : "en-US",
+                  )}
                 </p>
               </div>
               {canWrite ? (
                 <select
-                  aria-label={`Status for ${item.subject}`}
+                  aria-label={t("Status for {value1}", {
+                    value1: item.subject,
+                  })}
                   value={item.status}
                   disabled={busy === item.id}
                   onChange={(e) => void updateStatus(item, e.target.value)}
                   className="rounded-lg border px-3 py-2"
                 >
                   {statuses.map((v) => (
-                    <option key={v}>{v}</option>
+                    <option key={v} value={v}>
+                      {t(String(v))}
+                    </option>
                   ))}
                 </select>
               ) : (
-                <span>{item.status}</span>
+                <span>{t(String(item.status))}</span>
               )}
             </div>
             <p className="mt-4 whitespace-pre-wrap text-sm leading-6 text-neutral-700">
               {item.content}
             </p>
             <p className="mt-3 text-sm">
-              {item.source} · {item.priority} · {item.assignedTeam ?? "No team"}{" "}
-              · {item.assignedTo ? "Assigned" : "Unassigned"} ·{" "}
+              {t(String(item.source))} · {t(String(item.priority))} ·{" "}
+              {item.assignedTeam ?? t("No team")} ·{" "}
+              {item.assignedTo ? t("Assigned") : t("Unassigned")} ·{" "}
               {item.tags.join(", ")}
             </p>
             <ContactHistory
@@ -336,20 +360,20 @@ export function ContactWorkbench() {
           </article>
         ))}
       </div>
-      <nav aria-label="Contact pages" className="mt-6 flex gap-4">
+      <nav aria-label={t("Contact pages")} className="mt-6 flex gap-4">
         <button
           disabled={loading || page <= 1}
           className="rounded border px-4 py-2"
           onClick={() => setPage((p) => p - 1)}
         >
-          Previous
+          {t("Previous")}
         </button>
         <button
           disabled={loading || page * result.pageSize >= result.total}
           className="rounded border px-4 py-2"
           onClick={() => setPage((p) => p + 1)}
         >
-          Next
+          {t("Next")}
         </button>
       </nav>
     </main>

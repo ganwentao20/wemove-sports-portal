@@ -361,7 +361,7 @@ export class NotificationsService implements OnModuleInit, OnModuleDestroy {
       });
       await transport.sendMail({
         from:
-          process.env.EMAIL_FROM ?? 'WEMOVE SPORTS <no-reply@wemovetoy.com>',
+          process.env.EMAIL_FROM ?? 'WEMOVE <no-reply@wemovetoy.com>',
         to: payload.to,
         subject: payload.subject,
         text: payload.text,
@@ -458,7 +458,7 @@ export class NotificationsService implements OnModuleInit, OnModuleDestroy {
       sender: {
         configured: Boolean(process.env.SMTP_HOST),
         from:
-          process.env.EMAIL_FROM ?? 'WEMOVE SPORTS <no-reply@wemovetoy.com>',
+          process.env.EMAIL_FROM ?? 'WEMOVE <no-reply@wemovetoy.com>',
         workerEnabled: process.env.NOTIFICATION_WORKER !== 'false',
       },
     };

@@ -1,4 +1,6 @@
 "use client";
+import { useUiText, useUiLocale } from "./ui-locale";
+
 type Row = Record<string, unknown>;
 const labels: Record<string, string> = {
   vitals: "Consented field performance",
@@ -16,6 +18,9 @@ export function OperationMetrics({
   metrics: Record<string, Row[]>;
   mfa: string;
 }) {
+  const t = useUiText();
+  const uiLocale = useUiLocale();
+
   async function download() {
     const response = await fetch("/api/secure/staff/admin/reports/export", {
       headers: { "x-wemove-csrf": "1", "x-mfa-code": mfa },
@@ -34,19 +39,17 @@ export function OperationMetrics({
   return (
     <section className="space-y-6">
       <p className="text-sm leading-6">
-        All measures below cover the last 30 days. Rates are percentages; blank
-        means no eligible denominator. Product rates count consenting browser
-        sessions, and assisted conversions match later purchases within that
-        session. Sales use payment records and stay separate for each currency.
-        Non-consenting visits are excluded from behavior reports.
+        {t(
+          "All measures below cover the last 30 days. Rates are percentages; blank means no eligible denominator. Product rates count consenting browser sessions, and assisted conversions match later purchases within that session. Sales use payment records and stay separate for each currency. Non-consenting visits are excluded from behavior reports.",
+        )}
       </p>
       <button
         className="rounded-lg border px-4 py-2"
         onClick={() =>
-          void download().catch((error) => window.alert(error.message))
+          void download().catch((error) => window.alert(t(error.message)))
         }
       >
-        Download report CSV
+        {t("Download report CSV")}
       </button>
       {Object.entries(metrics).map(([group, rows]) => {
         const columns = Array.from(
@@ -54,7 +57,9 @@ export function OperationMetrics({
         );
         return (
           <section key={group} className="rounded-xl border p-5">
-            <h2 className="mb-4 text-xl font-bold">{labels[group] ?? group}</h2>
+            <h2 className="mb-4 text-xl font-bold">
+              {t(String(labels[group] ?? group))}
+            </h2>
             {rows.length ? (
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-sm">
@@ -62,7 +67,7 @@ export function OperationMetrics({
                     <tr>
                       {columns.map((key) => (
                         <th key={key} className="whitespace-nowrap p-2">
-                          {key.replace(/([a-z])([A-Z])/g, "$1 $2")}
+                          {t(key.replace(/([a-z])([A-Z])/g, "$1 $2"))}
                         </th>
                       ))}
                     </tr>
@@ -75,9 +80,12 @@ export function OperationMetrics({
                             {row[key] === null || row[key] === undefined
                               ? "—"
                               : typeof row[key] === "number"
-                                ? Number(row[key]).toLocaleString(undefined, {
-                                    maximumFractionDigits: 2,
-                                  })
+                                ? Number(row[key]).toLocaleString(
+                                    uiLocale === "zh" ? "zh-CN" : "en-US",
+                                    {
+                                      maximumFractionDigits: 2,
+                                    },
+                                  )
                                 : String(row[key])}
                           </td>
                         ))}
@@ -87,7 +95,7 @@ export function OperationMetrics({
                 </table>
               </div>
             ) : (
-              <p>No matching activity in this period.</p>
+              <p>{t("No matching activity in this period.")}</p>
             )}
           </section>
         );

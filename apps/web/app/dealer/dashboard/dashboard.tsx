@@ -1,4 +1,8 @@
 "use client";
+import { uiError } from "../../../lib/ui-i18n";
+
+import { useUiText, useUiLocale } from "../../../components/ui-locale";
+
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { secureApiFetch } from "../../../lib/secure-api";
@@ -49,6 +53,10 @@ export function DealerDashboard({
 }: {
   announcements: Array<{ id: string; title: string; href?: string }>;
 }) {
+  const uiLocale = useUiLocale();
+
+  const t = useUiText();
+
   const [data, setData] = useState<Dashboard | null>(null),
     [files, setFiles] = useState<Download[]>([]),
     [error, setError] = useState(""),
@@ -91,67 +99,72 @@ export function DealerDashboard({
       className="mx-auto max-w-6xl space-y-7 px-4 py-10"
     >
       <div>
-        <p className="text-sm font-semibold text-sky-800">DEALER CENTER</p>
+        <p className="text-sm font-semibold text-sky-800">
+          {t("DEALER CENTER")}
+        </p>
         <h1 className="mt-1 text-3xl font-bold">
           {data?.company.profile.displayName ||
             data?.company.companyName ||
-            "Dealer Dashboard"}
+            t("Dealer Dashboard")}
         </h1>
         <p className="mt-2 text-sm text-neutral-600">
-          Review company orders, quotations and purchasing resources.
+          {t("Review company orders, quotations and purchasing resources.")}
         </p>
       </div>
       {error && (
         <p role="alert" className="rounded bg-red-50 p-3 text-red-800">
-          {error}
+          {error ? uiError(uiLocale, error) : ""}
           {login && (
             <>
               {" "}
               <Link href="/dealer/login" className="underline">
-                Dealer login
+                {t("Dealer login")}
               </Link>
             </>
           )}
         </p>
       )}
-      {!data && !error && <p role="status">Loading company dashboard…</p>}
+      {!data && !error && (
+        <p role="status">{t("Loading company dashboard…")}</p>
+      )}
       {data && (
         <>
           <section
             className="grid gap-4 rounded-xl bg-sky-50 p-5 text-sm sm:grid-cols-3"
-            aria-label="Company account"
+            aria-label={t("Company account")}
           >
             <p>
-              Status: <strong>{data.company.status}</strong>
+              {t("Status:")}
+              <strong>{t(data.company.status)}</strong>
               <br />
-              Role: {data.company.role}
+              {t("Role:")} {t(data.company.role)}
             </p>
             <p>
-              Price level:{" "}
+              {t("Price level:")}{" "}
               <strong>
-                {data.company.tier?.name ?? "Default dealer pricing"}
+                {data.company.tier?.name ?? t("Default dealer pricing")}
               </strong>
               <br />
-              Currency:{" "}
+              {t("Currency:")}{" "}
               {String(data.company.purchaseSettings.currency ?? "USD")}
             </p>
             <p>
-              Sales region:{" "}
+              {t("Sales region:")}{" "}
               <strong>
                 {data.company.profile.salesRegion ||
                   data.company.catalogPolicy.markets?.join(", ") ||
                   data.company.country}
               </strong>
               <br />
-              Business contact:{" "}
+              {t("Business contact:")}{" "}
               {data.company.profile.salesRepresentative ||
                 data.company.profile.salesContact ||
-                "Contact platform support"}
+                t("Contact platform support")}
             </p>
           </section>
           <section
             className="grid gap-4 sm:grid-cols-3"
-            aria-label="Business overview"
+            aria-label={t("Business overview")}
           >
             {(
               [
@@ -166,13 +179,15 @@ export function DealerDashboard({
                 className={linkStyle}
               >
                 <span className="block text-3xl">{count}</span>
-                <span>{title}</span>
+                <span>{t(title)}</span>
               </Link>
             ))}
           </section>
           <div className="grid gap-6 lg:grid-cols-2">
             <section className="rounded-xl border p-5">
-              <h2 className="text-xl font-semibold">Quotations to review</h2>
+              <h2 className="text-xl font-semibold">
+                {t("Quotations to review")}
+              </h2>
               {data.quotes.length ? (
                 <ul className="mt-3 divide-y">
                   {data.quotes.map((quote) => {
@@ -190,14 +205,16 @@ export function DealerDashboard({
                           {quote.title}
                         </Link>
                         <p className="text-sm text-neutral-600">
-                          {expired ? "EXPIRED" : quote.status}
+                          {expired ? t("EXPIRED") : t(quote.status)}
                           {latest
                             ? " · " +
                               latest.currency +
                               " " +
                               (latest.totalCents / 100).toFixed(2) +
-                              " · valid until " +
-                              new Date(latest.validUntil).toLocaleDateString()
+                              t(" · valid until ") +
+                              new Date(latest.validUntil).toLocaleDateString(
+                                uiLocale,
+                              )
                             : ""}
                         </p>
                       </li>
@@ -206,12 +223,12 @@ export function DealerDashboard({
                 </ul>
               ) : (
                 <p className="mt-3 text-sm text-neutral-500">
-                  No pending quotations.
+                  {t("No pending quotations.")}
                 </p>
               )}
             </section>
             <section className="rounded-xl border p-5">
-              <h2 className="text-xl font-semibold">Recent orders</h2>
+              <h2 className="text-xl font-semibold">{t("Recent orders")}</h2>
               {data.orders.length ? (
                 <ul className="mt-3 divide-y">
                   {data.orders.map((order) => (
@@ -223,24 +240,26 @@ export function DealerDashboard({
                         {order.orderNo}
                       </Link>
                       <p className="text-sm text-neutral-600">
-                        {order.status} · {order.paymentStatus} ·{" "}
+                        {t(order.status)} · {t(order.paymentStatus)} ·{" "}
                         {order.currency} {(order.totalCents / 100).toFixed(2)}
                       </p>
                       <p className="text-xs text-neutral-500">
-                        {new Date(order.createdAt).toLocaleDateString()}
+                        {new Date(order.createdAt).toLocaleDateString(uiLocale)}
                       </p>
                     </li>
                   ))}
                 </ul>
               ) : (
-                <p className="mt-3 text-sm text-neutral-500">No orders yet.</p>
+                <p className="mt-3 text-sm text-neutral-500">
+                  {t("No orders yet.")}
+                </p>
               )}
             </section>
           </div>
           <div className="grid gap-6 lg:grid-cols-2">
             <section className="rounded-xl border p-5">
               <h2 className="text-xl font-semibold">
-                Latest company resources
+                {t("Latest company resources")}
               </h2>
               {files.length ? (
                 <ul className="mt-3 divide-y">
@@ -252,28 +271,34 @@ export function DealerDashboard({
                       <span>
                         {file.fileName}
                         <span className="block text-xs text-neutral-500">
-                          Version {file.version} ·{" "}
-                          {Math.ceil(file.sizeBytes / 1024)} KB
+                          {t("Version")} {file.version} ·{" "}
+                          {Math.ceil(file.sizeBytes / 1024)} {t("KB")}
                         </span>
                       </span>
                       <button
                         onClick={() => void download(file.id)}
                         className="text-sm underline"
                       >
-                        Download
+                        {t("Download")}
                       </button>
                     </li>
                   ))}
                 </ul>
               ) : (
                 <p className="mt-3 text-sm text-neutral-500">
-                  No authorized resources published yet.
+                  {t("No authorized resources published yet.")}
                 </p>
               )}
-              {downloadError && <p role="alert">{downloadError}</p>}
+              {downloadError && (
+                <p role="alert">
+                  {downloadError ? uiError(uiLocale, downloadError) : ""}
+                </p>
+              )}
             </section>
             <section className="rounded-xl border p-5">
-              <h2 className="text-xl font-semibold">Platform announcements</h2>
+              <h2 className="text-xl font-semibold">
+                {t("Platform announcements")}
+              </h2>
               {announcements.length ? (
                 <ul className="mt-3 space-y-3">
                   {announcements.map((item) => (
@@ -290,7 +315,7 @@ export function DealerDashboard({
                 </ul>
               ) : (
                 <p className="mt-3 text-sm text-neutral-500">
-                  No current announcements.
+                  {t("No current announcements.")}
                 </p>
               )}
             </section>
@@ -298,7 +323,7 @@ export function DealerDashboard({
         </>
       )}
       <nav
-        aria-label="Dealer tools"
+        aria-label={t("Dealer tools")}
         className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3"
       >
         {[
@@ -310,7 +335,7 @@ export function DealerDashboard({
           ["Account security", "/dealer/security"],
         ].map(([label, href]) => (
           <Link href={href} key={href} className={linkStyle}>
-            {label}
+            {t(String(label))}
           </Link>
         ))}
       </nav>

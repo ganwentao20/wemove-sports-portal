@@ -1,5 +1,9 @@
+import { getUiText } from "../../../../lib/ui-i18n-server";
 import { RetailOrder } from "../../../../components/retail-order";
-export const metadata = { title: "Order details" };
+export async function generateMetadata() {
+  const t = await getUiText();
+  return { title: t("Order details") };
+}
 export default async function Page({
   params,
 }: {

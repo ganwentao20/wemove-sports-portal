@@ -1,4 +1,8 @@
 "use client";
+import { uiError } from "../../../lib/ui-i18n";
+
+import { useUiText, useUiLocale } from "../../../components/ui-locale";
+
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { secureApiFetch } from "../../../lib/secure-api";
@@ -16,6 +20,10 @@ type Application = {
   businessType: string;
 };
 export default function ApplicationPage() {
+  const uiLocale = useUiLocale();
+
+  const t = useUiText();
+
   const [id, setId] = useState("");
   const [token, setToken] = useState("");
   const [application, setApplication] = useState<Application | null>(null);
@@ -54,15 +62,17 @@ export default function ApplicationPage() {
       tabIndex={-1}
       className="mx-auto max-w-4xl px-4 py-10"
     >
-      <h1 className="text-3xl font-bold">Track your dealer application</h1>
+      <h1 className="text-3xl font-bold">
+        {t("Track your dealer application")}
+      </h1>
       <p className="my-3">
-        Sign in with the verified customer email used on the application.{" "}
+        {t("Sign in with the verified customer email used on the application.")}{" "}
         <Link href="/customer/login" className="underline">
-          Customer login
+          {t("Customer login")}
         </Link>
       </p>
-      <p role="alert">{error}</p>
-      <p role="status">{notice}</p>
+      <p role="alert">{error ? uiError(uiLocale, error) : ""}</p>
+      <p role="status">{notice ? uiError(uiLocale, notice) : ""}</p>
       <form
         className="my-5 space-y-3"
         onSubmit={(e) => {
@@ -71,7 +81,7 @@ export default function ApplicationPage() {
         }}
       >
         <label className="block">
-          Application ID
+          {t("Application ID")}
           <input
             required
             value={id}
@@ -80,7 +90,7 @@ export default function ApplicationPage() {
           />
         </label>
         <label className="block">
-          Email claim token (first claim only)
+          {t("Email claim token (first claim only)")}
           <input
             value={token}
             onChange={(e) => setToken(e.target.value)}
@@ -91,7 +101,7 @@ export default function ApplicationPage() {
           disabled={busy}
           className="rounded bg-neutral-900 px-5 py-2 text-white"
         >
-          {token ? "Claim and view" : "View application"}
+          {token ? t("Claim and view") : t("View application")}
         </button>
         <button
           type="button"
@@ -117,7 +127,7 @@ export default function ApplicationPage() {
             }
           }}
         >
-          Resend claim email
+          {t("Resend claim email")}
         </button>
       </form>
       {list.map((a) => (
@@ -126,16 +136,17 @@ export default function ApplicationPage() {
           onClick={() => setId(a.id)}
           className="my-2 block underline"
         >
-          {a.companyName} · {a.status} · {a.id}
+          {a.companyName} · {t(a.status)} · {a.id}
         </button>
       ))}
       {application && (
         <section className="mt-6 rounded border p-5">
           <h2>
-            {application.companyName} · {application.status}
+            {application.companyName} · {t(application.status)}
           </h2>
           <p className="mt-2">
-            Review message: {application.remark ?? "Review is pending."}
+            {t("Review message:")}{" "}
+            {application.remark ?? t("Review is pending.")}
           </p>
           {application.status === "MORE_INFO_REQUIRED" && (
             <DealerApplicationForm

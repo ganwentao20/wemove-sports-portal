@@ -1,7 +1,12 @@
 "use client";
+import { useUiText, useUiLocale } from "../../../components/ui-locale";
+
 import { useState } from "react";
+import { uiError } from "../../../lib/ui-i18n";
 import { apiFetch } from "../../../lib/api";
 export default function NewsletterPage() {
+  const t = useUiText();
+  const uiLocale = useUiLocale();
   const [message, setMessage] = useState(""),
     [busy, setBusy] = useState(false);
   async function act(unsubscribe: boolean) {
@@ -29,9 +34,9 @@ export default function NewsletterPage() {
   }
   return (
     <div className="mx-auto max-w-xl px-4 py-16">
-      <h1 className="text-3xl font-bold">Email subscription</h1>
+      <h1 className="text-3xl font-bold">{t("Email subscription")}</h1>
       <p className="my-6">
-        Confirm your subscription to receive play ideas and product news.
+        {t("Confirm your subscription to receive play ideas and product news.")}
       </p>
       <div className="flex gap-4">
         <button
@@ -39,18 +44,18 @@ export default function NewsletterPage() {
           onClick={() => void act(false)}
           className="rounded-lg border p-3"
         >
-          Confirm subscription
+          {t("Confirm subscription")}
         </button>
         <button
           disabled={busy}
           onClick={() => void act(true)}
           className="rounded-lg border p-3"
         >
-          Unsubscribe
+          {t("Unsubscribe")}
         </button>
       </div>
       <p role="status" className="mt-5">
-        {message}
+        {message ? uiError(uiLocale, message) : ""}
       </p>
     </div>
   );

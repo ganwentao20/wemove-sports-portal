@@ -1,10 +1,14 @@
+import { getUiText } from "../../../lib/ui-i18n-server";
 import type { Metadata } from "next";
 import { CustomerAccount } from "./customer-account";
 
-export const metadata: Metadata = {
-  title: "My Account",
-  robots: { index: false, follow: false },
-};
+export async function generateMetadata() {
+  const t = await getUiText();
+  return {
+    title: t("My Account"),
+    robots: { index: false, follow: false },
+  };
+}
 
 export default function AccountPage() {
   return (

@@ -1,4 +1,5 @@
 "use client";
+import { useUiText } from "./ui-locale";
 type Social = { label: string; href: string };
 export function BrandSocialLinks({
   value,
@@ -7,6 +8,7 @@ export function BrandSocialLinks({
   value: Social[];
   onChange: (links: Social[]) => void;
 }) {
+  const t = useUiText();
   function update(index: number, patch: Partial<Social>) {
     onChange(
       value.map((item, i) => (i === index ? { ...item, ...patch } : item)),
@@ -14,10 +16,11 @@ export function BrandSocialLinks({
   }
   return (
     <fieldset className="mb-5 rounded-lg border p-4">
-      <legend className="px-2 font-semibold">Social profiles</legend>
+      <legend className="px-2 font-semibold">{t("Social profiles")}</legend>
       <p className="mb-3 text-sm text-neutral-700">
-        Public footer links, in display order. Use the complete HTTPS profile
-        URL.
+        {t(
+          "Public footer links, in display order. Use the complete HTTPS profile URL.",
+        )}
       </p>
       <div className="space-y-3">
         {value.map((item, index) => (
@@ -26,7 +29,7 @@ export function BrandSocialLinks({
             className="grid items-end gap-2 sm:grid-cols-[1fr_2fr_auto]"
           >
             <label>
-              Profile label
+              {t("Profile label")}
               <input
                 required
                 maxLength={80}
@@ -36,7 +39,7 @@ export function BrandSocialLinks({
               />
             </label>
             <label>
-              HTTPS URL
+              {t("HTTPS URL")}
               <input
                 required
                 type="url"
@@ -51,7 +54,9 @@ export function BrandSocialLinks({
               <button
                 type="button"
                 disabled={index === 0}
-                aria-label={`Move social profile ${index + 1} up`}
+                aria-label={t("Move social profile {number} up", {
+                  number: index + 1,
+                })}
                 className="rounded border p-2"
                 onClick={() => {
                   const next = [...value];
@@ -69,7 +74,7 @@ export function BrandSocialLinks({
                 className="rounded border p-2"
                 onClick={() => onChange(value.filter((_, i) => i !== index))}
               >
-                Remove
+                {t("Remove")}
               </button>
             </div>
           </div>
@@ -81,7 +86,7 @@ export function BrandSocialLinks({
         onClick={() => onChange([...value, { label: "", href: "" }])}
         className="mt-3 rounded border px-4 py-2"
       >
-        Add social profile
+        {t("Add social profile")}
       </button>
     </fieldset>
   );

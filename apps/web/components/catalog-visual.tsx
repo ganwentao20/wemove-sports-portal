@@ -1,15 +1,6 @@
 import Image from "next/image";
 
-const FALLBACK_IMAGE = "/images/wemove-active-play-hero.png";
-const POSITIONS = ["72% 50%", "88% 32%", "58% 70%", "42% 62%"];
-
-function positionFor(name: string) {
-  const value = [...name].reduce(
-    (total, character) => total + character.charCodeAt(0),
-    0,
-  );
-  return POSITIONS[value % POSITIONS.length];
-}
+const FALLBACK_IMAGE = "/original-site/product-standard-50.jpg";
 
 export function CatalogVisual({
   name,
@@ -23,7 +14,7 @@ export function CatalogVisual({
   className?: string;
 }) {
   return (
-    <div className={`relative overflow-hidden bg-[#cfe2eb] ${className}`}>
+    <div className={`relative overflow-hidden bg-[#f4f1ea] ${className}`}>
       {imageUrl ? (
         <Image
           src={imageUrl}
@@ -46,20 +37,15 @@ export function CatalogVisual({
         <Image
           src={FALLBACK_IMAGE}
           quality={60}
-          alt={`${name} active play collection`}
+          alt={name}
           fill
           preload={priority}
           fetchPriority={priority ? "high" : "auto"}
           loading={priority ? undefined : "lazy"}
           sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-          className="object-cover transition-transform duration-500 group-hover:scale-[1.035]"
-          style={{ objectPosition: positionFor(name) }}
+          className="object-cover transition-transform duration-500 group-hover:scale-[1.02]"
         />
       )}
-      <span
-        className="absolute inset-0 bg-gradient-to-t from-[#102332]/20 via-transparent to-white/5"
-        aria-hidden="true"
-      />
     </div>
   );
 }

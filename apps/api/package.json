@@ -1,8 +1,8 @@
 {
   "name": "api",
   "version": "0.1.0",
-  "description": "WEMOVE SPORTS API（NestJS 12 · Prisma 6 · PostgreSQL）— 全局前缀 /api/v1",
-  "author": "WEMOVE SPORTS Team",
+  "description": "WEMOVE 原网站重构 API（NestJS 12 · Prisma 6 · PostgreSQL）— 全局前缀 /api/v1",
+  "author": "WEMOVE Team",
   "private": true,
   "license": "UNLICENSED",
   "type": "module",

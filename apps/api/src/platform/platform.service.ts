@@ -21,15 +21,19 @@ import type {
 } from './platform.dto.js';
 
 const DEFAULT_NAV = [
-  { label: 'Products', zh: '产品', href: '/products' },
-  { label: 'Play & Learn', zh: '玩乐与学习', href: '/play-learn' },
-  { label: 'Dealers', zh: '经销商', href: '/dealers' },
-  { label: 'Support', zh: '支持', href: '/support' },
-  { label: 'About', zh: '关于品牌', href: '/about' },
+  { label: 'Home', zh: '首页', href: '/' },
+  { label: 'Toys', zh: '玩具品类', href: '/workshop' },
+  { label: 'Furniture', zh: '家具定制', href: '/furniture' },
+  { label: 'Prototyping', zh: '中试打样', href: '/woodlab' },
+  { label: 'STEM', zh: 'STEM教育', href: '/stem' },
+  { label: 'Research', zh: '科研研发', href: '/library' },
+  { label: 'Public Benefit', zh: '公益项目', href: '/public-benefit' },
+  { label: 'Craft Stories', zh: '匠心筑梦', href: '/craft-dream' },
+  { label: 'Manuals', zh: '电子说明书', href: '/support/downloads' },
 ];
 export const DEFAULT_SETTINGS = {
   brand: {
-    name: 'WEMOVE SPORTS',
+    name: 'WEMOVE',
     favicon: '',
     primaryColor: '#b7251e',
     logo: '',

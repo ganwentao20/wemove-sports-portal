@@ -1,4 +1,6 @@
 "use client";
+import { uiError } from "../../../lib/ui-i18n";
+import { useUiText, useUiLocale } from "../../../components/ui-locale";
 
 import { FormEvent, useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -30,6 +32,9 @@ type MediaAsset = {
 };
 
 export function MediaWorkbench() {
+  const t = useUiText();
+  const uiLocale = useUiLocale();
+
   const router = useRouter();
   const [items, setItems] = useState<MediaAsset[]>([]);
   const [cleanupJobs, setCleanupJobs] = useState<
@@ -95,7 +100,9 @@ export function MediaWorkbench() {
     const mfaHeaders = headers();
     if (
       !mfaHeaders ||
-      !window.confirm(`Permanently delete “${item.fileName}”?`)
+      !window.confirm(
+        t("Permanently delete “{value1}”?", { value1: item.fileName }),
+      )
     )
       return;
     setBusy(item.id);
@@ -138,14 +145,16 @@ export function MediaWorkbench() {
     >
       <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
         <div>
-          <p className="text-sm font-semibold text-[#2B5F8A]">WEMOVE ADMIN</p>
-          <h1 className="mt-1 text-3xl font-bold">Media library</h1>
+          <p className="text-sm font-semibold text-[#2B5F8A]">
+            {t("WEMOVE ADMIN")}
+          </p>
+          <h1 className="mt-1 text-3xl font-bold">{t("Media library")}</h1>
           <p className="mt-2 text-sm text-neutral-500">
-            JPG, PNG, WebP, PDF, MP4 or WebM, up to 50 MB.
+            {t("JPG, PNG, WebP, PDF, MP4 or WebM, up to 50 MB.")}
           </p>
         </div>
         <label className="text-sm">
-          MFA code
+          {t("MFA code")}
           <input
             value={mfaCode}
             onChange={(event) =>
@@ -163,7 +172,7 @@ export function MediaWorkbench() {
           role="alert"
           className="mt-5 rounded-lg bg-red-50 p-3 text-sm text-red-700"
         >
-          {error}
+          {error ? uiError(uiLocale, error) : ""}
         </p>
       )}
       <form
@@ -171,7 +180,7 @@ export function MediaWorkbench() {
         className="mt-6 flex flex-col gap-3 rounded-2xl border border-neutral-200 bg-white p-5 sm:flex-row sm:items-end"
       >
         <label className="flex-1 text-sm">
-          File
+          {t("File")}
           <input
             required
             name="file"
@@ -181,26 +190,26 @@ export function MediaWorkbench() {
           />
         </label>
         <label className="text-sm">
-          Visibility
+          {t("Visibility")}
           <select
             name="visibility"
             className="mt-2 block rounded-lg border border-neutral-300 px-3 py-2"
           >
-            <option>PUBLIC</option>
-            <option>REGISTERED</option>
-            <option>DEALER_ONLY</option>
-            <option>INTERNAL</option>
+            <option value="PUBLIC">{t("PUBLIC")}</option>
+            <option value="REGISTERED">{t("REGISTERED")}</option>
+            <option value="DEALER_ONLY">{t("DEALER_ONLY")}</option>
+            <option value="INTERNAL">{t("INTERNAL")}</option>
           </select>
         </label>
         <button
           disabled={busy === "upload"}
           className="rounded-full bg-[var(--wm-dark)] px-5 py-2.5 text-sm font-semibold text-white disabled:opacity-50"
         >
-          Upload
+          {t("Upload")}
         </button>
       </form>
       <label className="mt-5 block text-sm">
-        Search title, filename, language or tags
+        {t("Search title, filename, language or tags")}
         <input
           value={query}
           onChange={(e) => setQuery(e.target.value)}
@@ -210,15 +219,17 @@ export function MediaWorkbench() {
       <div className="mt-6 space-y-3">
         {cleanupJobs.length > 0 && (
           <section className="rounded border border-amber-200 bg-amber-50 p-4">
-            <h2 className="font-semibold">Privacy attachment cleanup</h2>
+            <h2 className="font-semibold">{t("Privacy attachment cleanup")}</h2>
             <p className="mt-1 text-sm">
-              Pending files are unavailable for download. Cleanup retries
-              automatically after temporary storage failures.
+              {t(
+                "Pending files are unavailable for download. Cleanup retries automatically after temporary storage failures.",
+              )}
             </p>
             {cleanupJobs.map((job) => (
               <p key={job.key} className="mt-2 break-all text-xs">
-                {job.key} · {job.status} · attempts {job.attempts} ·{" "}
-                {job.lastError}
+                {job.key} · {t(String(job.status))} {t("· attempts")}
+                {job.attempts} ·{" "}
+                {job.lastError ? uiError(uiLocale, job.lastError) : ""}
               </p>
             ))}
           </section>
@@ -244,34 +255,42 @@ export function MediaWorkbench() {
               <div>
                 <h2 className="font-semibold">{item.title || item.fileName}</h2>
                 <p className="text-xs text-neutral-500">
-                  {item.fileName} · {item.language} · {item.resourceType} ·{" "}
-                  {item.tags?.join(", ")}
+                  {item.fileName} · {item.language} ·{" "}
+                  {t(String(item.resourceType))} · {item.tags?.join(", ")}
                 </p>
                 <p className="text-xs text-neutral-500">
-                  Uploaded {new Date(item.created_at).toLocaleString()} by{" "}
-                  {item.uploadedBy} · Published{" "}
-                  {new Date(item.publishedAt).toLocaleDateString()}
+                  {t("Uploaded")}
+                  {new Date(item.created_at).toLocaleString(
+                    uiLocale === "zh" ? "zh-CN" : "en-US",
+                  )}{" "}
+                  {t("by")} {item.uploadedBy} {t("· Published")}{" "}
+                  {new Date(item.publishedAt).toLocaleDateString(
+                    uiLocale === "zh" ? "zh-CN" : "en-US",
+                  )}
                 </p>
                 {item.visibility === "PUBLIC" &&
                   item.mimeType.startsWith("image/") &&
                   !item.alt &&
                   !item.decorative && (
                     <p className="mt-2 text-sm text-amber-800">
-                      Add meaningful alt text or mark this image as decorative.
+                      {t(
+                        "Add meaningful alt text or mark this image as decorative.",
+                      )}
                     </p>
                   )}
                 <p className="text-sm text-neutral-500">
-                  {item.mimeType} · {(item.size / 1024).toFixed(1)} KB ·{" "}
-                  {item.visibility}
+                  {item.mimeType} · {(item.size / 1024).toFixed(1)} {t("KB ·")}{" "}
+                  {t(String(item.visibility))}
                 </p>
                 <p className="mt-1 break-all text-xs">
-                  v{item.version} · {item.scanStatus} · SHA-256{" "}
-                  {item.checksum ?? "legacy file"}
+                  {t("v")}
+                  {item.version} · {t(String(item.scanStatus))} {t("· SHA-256")}{" "}
+                  {item.checksum ?? t("legacy file")}
                 </p>
               </div>
               <details>
                 <summary className="cursor-pointer">
-                  Metadata, access & version replacement
+                  {t("Metadata, access & version replacement")}
                 </summary>
                 <form
                   className="mt-3 grid gap-3 sm:grid-cols-2"
@@ -323,7 +342,7 @@ export function MediaWorkbench() {
                   }}
                 >
                   <label>
-                    Resource title
+                    {t("Resource title")}
                     <input
                       name="title"
                       maxLength={160}
@@ -332,7 +351,7 @@ export function MediaWorkbench() {
                     />
                   </label>
                   <label>
-                    Language
+                    {t("Language")}
                     <input
                       name="language"
                       required
@@ -343,7 +362,7 @@ export function MediaWorkbench() {
                     />
                   </label>
                   <label>
-                    Resource type
+                    {t("Resource type")}
                     <select
                       name="resourceType"
                       defaultValue={item.resourceType ?? "OTHER"}
@@ -358,12 +377,14 @@ export function MediaWorkbench() {
                         "FORM",
                         "OTHER",
                       ].map((value) => (
-                        <option key={value}>{value}</option>
+                        <option key={value} value={value}>
+                          {t(String(value))}
+                        </option>
                       ))}
                     </select>
                   </label>
                   <label>
-                    Publication date (UTC)
+                    {t("Publication date (UTC)")}
                     <input
                       type="date"
                       name="publishedAt"
@@ -372,7 +393,7 @@ export function MediaWorkbench() {
                     />
                   </label>
                   <label>
-                    Tags (comma separated)
+                    {t("Tags (comma separated)")}
                     <input
                       name="tags"
                       defaultValue={item.tags?.join(", ") ?? ""}
@@ -385,10 +406,10 @@ export function MediaWorkbench() {
                       name="decorative"
                       defaultChecked={item.decorative}
                     />{" "}
-                    Decorative image (empty alt is intentional)
+                    {t("Decorative image (empty alt is intentional)")}
                   </label>
                   <label>
-                    Alt text
+                    {t("Alt text")}
                     <input
                       name="alt"
                       defaultValue={item.alt}
@@ -397,7 +418,7 @@ export function MediaWorkbench() {
                   </label>
                   {["usageLocations", "companyIds", "productIds"].map((k) => (
                     <label key={k}>
-                      {k} (comma separated)
+                      {t(k)} {t("(comma separated)")}
                       <input
                         name={k}
                         defaultValue={(
@@ -410,7 +431,7 @@ export function MediaWorkbench() {
                     </label>
                   ))}
                   <label>
-                    Replaces media ID (upload new file first)
+                    {t("Replaces media ID (upload new file first)")}
                     <input
                       name="previousVersionId"
                       defaultValue={item.previousVersionId ?? ""}
@@ -421,7 +442,7 @@ export function MediaWorkbench() {
                     disabled={Boolean(busy)}
                     className="rounded bg-neutral-900 px-3 py-2 text-white"
                   >
-                    Save metadata & grants
+                    {t("Save metadata & grants")}
                   </button>
                 </form>
               </details>
@@ -430,7 +451,7 @@ export function MediaWorkbench() {
                   onClick={() => void download(item)}
                   className="rounded-lg border px-3 py-2 text-sm"
                 >
-                  Download
+                  {t("Download")}
                 </button>
                 <button
                   disabled={busy === item.id}
@@ -455,14 +476,14 @@ export function MediaWorkbench() {
                   }}
                   className="rounded-lg border px-3 py-2 text-sm disabled:opacity-50"
                 >
-                  Re-scan file
+                  {t("Re-scan file")}
                 </button>
                 <button
                   disabled={busy === item.id}
                   onClick={() => void remove(item)}
                   className="rounded-lg bg-red-700 px-3 py-2 text-sm text-white disabled:opacity-50"
                 >
-                  Delete
+                  {t("Delete")}
                 </button>
               </div>
             </article>

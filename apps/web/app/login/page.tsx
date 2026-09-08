@@ -21,7 +21,7 @@ export default async function LoginPage() {
           href={`/${locale}`}
           className="text-lg font-extrabold tracking-tight text-[var(--wm-dark)]"
         >
-          WEMOVE SPORTS
+          WEMOVE
         </Link>
         <Link
           href={`/${locale}`}
@@ -37,7 +37,7 @@ export default async function LoginPage() {
       >
         <section className="max-w-md self-center">
           <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--wm-primary)]">
-            WEMOVE SPORTS
+            WEMOVE
           </p>
           <h1 className="mt-4 text-4xl font-semibold tracking-tight text-[var(--wm-dark)] sm:text-5xl">
             {t.welcome}
@@ -71,7 +71,7 @@ export default async function LoginPage() {
         </section>
       </main>
       <footer className="mx-auto flex max-w-6xl gap-5 px-6 py-8 text-xs text-neutral-600 sm:px-10">
-        <span>© WEMOVE SPORTS</span>
+        <span>© WEMOVE</span>
         <Link href="/privacy" className="underline">
           {t.privacy}
         </Link>

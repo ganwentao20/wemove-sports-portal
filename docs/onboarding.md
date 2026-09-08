@@ -40,6 +40,14 @@ npm run dev               # 并行启动 web(3000) + api(8080)
 
 Mailpit 开发收件箱：http://localhost:8025。演示凭据仅可用于本地/测试，禁止沿用到生产。
 
+Windows 已安装依赖、配置环境并完成首次 seed 后，可从仓库根目录启动独立后台服务：
+
+```powershell
+powershell.exe -NoProfile -File scripts/start-local.ps1
+```
+
+脚本启动 Docker、本地容器、数据库迁移及前后端，不依赖当前终端保持打开；重复运行会识别已有 worker。启动日志位于 `.local/persistent-services.log`，进程信息位于 `.local/persistent-services.json`。看到启动提示后，需等待日志出现 API 和 Web 就绪，并访问上述地址确认。脚本不会设置开机自启；电脑重启后重新运行即可。
+
 > 只做静态样式时可使用页面内已有 fallback 数据；联调认证、价格、目录等真实流程时必须同时启动 API 与基础设施。
 
 ## 三、仓库地图：谁改哪里（避免冲突）

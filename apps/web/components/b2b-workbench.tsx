@@ -1,4 +1,7 @@
 "use client";
+import { uiError } from "../lib/ui-i18n";
+
+import { useUiText, useUiLocale } from "./ui-locale";
 
 import { useCallback, useEffect, useState, type FormEvent } from "react";
 import Link from "next/link";
@@ -102,6 +105,8 @@ function Lines({
   items: Item[];
   currency?: string;
 }) {
+  const t = useUiText();
+
   return (
     <div className="mt-4 overflow-x-auto">
       <table className="w-full text-left text-sm">
@@ -110,7 +115,7 @@ function Lines({
             {["Product / SKU", "Quantity", "Unit price", "Total"].map(
               (label) => (
                 <th key={label} className="p-3">
-                  {label}
+                  {t(String(label))}
                 </th>
               ),
             )}
@@ -150,6 +155,8 @@ function QuoteForm({
   act: Action;
   busy: boolean;
 }) {
+  const t = useUiText();
+
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const data = new FormData(event.currentTarget);
@@ -170,22 +177,23 @@ function QuoteForm({
   return (
     <form onSubmit={submit} className="mt-5 rounded-lg bg-neutral-50 p-4">
       <h3 className="font-semibold">
-        {rfq.revision ? "Issue a revised quote" : "Prepare quote"}
+        {rfq.revision ? t("Issue a revised quote") : t("Prepare quote")}
       </h3>
       <p className="mt-1 text-sm text-neutral-600">
-        Prices are in{" "}
+        {t("Prices are in")}{" "}
         {rfq.company?.purchaseSettings?.currency ??
           rfq.quotes[0]?.currency ??
-          "USD"}
-        . Existing quote versions remain available for reference.
+          t("USD")}{" "}
+        {t(". Existing quote versions remain available for reference.")}
       </p>
       <div className="mt-3 grid gap-3 sm:grid-cols-2">
         <label>
-          Discount (
-          {rfq.company?.purchaseSettings?.currency ??
-            rfq.quotes[0]?.currency ??
-            "USD"}
-          )
+          {t("Discount ({currency})", {
+            currency:
+              rfq.company?.purchaseSettings?.currency ??
+              rfq.quotes[0]?.currency ??
+              "USD",
+          })}
           <input
             name="discount"
             type="number"
@@ -196,7 +204,7 @@ function QuoteForm({
           />
         </label>
         <label>
-          Payment terms
+          {t("Payment terms")}
           <input
             name="paymentTerms"
             defaultValue="PREPAID"
@@ -206,12 +214,12 @@ function QuoteForm({
           />
         </label>
         <label>
-          Delivery terms
+          {t("Delivery terms")}
           <input name="deliveryTerms" maxLength={500} className={input} />
         </label>
         {rfq.items.map((item) => (
           <label key={item.sku} className="text-sm">
-            {item.sku} · unit price
+            {item.sku} {t("· unit price")}
             <input
               name={item.sku}
               type="number"
@@ -228,11 +236,12 @@ function QuoteForm({
           </label>
         ))}
         <label className="text-sm">
-          Tax (
-          {rfq.company?.purchaseSettings?.currency ??
-            rfq.quotes[0]?.currency ??
-            "USD"}
-          )
+          {t("Tax ({currency})", {
+            currency:
+              rfq.company?.purchaseSettings?.currency ??
+              rfq.quotes[0]?.currency ??
+              "USD",
+          })}
           <input
             name="tax"
             type="number"
@@ -244,11 +253,12 @@ function QuoteForm({
           />
         </label>
         <label className="text-sm">
-          Shipping (
-          {rfq.company?.purchaseSettings?.currency ??
-            rfq.quotes[0]?.currency ??
-            "USD"}
-          )
+          {t("Shipping ({currency})", {
+            currency:
+              rfq.company?.purchaseSettings?.currency ??
+              rfq.quotes[0]?.currency ??
+              "USD",
+          })}
           <input
             name="shipping"
             type="number"
@@ -260,7 +270,7 @@ function QuoteForm({
           />
         </label>
         <label className="text-sm">
-          Valid until (your local time)
+          {t("Valid until (your local time)")}
           <input
             name="validUntil"
             type="datetime-local"
@@ -270,7 +280,7 @@ function QuoteForm({
         </label>
       </div>
       <button disabled={busy} className={`${button} mt-4`}>
-        Issue quote version {rfq.revision + 1}
+        {t("Issue quote version")} {rfq.revision + 1}
       </button>
     </form>
   );
@@ -287,6 +297,8 @@ function AcceptForm({
   busy: boolean;
   admin?: boolean;
 }) {
+  const t = useUiText();
+
   const [opened, setOpened] = useState(false);
   const [addresses, setAddresses] = useState<
     Array<{ id: string; label: string; address: Record<string, string> }>
@@ -357,16 +369,16 @@ function AcceptForm({
         className={button}
       >
         {admin
-          ? "Create purchase order for company"
-          : "Accept quote & create purchase order"}
+          ? t("Create purchase order for company")
+          : t("Accept quote & create purchase order")}
       </button>
     );
   return (
     <form onSubmit={submit} className="mt-3 w-full rounded-lg bg-blue-50 p-4">
-      <h3 className="font-semibold">Delivery details</h3>
+      <h3 className="font-semibold">{t("Delivery details")}</h3>
       {admin && (
         <label className="block">
-          Staff authorization / reason
+          {t("Staff authorization / reason")}
           <textarea
             name="staffReason"
             minLength={5}
@@ -375,19 +387,20 @@ function AcceptForm({
             className={input}
           />
           <span className="text-sm">
-            This records a staff-created order with your identity and reason.
-            Company acceptance and account consent records are not changed.
+            {t(
+              "This records a staff-created order with your identity and reason. Company acceptance and account consent records are not changed.",
+            )}
           </span>
         </label>
       )}
       <label>
-        Saved shipping address
+        {t("Saved shipping address")}
         <select
           className={input}
           value={selectedAddress}
           onChange={(e) => setSelectedAddress(e.target.value)}
         >
-          <option value="">Enter address below</option>
+          <option value="">{t("Enter address below")}</option>
           {addresses.map((a) => (
             <option key={a.id} value={a.id}>
               {a.label}
@@ -396,13 +409,13 @@ function AcceptForm({
         </select>
       </label>
       <label>
-        Billing address
+        {t("Billing address")}
         <select
           className={input}
           value={billingId}
           onChange={(e) => setBillingId(e.target.value)}
         >
-          <option value="">Same as shipping</option>
+          <option value="">{t("Same as shipping")}</option>
           {addresses.map((a) => (
             <option key={a.id} value={a.id}>
               {a.label}
@@ -411,29 +424,32 @@ function AcceptForm({
         </select>
       </label>
       <label>
-        Customer PO number
+        {t("Customer PO number")}
         <input name="customerPoNumber" maxLength={80} className={input} />
       </label>
       <label>
-        Payment method
+        {t("Payment method")}
         <select name="paymentMethod" className={input}>
           {paymentMethods.map((m) => (
             <option key={m} value={m}>
-              {(
-                {
-                  BANK_TRANSFER: "Bank transfer",
-                  PO: "Purchase order",
-                  ACCOUNT: "Company account terms",
-                  CARD: "Credit card",
-                } as Record<string, string>
-              )[m] ?? m}
+              {t(
+                (
+                  {
+                    BANK_TRANSFER: "Bank transfer",
+                    PO: "Purchase order",
+                    ACCOUNT: "Company account terms",
+                    CARD: "Credit card",
+                  } as Record<string, string>
+                )[m] ?? m,
+              )}
             </option>
           ))}
         </select>
       </label>
       <p className="mt-1 text-sm">
-        Accepting version {rfq.revision} creates one purchase order and reserves
-        stock. Total: {money(rfq.quotes[0].totalCents, rfq.quotes[0].currency)}.
+        {t("Accepting version")} {rfq.revision}{" "}
+        {t("creates one purchase order and reserves stock. Total:")}{" "}
+        {money(rfq.quotes[0].totalCents, rfq.quotes[0].currency)}.
       </p>
       <div className="mt-3 grid gap-3 sm:grid-cols-2">
         {[
@@ -445,7 +461,7 @@ function AcceptForm({
           ["postalCode", "Postal code", 24],
         ].map(([name, label, max]) => (
           <label key={name} className="text-sm">
-            {label}
+            {t(String(label))}
             <input
               key={`${String(name)}-${selectedAddress}`}
               defaultValue={
@@ -464,7 +480,9 @@ function AcceptForm({
       </div>
       <div className="mt-4 flex gap-3">
         <button disabled={busy} className={button}>
-          {admin ? "Create company purchase order" : "Confirm purchase order"}
+          {admin
+            ? t("Create company purchase order")
+            : t("Confirm purchase order")}
         </button>
         <button
           type="button"
@@ -472,7 +490,7 @@ function AcceptForm({
           onClick={() => setOpened(false)}
           className="text-sm underline"
         >
-          Back
+          {t("Back")}
         </button>
       </div>
     </form>
@@ -488,6 +506,8 @@ function PriceBooks({
   act: Action;
   busy: boolean;
 }) {
+  const t = useUiText();
+
   async function create(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const form = event.currentTarget;
@@ -496,22 +516,23 @@ function PriceBooks({
   }
   return (
     <section className="mt-8 rounded-xl border p-5">
-      <h2 className="text-xl font-semibold">Company price books</h2>
+      <h2 className="text-xl font-semibold">{t("Company price books")}</h2>
       <p className="mt-2 text-sm text-neutral-600">
-        Assign approved companies to price books. Rules attached to unassigned
-        books never enter their dealer price calculation.
+        {t(
+          "Assign approved companies to price books. Rules attached to unassigned books never enter their dealer price calculation.",
+        )}
       </p>
       <form onSubmit={create} className="mt-4 flex flex-wrap items-end gap-3">
         <label className="text-sm">
-          Book code
+          {t("Book code")}
           <input name="code" required maxLength={64} className={input} />
         </label>
         <label className="text-sm">
-          Book label
+          {t("Book label")}
           <input name="label" required maxLength={160} className={input} />
         </label>
         <button disabled={busy} className={button}>
-          Create book
+          {t("Create book")}
         </button>
       </form>
       <div className="mt-5 space-y-4">
@@ -534,7 +555,7 @@ function PriceBooks({
             <h3 className="font-semibold">{company.companyName}</h3>
             <div className="my-3 flex flex-wrap gap-4">
               {books.books.length === 0 && (
-                <p className="text-sm">Create a price book first.</p>
+                <p className="text-sm">{t("Create a price book first.")}</p>
               )}
               {books.books.map((book) => (
                 <label key={book.id} className="text-sm">
@@ -552,7 +573,7 @@ function PriceBooks({
               ))}
             </div>
             <button disabled={busy} className={button}>
-              Save company access
+              {t("Save company access")}
             </button>
           </form>
         ))}
@@ -570,6 +591,8 @@ function PayCard({
   refresh: () => Promise<void>;
   onError: (error: unknown) => void;
 }) {
+  const t = useUiText();
+
   const [busy, setBusy] = useState(false);
   const [demoId, setDemoId] = useState("");
   async function begin() {
@@ -610,7 +633,7 @@ function PayCard({
     <div className="mt-3 rounded border p-3">
       {demoId ? (
         <>
-          <p>Local test payment. No card is charged.</p>
+          <p>{t("Local test payment. No card is charged.")}</p>
           <div className="mt-2 flex gap-3">
             {["SUCCEEDED", "FAILED", "CANCELLED"].map((status) => (
               <button
@@ -619,14 +642,14 @@ function PayCard({
                 onClick={() => void finish(status)}
                 className="underline"
               >
-                Simulate {status.toLowerCase()}
+                {t("Simulate")} {t(status.toLowerCase())}
               </button>
             ))}
           </div>
         </>
       ) : (
         <button className={button} disabled={busy} onClick={() => void begin()}>
-          Pay by credit card
+          {t("Pay by credit card")}
         </button>
       )}
     </div>
@@ -634,6 +657,10 @@ function PayCard({
 }
 
 function CompanyPolicies({ act, busy }: { act: Action; busy: boolean }) {
+  const uiLocale = useUiLocale();
+
+  const t = useUiText();
+
   type Options = {
     products: Array<{
       id: string;
@@ -666,14 +693,14 @@ function CompanyPolicies({ act, busy }: { act: Action; busy: boolean }) {
   return (
     <section className="mt-8 rounded border p-5">
       <h2 className="text-xl font-semibold">
-        Company product authorization & purchase rules
+        {t("Company product authorization & purchase rules")}
       </h2>
       <p className="mt-2 text-sm">
-        Choose the products and categories each company may purchase. Market and
-        channel restrictions also apply. Hold Ctrl or Command to select multiple
-        entries.
+        {t(
+          "Choose the products and categories each company may purchase. Market and channel restrictions also apply. Hold Ctrl or Command to select multiple entries.",
+        )}
       </p>
-      <p role="alert">{error}</p>
+      <p role="alert">{error ? uiError(uiLocale, error) : ""}</p>
       {companies.map((c) => (
         <form
           key={c.id}
@@ -730,7 +757,7 @@ function CompanyPolicies({ act, busy }: { act: Action; busy: boolean }) {
             href={`/admin/dealers/company?id=${encodeURIComponent(c.id)}`}
             className="underline sm:col-span-2"
           >
-            Manage company profile, team and addresses
+            {t("Manage company profile, team and addresses")}
           </Link>
           <label>
             <input
@@ -741,11 +768,12 @@ function CompanyPolicies({ act, busy }: { act: Action; busy: boolean }) {
                 Array.isArray(c.catalogPolicy.categoryIds)
               }
             />{" "}
-            Restrict catalog to selected products/categories (no selections
-            denies all)
+            {t(
+              "Restrict catalog to selected products/categories (no selections denies all)",
+            )}
           </label>
           <label>
-            Authorized products
+            {t("Authorized products")}
             <select
               multiple
               name="productIds"
@@ -764,7 +792,7 @@ function CompanyPolicies({ act, busy }: { act: Action; busy: boolean }) {
             </select>
           </label>
           <label>
-            Authorized variants
+            {t("Authorized variants")}
             <select
               multiple
               name="variantIds"
@@ -785,7 +813,7 @@ function CompanyPolicies({ act, busy }: { act: Action; busy: boolean }) {
             </select>
           </label>
           <label>
-            Authorized categories
+            {t("Authorized categories")}
             <select
               multiple
               name="categoryIds"
@@ -805,7 +833,7 @@ function CompanyPolicies({ act, busy }: { act: Action; busy: boolean }) {
           </label>
           {["markets", "channels", "channel"].map((k) => (
             <label key={k}>
-              {k} (comma separated)
+              {t(k)} {t("(comma separated)")}
               <input
                 name={k}
                 className={input}
@@ -819,7 +847,7 @@ function CompanyPolicies({ act, busy }: { act: Action; busy: boolean }) {
           ))}
           {["moq", "multiple", "caseSize", "leadTimeDays"].map((k) => (
             <label key={k}>
-              {k}
+              {t(k)}
               <input
                 name={k}
                 type="number"
@@ -832,7 +860,7 @@ function CompanyPolicies({ act, busy }: { act: Action; busy: boolean }) {
             </label>
           ))}
           <label>
-            Case gross weight (g, optional)
+            {t("Case gross weight (g, optional)")}
             <input
               name="caseWeightGrams"
               type="number"
@@ -845,7 +873,7 @@ function CompanyPolicies({ act, busy }: { act: Action; busy: boolean }) {
             />
           </label>
           <label>
-            Inventory display
+            {t("Inventory display")}
             <select
               name="inventoryDisplay"
               defaultValue={String(
@@ -853,17 +881,17 @@ function CompanyPolicies({ act, busy }: { act: Action; busy: boolean }) {
               )}
               className={input}
             >
-              <option>EXACT</option>
-              <option>STATUS</option>
-              <option>HIDDEN</option>
+              <option value={"EXACT"}>{t("EXACT")}</option>
+              <option value={"STATUS"}>{t("STATUS")}</option>
+              <option value={"HIDDEN"}>{t("HIDDEN")}</option>
             </select>
           </label>
           <label>
-            Account status
+            {t("Account status")}
             <select name="status" defaultValue={c.status} className={input}>
-              <option>APPROVED</option>
-              <option>SUSPENDED</option>
-              <option>CLOSED</option>
+              <option value={"APPROVED"}>{t("APPROVED")}</option>
+              <option value={"SUSPENDED"}>{t("SUSPENDED")}</option>
+              <option value={"CLOSED"}>{t("CLOSED")}</option>
             </select>
           </label>
           <label>
@@ -872,10 +900,10 @@ function CompanyPolicies({ act, busy }: { act: Action; busy: boolean }) {
               type="checkbox"
               defaultChecked={c.purchaseSettings.requirePoNumber === true}
             />{" "}
-            Require customer PO number
+            {t("Require customer PO number")}
           </label>
           <label>
-            Settlement currency
+            {t("Settlement currency")}
             <input
               name="currency"
               pattern="[A-Za-z]{3}"
@@ -886,14 +914,18 @@ function CompanyPolicies({ act, busy }: { act: Action; busy: boolean }) {
             />
           </label>
           <label>
-            Reserve inventory
+            {t("Reserve inventory")}
             <select
               name="reserveAt"
               defaultValue={String(c.purchaseSettings.reserveAt ?? "SUBMIT")}
               className={input}
             >
-              <option value="SUBMIT">When the dealer submits the order</option>
-              <option value="CONFIRM">When staff confirms the order</option>
+              <option value="SUBMIT">
+                {t("When the dealer submits the order")}
+              </option>
+              <option value="CONFIRM">
+                {t("When staff confirms the order")}
+              </option>
             </select>
           </label>
           <label>
@@ -902,7 +934,7 @@ function CompanyPolicies({ act, busy }: { act: Action; busy: boolean }) {
               type="checkbox"
               defaultChecked={c.purchaseSettings.requireMfa === true}
             />{" "}
-            Require MFA for dealer accounts
+            {t("Require MFA for dealer accounts")}
           </label>
           <label>
             <input
@@ -910,10 +942,10 @@ function CompanyPolicies({ act, busy }: { act: Action; busy: boolean }) {
               type="checkbox"
               defaultChecked={c.purchaseSettings.orderSuspended === true}
             />{" "}
-            Pause new orders
+            {t("Pause new orders")}
           </label>
           <fieldset>
-            <legend>Allowed payment methods</legend>
+            <legend>{t("Allowed payment methods")}</legend>
             {["BANK_TRANSFER", "PO", "ACCOUNT", "CARD"].map((m) => (
               <label className="mr-3" key={m}>
                 <input
@@ -929,12 +961,12 @@ function CompanyPolicies({ act, busy }: { act: Action; busy: boolean }) {
                       ))
                   }
                 />
-                {m}
+                {t(m)}
               </label>
             ))}
           </fieldset>
           <button className={button} disabled={busy}>
-            Save company policy
+            {t("Save company policy")}
           </button>
         </form>
       ))}
@@ -943,6 +975,10 @@ function CompanyPolicies({ act, busy }: { act: Action; busy: boolean }) {
 }
 
 export function B2bWorkbench({ admin = false }: { admin?: boolean }) {
+  const uiLocale = useUiLocale();
+
+  const t = useUiText();
+
   const router = useRouter();
   const kind = admin ? "staff" : "dealer";
   const base = admin ? "/admin/b2b" : "/dealer";
@@ -1020,13 +1056,17 @@ export function B2bWorkbench({ admin = false }: { admin?: boolean }) {
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <p className="text-sm font-semibold text-[#2B5F8A]">
-            WEMOVE {admin ? "ADMIN" : "DEALER"}
+            {t("WEMOVE")} {admin ? t("ADMIN") : t("DEALER")}
           </p>
           <h1 className="mt-1 text-3xl font-bold">
-            {admin ? "B2B sales & fulfillment" : "Quotes & purchase orders"}
+            {admin
+              ? t("B2B sales & fulfillment")
+              : t("Quotes & purchase orders")}
           </h1>
           <p className="mt-2 text-sm text-neutral-600">
-            Track requests, compare quote versions and follow company purchases.
+            {t(
+              "Track requests, compare quote versions and follow company purchases.",
+            )}
           </p>
         </div>
         <div className="flex items-center gap-4">
@@ -1034,11 +1074,11 @@ export function B2bWorkbench({ admin = false }: { admin?: boolean }) {
             href={admin ? "/admin/dashboard" : "/dealer/dashboard"}
             className="text-sm underline"
           >
-            Dashboard
+            {t("Dashboard")}
           </Link>
           {!admin && (
             <Link href="/dealer/quick-order" className={button}>
-              New request
+              {t("New request")}
             </Link>
           )}
           <button
@@ -1049,13 +1089,13 @@ export function B2bWorkbench({ admin = false }: { admin?: boolean }) {
             }}
             className="text-sm underline"
           >
-            Refresh
+            {t("Refresh")}
           </button>
         </div>
       </div>
       {admin && (
         <label className="mt-6 block max-w-xs text-sm">
-          Current MFA code
+          {t("Current MFA code")}
           <input
             value={mfa}
             onChange={(event) =>
@@ -1073,7 +1113,7 @@ export function B2bWorkbench({ admin = false }: { admin?: boolean }) {
           role="alert"
           className="mt-5 rounded-lg bg-red-50 p-3 text-sm text-red-700"
         >
-          {error}
+          {error ? uiError(uiLocale, error) : ""}
         </p>
       )}
       {notice && (
@@ -1081,21 +1121,27 @@ export function B2bWorkbench({ admin = false }: { admin?: boolean }) {
           role="status"
           className="mt-5 rounded-lg bg-emerald-50 p-3 text-sm text-emerald-800"
         >
-          {notice}
+          {notice ? uiError(uiLocale, notice) : ""}
         </p>
       )}
       {loading ? (
-        <p className="mt-8">Loading company documents…</p>
+        <p className="mt-8">{t("Loading company documents…")}</p>
       ) : (
         <>
           <section className="mt-8">
-            <h2 className="text-xl font-semibold">Requests for quotation</h2>
+            <h2 className="text-xl font-semibold">
+              {t("Requests for quotation")}
+            </h2>
             <p className="mt-1 text-sm text-neutral-500">
-              Latest 100 requests. Amounts use the quoted settlement currency.
+              {t(
+                "Latest 100 requests. Amounts use the quoted settlement currency.",
+              )}
             </p>
             {!rfqs.length && (
               <p className="mt-4 rounded-lg border border-dashed p-6">
-                No RFQs yet. Start from Quick Order to validate your items.
+                {t(
+                  "No RFQs yet. Start from Quick Order to validate your items.",
+                )}
               </p>
             )}
             <div className="mt-4 space-y-5">
@@ -1112,19 +1158,21 @@ export function B2bWorkbench({ admin = false }: { admin?: boolean }) {
                       </p>
                     </div>
                     <span className="self-start rounded bg-neutral-100 px-3 py-1 text-xs font-semibold">
-                      {rfq.status}
+                      {t(rfq.status)}
                     </span>
                   </div>
                   {rfq.note && <p className="mt-3 text-sm">{rfq.note}</p>}
                   {rfq.targetDeliveryAt && (
                     <p className="mt-2 text-sm">
-                      Target delivery:{" "}
-                      {new Date(rfq.targetDeliveryAt).toLocaleDateString()}
+                      {t("Target delivery:")}{" "}
+                      {new Date(rfq.targetDeliveryAt).toLocaleDateString(
+                        uiLocale,
+                      )}
                     </p>
                   )}
                   {rfq.rejectionReason && (
                     <p className="mt-2 text-sm">
-                      Rejection reason: {rfq.rejectionReason}
+                      {t("Rejection reason:")} {rfq.rejectionReason}
                     </p>
                   )}
                   {rfq.attachmentIds?.map((id) => (
@@ -1147,7 +1195,7 @@ export function B2bWorkbench({ admin = false }: { admin?: boolean }) {
                         }
                       }}
                     >
-                      RFQ attachment
+                      {t("RFQ attachment")}
                     </button>
                   ))}
                   <Lines
@@ -1159,8 +1207,9 @@ export function B2bWorkbench({ admin = false }: { admin?: boolean }) {
                   />
                   {!rfq.quotes.length && (
                     <p className="mt-2 text-xs text-neutral-500">
-                      Estimated dealer prices; a sales quote is required before
-                      purchase.
+                      {t(
+                        "Estimated dealer prices; a sales quote is required before purchase.",
+                      )}
                     </p>
                   )}
                   {rfq.quotes.map((quote, index) => (
@@ -1170,19 +1219,24 @@ export function B2bWorkbench({ admin = false }: { admin?: boolean }) {
                       className="mt-3 rounded border p-3"
                     >
                       <summary className="cursor-pointer text-sm font-medium">
-                        Version {quote.version}
-                        {index === 0 ? " · Latest" : " · Historical"} ·{" "}
-                        {money(quote.totalCents, quote.currency)} · valid until{" "}
-                        {new Date(quote.validUntil).toLocaleString()}
+                        {t("Version")} {quote.version}
+                        {index === 0
+                          ? t(" · Latest")
+                          : t(" · Historical")} ·{" "}
+                        {money(quote.totalCents, quote.currency)}{" "}
+                        {t("· valid until")}{" "}
+                        {new Date(quote.validUntil).toLocaleString(uiLocale)}
                       </summary>
                       <p className="mt-2 text-sm">
-                        Tax {money(quote.taxCents, quote.currency)} · Shipping{" "}
+                        {t("Tax")} {money(quote.taxCents, quote.currency)}{" "}
+                        {t("· Shipping")}{" "}
                         {money(quote.shippingCents, quote.currency)}
                       </p>
                       <p className="mt-2 text-sm">
-                        Discount{" "}
-                        {money(quote.discountCents ?? 0, quote.currency)} ·
-                        Payment {quote.paymentTerms} · {quote.deliveryTerms}
+                        {t("Discount")}{" "}
+                        {money(quote.discountCents ?? 0, quote.currency)}{" "}
+                        {t("· Payment")} {quote.paymentTerms} ·{" "}
+                        {quote.deliveryTerms}
                       </p>
                       {index > 0 && (
                         <Lines items={quote.items} currency={quote.currency} />
@@ -1204,7 +1258,7 @@ export function B2bWorkbench({ admin = false }: { admin?: boolean }) {
                         onClick={() => void act(`/rfqs/${rfq.id}/submit`)}
                         className={button}
                       >
-                        Submit for quotation
+                        {t("Submit for quotation")}
                       </button>
                     )}
                     {admin && rfq.status === "QUOTED" && (
@@ -1217,7 +1271,7 @@ export function B2bWorkbench({ admin = false }: { admin?: boolean }) {
                           disabled={busy}
                           onClick={() => {
                             const reason = window.prompt(
-                              "Reason for declining this quote:",
+                              t("Reason for declining this quote:"),
                             );
                             if (reason?.trim())
                               void act(`/rfqs/${rfq.id}/reject`, {
@@ -1227,7 +1281,7 @@ export function B2bWorkbench({ admin = false }: { admin?: boolean }) {
                           }}
                           className="rounded border border-red-300 px-4 py-2 text-sm text-red-700"
                         >
-                          Reject quote
+                          {t("Reject quote")}
                         </button>
                       </>
                     )}
@@ -1236,7 +1290,7 @@ export function B2bWorkbench({ admin = false }: { admin?: boolean }) {
                         href={`#po-${rfq.purchaseOrder.id}`}
                         className="text-sm underline"
                       >
-                        View purchase order {rfq.purchaseOrder.orderNo}
+                        {t("View purchase order")} {rfq.purchaseOrder.orderNo}
                       </a>
                     )}
                   </div>
@@ -1245,10 +1299,12 @@ export function B2bWorkbench({ admin = false }: { admin?: boolean }) {
             </div>
           </section>
           <section className="mt-10">
-            <h2 className="text-xl font-semibold">Purchase orders</h2>
+            <h2 className="text-xl font-semibold">{t("Purchase orders")}</h2>
             {!orders.length && (
               <p className="mt-4 rounded-lg border border-dashed p-6">
-                No purchase orders yet. Accept a valid quote to create one.
+                {t(
+                  "No purchase orders yet. Accept a valid quote to create one.",
+                )}
               </p>
             )}
             <div className="mt-4 space-y-5">
@@ -1260,13 +1316,13 @@ export function B2bWorkbench({ admin = false }: { admin?: boolean }) {
                 >
                   <h3 className="break-all font-semibold">{order.orderNo}</h3>
                   <p className="mt-2 text-sm">
-                    {order.companyName} · {order.status} · Quote v
+                    {order.companyName} · {t(order.status)} {t("· Quote v")}{" "}
                     {order.quoteVersion}
                   </p>
                   <p className="mt-2 text-sm">
-                    Customer PO: {order.customerPoNumber ?? "—"} ·{" "}
-                    {order.paymentMethod} · {order.paymentTerms} ·{" "}
-                    {order.paymentStatus}
+                    {t("Customer PO:")} {order.customerPoNumber ?? "—"} ·{" "}
+                    {t(order.paymentMethod)} · {order.paymentTerms} ·{" "}
+                    {t(order.paymentStatus)}
                   </p>
                   {!admin &&
                     canBuy &&
@@ -1299,7 +1355,7 @@ export function B2bWorkbench({ admin = false }: { admin?: boolean }) {
                         }}
                       >
                         <label>
-                          Bank receipt / settlement reference
+                          {t("Bank receipt / settlement reference")}
                           <input
                             name="reference"
                             required
@@ -1309,7 +1365,7 @@ export function B2bWorkbench({ admin = false }: { admin?: boolean }) {
                           />
                         </label>
                         <button disabled={busy} className={button}>
-                          Confirm receipt of{" "}
+                          {t("Confirm receipt of")}{" "}
                           {money(order.totalCents, order.currency)}
                         </button>
                       </form>
@@ -1323,33 +1379,37 @@ export function B2bWorkbench({ admin = false }: { admin?: boolean }) {
                     }
                     className="mt-3 inline-block underline"
                   >
-                    Returns, refunds & after-sales history
+                    {t("Returns, refunds & after-sales history")}
                   </Link>
                   <p className="mt-3 text-right font-semibold">
-                    Total {money(order.totalCents, order.currency)}
+                    {t("Total")} {money(order.totalCents, order.currency)}
                   </p>
                   <p className="mt-1 text-right text-sm">
-                    Includes tax {money(order.taxCents, order.currency)} and
-                    shipping {money(order.shippingCents, order.currency)}
+                    {t("Includes tax")} {money(order.taxCents, order.currency)}{" "}
+                    {t("and shipping")}{" "}
+                    {money(order.shippingCents, order.currency)}
                   </p>
                   <p className="mt-3 text-sm text-neutral-600">
-                    Deliver to:{" "}
+                    {t("Deliver to:")}{" "}
                     {Object.values(order.shippingAddress).join(", ")}
                   </p>
                   <p className="mt-1 text-sm">
-                    Inventory:{" "}
+                    {t("Inventory:")}{" "}
                     {order.status === "CANCELLED"
-                      ? "reservation released"
+                      ? t("reservation released")
                       : order.inventoryReserved
-                        ? "reservation recorded"
-                        : "reserved after staff confirmation"}
+                        ? t("reservation recorded")
+                        : t("reserved after staff confirmation")}
                     {order.cancellationReason
-                      ? ` · Cancellation reason: ${order.cancellationReason}`
+                      ? t(" · Cancellation reason: {v0}", {
+                          v0: String(order.cancellationReason),
+                        })
                       : ""}
                   </p>
                   {order.adjustments?.map((entry, index) => (
                     <p key={index} className="mt-1 text-sm">
-                      Adjustment {new Date(entry.at).toLocaleString()}:{" "}
+                      {t("Adjustment")}{" "}
+                      {new Date(entry.at).toLocaleString(uiLocale)}:{" "}
                       {entry.reason}
                     </p>
                   ))}
@@ -1362,7 +1422,9 @@ export function B2bWorkbench({ admin = false }: { admin?: boolean }) {
                     ) && (
                       <details className="mt-4 rounded border p-3">
                         <summary className="cursor-pointer">
-                          Adjust customer reference, terms or delivery details
+                          {t(
+                            "Adjust customer reference, terms or delivery details",
+                          )}
                         </summary>
                         <form
                           className="mt-3 grid gap-3 sm:grid-cols-2"
@@ -1397,7 +1459,7 @@ export function B2bWorkbench({ admin = false }: { admin?: boolean }) {
                           }}
                         >
                           <label>
-                            Customer PO number
+                            {t("Customer PO number")}
                             <input
                               name="customerPoNumber"
                               defaultValue={order.customerPoNumber ?? ""}
@@ -1405,7 +1467,7 @@ export function B2bWorkbench({ admin = false }: { admin?: boolean }) {
                             />
                           </label>
                           <label>
-                            Payment terms
+                            {t("Payment terms")}
                             <input
                               name="paymentTerms"
                               required
@@ -1416,7 +1478,11 @@ export function B2bWorkbench({ admin = false }: { admin?: boolean }) {
                           {(["shipping", "billing"] as const).map((prefix) => (
                             <fieldset key={prefix} className="space-y-2">
                               <legend className="font-semibold capitalize">
-                                {prefix} address
+                                {t(
+                                  prefix === "shipping"
+                                    ? "Shipping address"
+                                    : "Billing address",
+                                )}
                               </legend>
                               {[
                                 "recipient",
@@ -1427,7 +1493,7 @@ export function B2bWorkbench({ admin = false }: { admin?: boolean }) {
                                 "postalCode",
                               ].map((key) => (
                                 <label key={key} className="block text-sm">
-                                  {key}
+                                  {t(key)}
                                   <input
                                     name={`${prefix}.${key}`}
                                     required
@@ -1444,7 +1510,7 @@ export function B2bWorkbench({ admin = false }: { admin?: boolean }) {
                             </fieldset>
                           ))}
                           <label className="sm:col-span-2">
-                            Adjustment reason
+                            {t("Adjustment reason")}
                             <textarea
                               name="reason"
                               required
@@ -1453,7 +1519,7 @@ export function B2bWorkbench({ admin = false }: { admin?: boolean }) {
                             />
                           </label>
                           <button disabled={busy} className={button}>
-                            Save adjustment with audit record
+                            {t("Save adjustment with audit record")}
                           </button>
                         </form>
                       </details>
@@ -1490,7 +1556,7 @@ export function B2bWorkbench({ admin = false }: { admin?: boolean }) {
                             }
                           }}
                         >
-                          {document} PDF
+                          {t(document)} {t("PDF")}
                         </button>
                       ),
                     )}
@@ -1525,7 +1591,7 @@ export function B2bWorkbench({ admin = false }: { admin?: boolean }) {
                           }
                         }}
                       >
-                        Reorder with current prices
+                        {t("Reorder with current prices")}
                       </button>
                     )}
                     {(admin
@@ -1542,14 +1608,18 @@ export function B2bWorkbench({ admin = false }: { admin?: boolean }) {
                             status === "CANCELLED"
                               ? window
                                   .prompt(
-                                    "Reason for cancelling this purchase order:",
+                                    t(
+                                      "Reason for cancelling this purchase order:",
+                                    ),
                                   )
                                   ?.trim()
                               : undefined;
                           if (status === "CANCELLED" && !reason) return;
                           if (
                             window.confirm(
-                              `Change purchase order to ${status}?`,
+                              t("Change purchase order to {v0}?", {
+                                v0: String(status),
+                              }),
                             )
                           )
                             void act(
@@ -1561,14 +1631,14 @@ export function B2bWorkbench({ admin = false }: { admin?: boolean }) {
                         className={button}
                       >
                         {status === "CANCELLED"
-                          ? "Cancel order"
-                          : `Mark ${status.toLowerCase()}`}
+                          ? t("Cancel order")
+                          : t("Mark {v0}", { v0: t(status.toLowerCase()) })}
                       </button>
                     ))}
                   </div>
                   {order.shipments?.map((s) => (
                     <p key={s.id} className="mt-3 text-sm">
-                      Shipment: {s.carrier} · {s.trackingNumber} ·{" "}
+                      {t("Shipment:")} {s.carrier} · {s.trackingNumber} ·{" "}
                       {s.lines.map((l) => `${l.sku}: ${l.quantity}`).join(", ")}
                     </p>
                   ))}
@@ -1593,19 +1663,19 @@ export function B2bWorkbench({ admin = false }: { admin?: boolean }) {
                         }}
                       >
                         <h4 className="font-semibold sm:col-span-2">
-                          Record partial shipment
+                          {t("Record partial shipment")}
                         </h4>
                         <label>
-                          Carrier
+                          {t("Carrier")}
                           <input className={input} name="carrier" required />
                         </label>
                         <label>
-                          Tracking number
+                          {t("Tracking number")}
                           <input className={input} name="tracking" required />
                         </label>
                         {order.items.map((i) => (
                           <label key={i.sku}>
-                            {i.sku} quantity
+                            {i.sku} {t("quantity")}
                             <input
                               className={input}
                               name={i.sku}
@@ -1617,7 +1687,7 @@ export function B2bWorkbench({ admin = false }: { admin?: boolean }) {
                           </label>
                         ))}
                         <button className={button} disabled={busy}>
-                          Record shipment
+                          {t("Record shipment")}
                         </button>
                       </form>
                     )}

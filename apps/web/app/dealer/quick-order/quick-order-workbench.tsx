@@ -1,4 +1,7 @@
 "use client";
+import { uiError } from "../../../lib/ui-i18n";
+
+import { useUiText, useUiLocale } from "../../../components/ui-locale";
 
 import { recordEvent } from "../../../components/consent-analytics";
 import { FormEvent, useState } from "react";
@@ -32,6 +35,10 @@ type Preview = {
 };
 
 export function QuickOrderWorkbench() {
+  const uiLocale = useUiLocale();
+
+  const t = useUiText();
+
   const router = useRouter();
   const [raw, setRaw] = useState("\n");
   const [preview, setPreview] = useState<Preview | null>(null);
@@ -41,6 +48,29 @@ export function QuickOrderWorkbench() {
   const [note, setNote] = useState("");
   const [target, setTarget] = useState("");
   const [attachmentIds, setAttachmentIds] = useState<string[]>([]);
+
+  function lineMessage(message?: string) {
+    const rules = message?.match(
+      /^MOQ (\d+); quantity multiple (\d+); case size (\d+)\.$/,
+    );
+    if (rules)
+      return t(
+        "MOQ {min}; quantity multiple {multiple}; case size {caseSize}.",
+        {
+          min: rules[1],
+          multiple: rules[2],
+          caseSize: rules[3],
+        },
+      );
+    const stock = message?.match(
+      /^Only (\d+) units are currently available\.$/,
+    );
+    if (stock)
+      return t("Only {count} units are currently available.", {
+        count: stock[1],
+      });
+    return uiError(uiLocale, message);
+  }
 
   async function createRequest() {
     if (!preview?.valid || !title.trim()) return;
@@ -83,10 +113,14 @@ export function QuickOrderWorkbench() {
     setError("");
     try {
       setPreview(
-        await secureApiFetch<Preview>("dealer", "/dealer/quick-order/csv", {
-          method: "POST",
-          body: JSON.stringify({ csv: raw.replace(/\t/g, ",") }),
-        }),
+        await secureApiFetch<Preview>(
+          "dealer",
+          `/dealer/quick-order/csv?locale=${encodeURIComponent(uiLocale)}`,
+          {
+            method: "POST",
+            body: JSON.stringify({ csv: raw.replace(/\t/g, ",") }),
+          },
+        ),
       );
     } catch (cause) {
       if (cause instanceof ApiError && cause.status === 401) {
@@ -110,16 +144,20 @@ export function QuickOrderWorkbench() {
       tabIndex={-1}
       className="mx-auto max-w-5xl px-4 py-10"
     >
-      <p className="text-sm font-semibold text-[#2B5F8A]">APPROVED DEALER</p>
-      <h1 className="mt-1 text-3xl font-bold">Quick Order</h1>
+      <p className="text-sm font-semibold text-[#2B5F8A]">
+        {t("APPROVED DEALER")}
+      </p>
+      <h1 className="mt-1 text-3xl font-bold">{t("Quick Order")}</h1>
       <p className="mt-2 text-sm text-neutral-500">
-        Paste up to 100 rows as <code>SKU, quantity</code>. This validates
-        authorization, tier pricing and live stock before an RFQ or PO is
-        created.
+        {t("Paste up to 100 rows as")}
+        <code>{t("SKU, quantity")}</code>
+        {t(
+          ". This validates authorization, tier pricing and live stock before an RFQ or PO is created.",
+        )}
       </p>
       <form onSubmit={validate} className="mt-6 space-y-4">
         <label className="block">
-          Upload SKU CSV
+          {t("Upload SKU CSV")}
           <input
             type="file"
             accept=".csv,text/csv"
@@ -154,7 +192,7 @@ export function QuickOrderWorkbench() {
             }
           }}
         >
-          Load saved procurement cart
+          {t("Load saved procurement cart")}
         </button>
         <textarea
           required
@@ -164,7 +202,7 @@ export function QuickOrderWorkbench() {
             setRaw(event.target.value);
             setPreview(null);
           }}
-          aria-label="SKU and quantity rows"
+          aria-label={t("SKU and quantity rows")}
           placeholder={"WM-BALL-RED, 12\nWM-BALANCE-BLUE, 4"}
           className="w-full rounded-xl border border-neutral-300 p-4 font-mono text-sm"
         />
@@ -173,14 +211,14 @@ export function QuickOrderWorkbench() {
             role="alert"
             className="rounded-lg bg-red-50 p-3 text-sm text-red-700"
           >
-            {error}
+            {error ? uiError(uiLocale, error) : ""}
           </p>
         )}
         <button
           disabled={busy}
           className="rounded-full bg-[var(--wm-dark)] px-6 py-3 text-sm font-semibold text-white disabled:opacity-50"
         >
-          {busy ? "Validating…" : "Validate order"}
+          {busy ? t("Validating…") : t("Validate order")}
         </button>
       </form>
       {preview && (
@@ -189,19 +227,19 @@ export function QuickOrderWorkbench() {
             className={`p-4 text-sm font-semibold ${preview.valid ? "bg-emerald-50 text-emerald-800" : "bg-amber-50 text-amber-800"}`}
           >
             {preview.valid
-              ? "All rows are ready for the next business-document step."
-              : "Resolve the row errors before continuing."}{" "}
-            Valid total: {preview.currency}{" "}
+              ? t("All rows are ready for the next business-document step.")
+              : t("Resolve the row errors before continuing.")}{" "}
+            {t("Valid total:")} {preview.currency}{" "}
             {(preview.totalCents / 100).toFixed(2)}
           </div>
           <table className="min-w-full text-left text-sm">
             <thead className="bg-neutral-50">
               <tr>
-                <th className="p-3">Row</th>
-                <th className="p-3">SKU</th>
-                <th className="p-3">Qty</th>
-                <th className="p-3">Result</th>
-                <th className="p-3">Total</th>
+                <th className="p-3">{t("Row")}</th>
+                <th className="p-3">{t("SKU")}</th>
+                <th className="p-3">{t("Qty")}</th>
+                <th className="p-3">{t("Result")}</th>
+                <th className="p-3">{t("Total")}</th>
               </tr>
             </thead>
             <tbody className="divide-y">
@@ -214,8 +252,24 @@ export function QuickOrderWorkbench() {
                     className={`p-3 ${line.ok ? "text-emerald-700" : "text-red-700"}`}
                   >
                     {line.ok
-                      ? `${line.productName} · ${preview.currency} ${((line.unitPriceCents ?? 0) / 100).toFixed(2)} each · ${line.available == null ? line.availability : line.available + " available"} · lead time ${line.purchaseRules?.leadTimeDays ?? 0} days`
-                      : line.message}
+                      ? t(
+                          "{v0} · {v1} {v2} each · {v3} · lead time {v4} days",
+                          {
+                            v0: String(line.productName),
+                            v1: String(preview.currency),
+                            v2: String(
+                              ((line.unitPriceCents ?? 0) / 100).toFixed(2),
+                            ),
+                            v3:
+                              line.available == null
+                                ? t(line.availability ?? "CHECK_AVAILABILITY")
+                                : t("{v0} units available", {
+                                    v0: line.available,
+                                  }),
+                            v4: String(line.purchaseRules?.leadTimeDays ?? 0),
+                          },
+                        )
+                      : lineMessage(line.message)}
                   </td>
                   <td className="p-3">
                     {line.ok
@@ -230,19 +284,20 @@ export function QuickOrderWorkbench() {
       )}
       {preview?.valid && (
         <section className="mt-6 rounded-xl border p-5">
-          <h2 className="font-semibold">Request a sales quote</h2>
+          <h2 className="font-semibold">{t("Request a sales quote")}</h2>
           <p className="mt-2 text-sm text-neutral-600">
-            Owners and buyers can save these items as a draft, then submit it
-            for quotation.
+            {t(
+              "Owners and buyers can save these items as a draft, then submit it for quotation.",
+            )}
           </p>
           <label className="mt-3 block text-sm">
-            Request title
+            {t("Request title")}
             <input
               value={title}
               onChange={(event) => setTitle(event.target.value)}
               maxLength={160}
               className="mt-1 block w-full rounded border px-3 py-2"
-              placeholder="September store replenishment"
+              placeholder={t("September store replenishment")}
             />
           </label>
           <button
@@ -250,10 +305,10 @@ export function QuickOrderWorkbench() {
             disabled={busy || !title.trim()}
             className="mt-4 rounded-lg bg-[var(--wm-dark)] px-4 py-2 text-sm text-white disabled:opacity-50"
           >
-            Create RFQ draft
+            {t("Create RFQ draft")}
           </button>
           <label className="mt-3 block">
-            Target delivery date
+            {t("Target delivery date")}
             <input
               type="date"
               value={target}
@@ -262,7 +317,7 @@ export function QuickOrderWorkbench() {
             />
           </label>
           <label className="mt-3 block">
-            Request notes
+            {t("Request notes")}
             <textarea
               value={note}
               onChange={(e) => setNote(e.target.value)}
@@ -271,7 +326,7 @@ export function QuickOrderWorkbench() {
             />
           </label>
           <label className="mt-3 block">
-            RFQ attachment
+            {t("RFQ attachment")}
             <input
               type="file"
               accept="application/pdf,image/jpeg,image/png"
@@ -294,7 +349,7 @@ export function QuickOrderWorkbench() {
             />
           </label>
           <p className="text-sm">
-            {attachmentIds.length} attachment(s) uploaded.
+            {attachmentIds.length} {t("attachment(s) uploaded.")}
           </p>
           <button
             type="button"
@@ -317,7 +372,7 @@ export function QuickOrderWorkbench() {
               }
             }}
           >
-            Save procurement cart
+            {t("Save procurement cart")}
           </button>
         </section>
       )}

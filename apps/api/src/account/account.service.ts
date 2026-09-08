@@ -1,4 +1,5 @@
 import { createHash, randomBytes } from 'node:crypto';
+import { localizedProductSummary, localizedVariant } from '../catalog/product-locales.js';
 import { MediaService } from '../media/media.service.js';
 import { NotificationsService } from '../notifications/notifications.service.js';
 import { Injectable, Optional } from '@nestjs/common';
@@ -163,14 +164,14 @@ export class AccountService {
     if (!result.count) this.notFound();
     return { ok: true };
   }
-  async favorites(actor: JwtPayload) {
+  async favorites(actor: JwtPayload, locale = 'en') {
     const favorites = await this.prisma.accountFavorite.findMany({
       where: { userId: this.customer(actor) },
       orderBy: { createdAt: 'desc' },
     });
     const products = await this.prisma.product.findMany({
       where: {
-        id: { in: favorites.map((f) => f.productId) },
+          id: { in: favorites.map((f) => f.productId) },
         status: 'ACTIVE',
       },
       select: {
@@ -178,21 +179,34 @@ export class AccountService {
         name: true,
         slug: true,
         summary: true,
+        specifications: true,
+        description: true,
+        ageGuidance: true,
+        playGuide: true,
+        productFaq: true,
         variants: {
           where: { status: true },
           select: {
             id: true,
-            sku: true,
-            name: true,
+              sku: true,
+              name: true,
+              attrs: true,
             salePriceCents: true,
             msrpCents: true,
           },
         },
       },
     });
+    const localized = products.map(({ specifications, description, ageGuidance, playGuide, productFaq, ...product }) => {
+      const source = { ...product, specifications, description, ageGuidance, playGuide, productFaq };
+      return { ...product, ...localizedProductSummary(source, locale), variants: product.variants.map((variant) => {
+        const { attrs: _attrs, ...safe } = localizedVariant(variant, source, locale);
+        return safe;
+      }) };
+    });
     return favorites.map((f) => ({
       ...f,
-      product: products.find((p) => p.id === f.productId) ?? null,
+      product: localized.find((p) => p.id === f.productId) ?? null,
     }));
   }
   async favorite(actor: JwtPayload, productId: string, remove = false) {

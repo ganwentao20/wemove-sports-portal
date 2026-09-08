@@ -1,4 +1,8 @@
 "use client";
+import { adminNotificationLabels } from "../lib/ui-admin";
+import { uiError } from "../lib/ui-i18n";
+import { useUiText, useUiLocale } from "./ui-locale";
+
 import { RedirectImport } from "./redirect-import";
 import Link from "next/link";
 import { BrandSocialLinks } from "./brand-social-links";
@@ -14,6 +18,9 @@ export function PlatformWorkbench({
 }: {
   section: "settings" | "reports" | "seo";
 }) {
+  const t = useUiText();
+  const uiLocale = useUiLocale();
+
   const [data, setData] = useState<Data>({}),
     [message, setMessage] = useState(""),
     [mfa, setMfa] = useState(""),
@@ -73,12 +80,12 @@ export function PlatformWorkbench({
       className="mx-auto max-w-6xl px-4 py-10"
     >
       <Link href="/admin/dashboard" className="underline">
-        Operations dashboard
+        {t("Operations dashboard")}
       </Link>
       <div className="my-6 flex flex-wrap justify-between gap-4">
-        <h1 className="text-3xl font-bold">{title}</h1>
+        <h1 className="text-3xl font-bold">{t(String(title))}</h1>
         <label>
-          MFA code
+          {t("MFA code")}
           <input
             value={mfa}
             onChange={(e) => setMfa(e.target.value)}
@@ -89,7 +96,7 @@ export function PlatformWorkbench({
         </label>
       </div>
       <p role="status" className="mb-4">
-        {message}
+        {message ? uiError(uiLocale, message) : ""}
       </p>
       {section === "settings" && data.brand && (
         <div className="space-y-6">
@@ -100,7 +107,7 @@ export function PlatformWorkbench({
               void save("brand", data.brand);
             }}
           >
-            <h2 className="text-xl font-bold">Brand and contact</h2>
+            <h2 className="text-xl font-bold">{t("Brand and contact")}</h2>
             <div className="my-4 grid gap-4 sm:grid-cols-2">
               {[
                 "name",
@@ -112,7 +119,7 @@ export function PlatformWorkbench({
                 "address",
               ].map((key) => (
                 <label key={key}>
-                  {key}
+                  {t(String(key))}
                   <input
                     className={inputClass}
                     value={data.brand[key] ?? ""}
@@ -133,14 +140,15 @@ export function PlatformWorkbench({
               }
             />
             <button disabled={busy} className="rounded-lg border px-4 py-2">
-              Save brand
+              {t("Save brand")}
             </button>
           </form>
           <section className="rounded-xl border p-5">
-            <h2 className="text-xl font-bold">Navigation</h2>
+            <h2 className="text-xl font-bold">{t("Navigation")}</h2>
             <p className="my-3 text-sm">
-              Arrange primary and secondary links, translate their labels and
-              choose available markets.
+              {t(
+                "Arrange primary and secondary links, translate their labels and choose available markets.",
+              )}
             </p>
             <NavigationSettings
               items={data.navigation?.items ?? []}
@@ -154,7 +162,7 @@ export function PlatformWorkbench({
               onClick={() => void save("navigation", data.navigation)}
               className="mt-4 rounded border px-4 py-2"
             >
-              Save navigation
+              {t("Save navigation")}
             </button>
           </section>
           <form
@@ -164,9 +172,11 @@ export function PlatformWorkbench({
               void save("search", data.search);
             }}
           >
-            <h2 className="mb-4 text-xl font-bold">Search synonyms</h2>
+            <h2 className="mb-4 text-xl font-bold">{t("Search synonyms")}</h2>
             <label>
-              One group per line: preferred phrase = alternative, alternative
+              {t(
+                "One group per line: preferred phrase = alternative, alternative",
+              )}
               <textarea
                 rows={6}
                 className={inputClass}
@@ -202,7 +212,7 @@ export function PlatformWorkbench({
               />
             </label>
             <button disabled={busy} className="mt-3 rounded border px-4 py-2">
-              Save synonyms
+              {t("Save synonyms")}
             </button>
           </form>
           <form
@@ -213,12 +223,12 @@ export function PlatformWorkbench({
             }}
           >
             <h2 className="mb-3 text-xl font-bold">
-              Internal notification groups
+              {t("Internal notification groups")}
             </h2>
             <div className="grid gap-3 sm:grid-cols-3">
               {["dealer", "support", "orders"].map((key) => (
                 <label key={key}>
-                  {key} (comma separated emails)
+                  {t(String(key))} {t("(comma separated emails)")}
                   <input
                     value={(data.notifications?.[key] ?? []).join(", ")}
                     onChange={(e) =>
@@ -239,7 +249,7 @@ export function PlatformWorkbench({
               ))}
             </div>
             <button disabled={busy} className="mt-4 rounded border px-4 py-2">
-              Save recipients
+              {t("Save recipients")}
             </button>
           </form>
           <LocaleSettings
@@ -248,7 +258,7 @@ export function PlatformWorkbench({
             onSave={(value) => void save("locale", value)}
           />
           <section className="rounded-xl border p-5">
-            <h2 className="mb-3 text-xl font-bold">Analytics</h2>
+            <h2 className="mb-3 text-xl font-bold">{t("Analytics")}</h2>
             <label className="flex gap-2">
               <input
                 type="checkbox"
@@ -260,22 +270,22 @@ export function PlatformWorkbench({
                   })
                 }
               />
-              Enable analytics after visitor consent
+              {t("Enable analytics after visitor consent")}
             </label>
             <button
               onClick={() => void save("tracking", data.tracking)}
               className="mt-3 rounded border px-4 py-2"
             >
-              Save analytics
+              {t("Save analytics")}
             </button>
           </section>
           <section className="rounded-xl border p-5">
-            <h2 className="mb-4 text-xl font-bold">Email deliveries</h2>
+            <h2 className="mb-4 text-xl font-bold">{t("Email deliveries")}</h2>
             <Link
               href="/admin/notifications"
               className="mb-4 inline-block underline"
             >
-              Manage multilingual email templates
+              {t("Manage multilingual email templates")}
             </Link>
             <div className="overflow-auto">
               <table className="w-full text-left text-sm">
@@ -289,7 +299,7 @@ export function PlatformWorkbench({
                       "Action",
                     ].map((v) => (
                       <th key={v} className="p-2">
-                        {v}
+                        {t(v)}
                       </th>
                     ))}
                   </tr>
@@ -297,10 +307,16 @@ export function PlatformWorkbench({
                 <tbody>
                   {mail.map((row) => (
                     <tr key={row.id} className="border-t">
-                      <td className="p-2">{row.kind}</td>
-                      <td>{row.status}</td>
+                      <td className="p-2">
+                        {t(adminNotificationLabels[row.kind] ?? row.kind)}
+                      </td>
+                      <td>{t(String(row.status))}</td>
                       <td>{row.attempts}</td>
-                      <td>{new Date(row.createdAt).toLocaleString()}</td>
+                      <td>
+                        {new Date(row.createdAt).toLocaleString(
+                          uiLocale === "zh" ? "zh-CN" : "en-US",
+                        )}
+                      </td>
                       <td>
                         {row.status === "DEAD" && (
                           <button
@@ -322,7 +338,7 @@ export function PlatformWorkbench({
                               }
                             }}
                           >
-                            Retry
+                            {t("Retry")}
                           </button>
                         )}
                       </td>
@@ -334,11 +350,11 @@ export function PlatformWorkbench({
           </section>
           <p>
             <Link href="/admin/pricing" className="underline">
-              Markets, currencies and checkout settings
+              {t("Markets, currencies and checkout settings")}
             </Link>{" "}
             ·{" "}
             <Link href="/admin/security" className="underline">
-              Security settings
+              {t("Security settings")}
             </Link>
           </p>
         </div>
@@ -349,9 +365,11 @@ export function PlatformWorkbench({
             <OperationMetrics metrics={data.metrics} mfa={mfa} />
           )}
           <p>
-            Activity events: last {data.periodDays} days. Business state counts:
-            current totals. Financial amounts are shown only with financial
-            report permission.
+            {t("Activity events: last")}
+            {data.periodDays}{" "}
+            {t(
+              "days. Business state counts: current totals. Financial amounts are shown only with financial report permission.",
+            )}
           </p>
           {[
             "events",
@@ -363,16 +381,18 @@ export function PlatformWorkbench({
             "mail",
           ].map((group) => (
             <section key={group} className="rounded-xl border p-5">
-              <h2 className="mb-4 text-xl font-bold">{group}</h2>
+              <h2 className="mb-4 text-xl font-bold">{t(String(group))}</h2>
               <div className="overflow-auto">
                 <table className="w-full text-left text-sm">
                   <thead>
                     <tr>
-                      <th className="p-2">Category</th>
-                      <th>Count</th>
+                      <th className="p-2">{t("Category")}</th>
+                      <th>{t("Count")}</th>
                       {data.financial &&
                         ["orders", "purchaseOrders"].includes(group) && (
-                          <th>Amount (cents, mixed currencies not summed)</th>
+                          <th>
+                            {t("Amount (cents, mixed currencies not summed)")}
+                          </th>
                         )}
                     </tr>
                   </thead>
@@ -380,8 +400,9 @@ export function PlatformWorkbench({
                     {(data[group] ?? []).map((row: Data, i: number) => (
                       <tr key={i} className="border-t">
                         <td className="p-2">
-                          {row.name ?? row.status} {row.source ?? ""}{" "}
-                          {row.currency ?? ""} {row.market ?? ""}
+                          {t(String(row.name ?? row.status))}{" "}
+                          {t(row.source ?? "")} {row.currency ?? ""}{" "}
+                          {row.market ?? ""}
                         </td>
                         <td>{row._count}</td>
                         {row.totalCents !== undefined && (
@@ -395,13 +416,13 @@ export function PlatformWorkbench({
             </section>
           ))}
           <section className="rounded-xl border p-5">
-            <h2 className="mb-4 text-xl font-bold">Search phrases</h2>
+            <h2 className="mb-4 text-xl font-bold">{t("Search phrases")}</h2>
             <ul className="space-y-2">
               {(data.searches ?? [])
                 .slice(0, 100)
                 .map((row: Data, i: number) => (
                   <li key={i}>
-                    {row.query} · {row.results_count} results
+                    {row.query} · {row.results_count} {t("results")}
                   </li>
                 ))}
             </ul>
@@ -411,9 +432,10 @@ export function PlatformWorkbench({
       {section === "seo" && data.pages && (
         <div className="space-y-6">
           <section className="rounded-xl border p-5">
-            <h2 className="text-xl font-bold">Content checks</h2>
+            <h2 className="text-xl font-bold">{t("Content checks")}</h2>
             <p className="my-3">
-              Public images missing alt text: {data.missingAlt}
+              {t("Public images missing alt text:")}
+              {data.missingAlt}
             </p>
             <ul className="divide-y">
               {data.pages.map((row: Data) => (
@@ -422,14 +444,14 @@ export function PlatformWorkbench({
                   className="flex flex-wrap justify-between gap-3 py-3"
                 >
                   <span>
-                    {row.title} / {row.slug} ({row.status})
+                    {row.title} / {row.slug} ({t(String(row.status))})
                   </span>
                   <span>
-                    {row.missingDescription ? "Missing description " : ""}
-                    {row.duplicateTitle ? "Duplicate title" : ""}
+                    {row.missingDescription ? t("Missing description ") : ""}
+                    {row.duplicateTitle ? t("Duplicate title") : ""}
                   </span>
                   <Link href="/admin/cms" className="underline">
-                    Edit content
+                    {t("Edit content")}
                   </Link>
                 </li>
               ))}
@@ -461,10 +483,10 @@ export function PlatformWorkbench({
               }
             }}
           >
-            <h2 className="text-xl font-bold">Redirects</h2>
+            <h2 className="text-xl font-bold">{t("Redirects")}</h2>
             <div className="my-4 grid gap-3 sm:grid-cols-3">
               <label>
-                Old path
+                {t("Old path")}
                 <input
                   name="source"
                   required
@@ -473,7 +495,7 @@ export function PlatformWorkbench({
                 />
               </label>
               <label>
-                Destination path
+                {t("Destination path")}
                 <input
                   name="destination"
                   required
@@ -482,14 +504,16 @@ export function PlatformWorkbench({
                 />
               </label>
               <label>
-                Status
+                {t("Status")}
                 <select name="status" className={inputClass}>
-                  <option>301</option>
-                  <option>302</option>
+                  <option value="301">301</option>
+                  <option value="302">302</option>
                 </select>
               </label>
             </div>
-            <button className="rounded border px-4 py-2">Save redirect</button>
+            <button className="rounded border px-4 py-2">
+              {t("Save redirect")}
+            </button>
             <ul className="mt-5 space-y-2">
               {redirects.map((r) => (
                 <li key={r.id}>
@@ -500,7 +524,7 @@ export function PlatformWorkbench({
           </form>
           <RedirectImport mfa={mfa} onSaved={load} />
           <section className="rounded-xl border p-5">
-            <h2 className="mb-3 text-xl font-bold">Recent 404 pages</h2>
+            <h2 className="mb-3 text-xl font-bold">{t("Recent 404 pages")}</h2>
             {data.notFound.map((row: Data) => (
               <p key={row.id}>{row.path}</p>
             ))}

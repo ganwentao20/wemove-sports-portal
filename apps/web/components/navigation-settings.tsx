@@ -1,4 +1,6 @@
 "use client";
+import { useUiText } from "./ui-locale";
+
 import type { NavigationItem } from "../lib/navigation";
 export function NavigationSettings({
   items,
@@ -9,6 +11,8 @@ export function NavigationSettings({
   languages: string[];
   onChange: (items: NavigationItem[]) => void;
 }) {
+  const t = useUiText();
+
   const field = "mt-1 w-full rounded-lg border border-neutral-300 px-3 py-2";
   function editor(
     item: NavigationItem,
@@ -17,7 +21,7 @@ export function NavigationSettings({
     return (
       <div className="grid gap-3 sm:grid-cols-2">
         <label className="text-sm">
-          English label
+          {t("English label")}
           <input
             className={field}
             value={item.label}
@@ -25,7 +29,7 @@ export function NavigationSettings({
           />
         </label>
         <label className="text-sm">
-          Local URL
+          {t("Local URL")}
           <input
             className={field}
             value={item.href}
@@ -36,7 +40,7 @@ export function NavigationSettings({
           .filter((l) => l !== "en")
           .map((language) => (
             <label className="text-sm" key={language}>
-              {language} label
+              {language} {t("label")}
               <input
                 className={field}
                 value={
@@ -54,7 +58,7 @@ export function NavigationSettings({
             </label>
           ))}
         <label className="text-sm">
-          Markets (comma separated; blank = all)
+          {t("Markets (comma separated; blank = all)")}
           <input
             className={field}
             value={(item.markets ?? []).join(",")}
@@ -83,7 +87,9 @@ export function NavigationSettings({
             <button
               type="button"
               className="rounded border px-3 py-2"
-              aria-label={`Move navigation ${index + 1} up`}
+              aria-label={t("Move navigation {value1} up", {
+                value1: index + 1,
+              })}
               disabled={index === 0}
               onClick={() => {
                 const next = [...items];
@@ -98,7 +104,7 @@ export function NavigationSettings({
               className="rounded border px-3 py-2"
               onClick={() => onChange(items.filter((_, i) => i !== index))}
             >
-              Remove link
+              {t("Remove link")}
             </button>
             <button
               type="button"
@@ -119,7 +125,7 @@ export function NavigationSettings({
                 )
               }
             >
-              Add secondary link
+              {t("Add secondary link")}
             </button>
           </div>
           {item.children?.map((child, childIndex) => (
@@ -146,7 +152,9 @@ export function NavigationSettings({
                   type="button"
                   disabled={childIndex === 0}
                   className="rounded border px-3 py-2"
-                  aria-label={`Move secondary navigation ${childIndex + 1} up`}
+                  aria-label={t("Move secondary navigation {value1} up", {
+                    value1: childIndex + 1,
+                  })}
                   onClick={() => {
                     const children = [...(item.children ?? [])];
                     [children[childIndex - 1], children[childIndex]] = [
@@ -180,7 +188,7 @@ export function NavigationSettings({
                     )
                   }
                 >
-                  Remove secondary link
+                  {t("Remove secondary link")}
                 </button>
               </div>
             </div>
@@ -192,7 +200,7 @@ export function NavigationSettings({
         onClick={() => onChange([...items, { label: "", href: "/" }])}
         className="rounded border px-4 py-2"
       >
-        Add primary link
+        {t("Add primary link")}
       </button>
     </div>
   );

@@ -3,6 +3,9 @@ import Link from "next/link";
 import { NewsletterForm } from "./newsletter-form";
 import { RichText } from "./rich-text";
 import { ContentCollection } from "./content-collection";
+import { getMarket } from "../lib/locale";
+import { publicUrl } from "../lib/public-url";
+import { translateUi } from "../lib/ui-i18n";
 type Block = {
   type: string;
   props?: Record<string, unknown>;
@@ -22,6 +25,13 @@ export async function ContentBlocks({
   locale?: string;
 }) {
   if (!Array.isArray(sections)) return null;
+  const market = await getMarket();
+  const catalogLink = (value: unknown) => {
+    const url = href(value);
+    return /^\/(?!\/)/.test(url) && !/\.[a-z0-9]+(?:[?#]|$)/i.test(url)
+      ? publicUrl(url, locale, market)
+      : url;
+  };
   return (
     <div className="space-y-12">
       {await Promise.all(
@@ -47,7 +57,7 @@ export async function ContentBlocks({
             );
           const title = text(p.title),
             body = text(p.text ?? p.body ?? p.content ?? p.description),
-            link = href(p.href ?? p.url),
+            link = catalogLink(p.href ?? p.url),
             label = text(p.label ?? p.buttonLabel);
           if (block.type === "hero")
             return (
@@ -84,7 +94,7 @@ export async function ContentBlocks({
                     )}
                     {text(p.secondaryLabel) && (
                       <Link
-                        href={href(p.secondaryHref)}
+                        href={catalogLink(p.secondaryHref)}
                         className="inline-block rounded-xl border px-6 py-3 font-bold"
                       >
                         {text(p.secondaryLabel)}
@@ -245,10 +255,10 @@ export async function ContentBlocks({
                           </p>
                           {item.href ? (
                             <Link
-                              href={href(item.href)}
+                              href={catalogLink(item.href)}
                               className="mt-3 inline-block underline"
                             >
-                              {text(item.label) || "Learn more"}
+                              {text(item.label) || translateUi(locale, "Learn more")}
                             </Link>
                           ) : null}
                         </li>

@@ -1,4 +1,7 @@
 "use client";
+import { uiError } from "../lib/ui-i18n";
+import { useUiText, useUiLocale } from "./ui-locale";
+
 import { useState } from "react";
 import { secureApiFetch } from "../lib/secure-api";
 export function RedirectImport({
@@ -8,6 +11,9 @@ export function RedirectImport({
   mfa: string;
   onSaved: () => Promise<void>;
 }) {
+  const t = useUiText();
+  const uiLocale = useUiLocale();
+
   const [rows, setRows] = useState<
       Array<{ source: string; destination: string; status: number }>
     >([]),
@@ -46,13 +52,14 @@ export function RedirectImport({
   }
   return (
     <section className="rounded-xl border p-5">
-      <h2 className="text-xl font-bold">Import redirects</h2>
+      <h2 className="text-xl font-bold">{t("Import redirects")}</h2>
       <p className="my-3 text-sm">
-        CSV columns: source,destination,status. Review up to 500 rows before
-        saving; invalid paths and cycles reject the entire import.
+        {t(
+          "CSV columns: source,destination,status. Review up to 500 rows before saving; invalid paths and cycles reject the entire import.",
+        )}
       </p>
       <label>
-        Redirect CSV
+        {t("Redirect CSV")}
         <input
           type="file"
           accept=".csv,text/csv"
@@ -72,7 +79,7 @@ export function RedirectImport({
         />
       </label>
       <p role="status" className="my-3">
-        {message}
+        {message ? uiError(uiLocale, message) : ""}
       </p>
       {rows.length > 0 && (
         <>
@@ -80,9 +87,9 @@ export function RedirectImport({
             <table className="w-full text-left text-sm">
               <thead>
                 <tr>
-                  <th>Source</th>
-                  <th>Destination</th>
-                  <th>Status</th>
+                  <th>{t("Source")}</th>
+                  <th>{t("Destination")}</th>
+                  <th>{t("Status")}</th>
                 </tr>
               </thead>
               <tbody>
@@ -107,7 +114,9 @@ export function RedirectImport({
                   headers: { "x-mfa-code": mfa },
                   body: JSON.stringify({ items: rows }),
                 });
-                setMessage(`${rows.length} redirects saved.`);
+                setMessage(
+                  t("{value1} redirects saved.", { value1: rows.length }),
+                );
                 setRows([]);
                 await onSaved();
               } catch (error) {
@@ -117,7 +126,8 @@ export function RedirectImport({
               }
             }}
           >
-            Import {rows.length} redirects
+            {t("Import")}
+            {rows.length} {t("redirects")}
           </button>
         </>
       )}

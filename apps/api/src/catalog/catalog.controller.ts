@@ -9,7 +9,7 @@ export class CatalogController {
 
   @Get('categories')
   categories(@Query() query: ProductDetailQueryDto) {
-    return this.catalog.categories(query.market);
+    return this.catalog.categories(query.market, query.locale);
   }
 
   @Get('products')

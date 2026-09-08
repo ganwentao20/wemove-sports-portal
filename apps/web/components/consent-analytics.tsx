@@ -94,7 +94,9 @@ export function ConsentAnalytics({
         ? "view_home"
         : /^\/products\/.+/.test(path)
           ? "view_product"
-          : path === "/products"
+          : path === "/products" ||
+              path === "/workshop" ||
+              /^\/products\/category\/.+/.test(path)
             ? "view_product_list"
             : /^\/(content\/|play-learn)/.test(path)
               ? "view_content"
@@ -120,7 +122,7 @@ export function ConsentAnalytics({
     return null;
   return (
     <aside
-      aria-label="Cookie consent"
+      aria-label={ui(locale, "Cookie consent")}
       className="fixed bottom-4 left-4 right-4 z-50 max-w-xl rounded-2xl border bg-white p-5 shadow-xl"
     >
       <h2 className="font-bold">{ui(locale, "Your privacy choices")}</h2>

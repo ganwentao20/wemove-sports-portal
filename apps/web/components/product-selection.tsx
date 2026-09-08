@@ -1,6 +1,11 @@
 "use client";
 import { createContext, useContext, useState, type ReactNode } from "react";
-type Variant = { id: string; attrs: unknown; price?: unknown };
+type Variant = {
+  id: string;
+  name?: string | null;
+  attrs: unknown;
+  price?: unknown;
+};
 const Selection = createContext<{
   selected: string;
   select: (id: string) => void;

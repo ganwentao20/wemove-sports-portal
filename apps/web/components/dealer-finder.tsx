@@ -1,4 +1,6 @@
 "use client";
+import { useUiText } from "./ui-locale";
+
 import { useState } from "react";
 import Link from "next/link";
 export type Dealer = {
@@ -23,6 +25,7 @@ export type Dealer = {
   longitude: number | null;
 };
 export function DealerFinder({ dealers }: { dealers: Dealer[] }) {
+  const t = useUiText();
   const [query, setQuery] = useState(""),
     [selected, setSelected] = useState<string | null>(null);
   const rows = dealers.filter((d) =>
@@ -47,7 +50,7 @@ export function DealerFinder({ dealers }: { dealers: Dealer[] }) {
   return (
     <div>
       <label className="block">
-        Search by country, state, city, postal code or name
+        {t("Search by country, state, city, postal code or name")}
         <input
           value={query}
           onChange={(e) => {
@@ -59,13 +62,15 @@ export function DealerFinder({ dealers }: { dealers: Dealer[] }) {
       </label>
       <div className="grid gap-8 lg:grid-cols-2">
         <div
-          aria-label="Dealer map"
+          aria-label={t("Dealer map")}
           className="relative aspect-[2/1] overflow-hidden rounded-xl border bg-[#e4edf1]"
         >
           <>
             {map ? (
               <iframe
-                title={"Street map for " + active!.companyName}
+                title={t("Street map for {name}", {
+                  name: active!.companyName,
+                })}
                 src={"https://www.openstreetmap.org/export/embed.html?" + map}
                 className="h-full w-full border-0"
                 loading="lazy"
@@ -76,7 +81,7 @@ export function DealerFinder({ dealers }: { dealers: Dealer[] }) {
                 viewBox="0 0 720 360"
                 className="h-full w-full"
                 role="img"
-                aria-label="World coordinate map with dealer locations"
+                aria-label={t("World coordinate map with dealer locations")}
               >
                 <path
                   d="M0 180H720M360 0V360M0 90H720M0 270H720M180 0V360M540 0V360"
@@ -111,8 +116,8 @@ export function DealerFinder({ dealers }: { dealers: Dealer[] }) {
           </>
           <span className="absolute bottom-2 left-3 text-xs">
             {map
-              ? "Map data © OpenStreetMap contributors"
-              : "Select a dealer to open its street map"}
+              ? t("Map data © OpenStreetMap contributors")
+              : t("Select a dealer to open its street map")}
           </span>
         </div>
         <ul className="space-y-4">
@@ -124,7 +129,7 @@ export function DealerFinder({ dealers }: { dealers: Dealer[] }) {
               {d.logo && (
                 <img
                   src={d.logo}
-                  alt={`${d.companyName} logo`}
+                  alt={t("{name} logo", { name: d.companyName })}
                   className="mb-3 h-16 max-w-40 object-contain"
                   loading="lazy"
                 />
@@ -140,9 +145,9 @@ export function DealerFinder({ dealers }: { dealers: Dealer[] }) {
               </p>
               <p className="mb-2 text-sm">
                 {[
-                  d.dealerType,
-                  d.online ? "Online store" : "",
-                  d.physical ? "Physical store" : "",
+                  t(d.dealerType),
+                  d.online ? t("Online store") : "",
+                  d.physical ? t("Physical store") : "",
                 ]
                   .filter(Boolean)
                   .join(" · ")}
@@ -157,18 +162,19 @@ export function DealerFinder({ dealers }: { dealers: Dealer[] }) {
               )}
               {d.openingHours && (
                 <p className="mb-2 whitespace-pre-wrap text-sm">
-                  Opening information: {d.openingHours}
+                  {t("Opening information:")}
+                  {d.openingHours}
                 </p>
               )}
               {d.categories.length > 0 && (
                 <p className="mb-3 text-sm">
-                  Authorized categories:{" "}
+                  {t("Authorized categories:")}{" "}
                   {d.categories.map((c) => c.name).join(", ")}
                 </p>
               )}
               {d.detailPath && (
                 <Link className="mr-4 underline" href={d.detailPath}>
-                  Store details
+                  {t("Store details")}
                 </Link>
               )}
               {d.website && (
@@ -177,7 +183,7 @@ export function DealerFinder({ dealers }: { dealers: Dealer[] }) {
                   rel="noopener noreferrer"
                   className="underline"
                 >
-                  Visit website
+                  {t("Visit website")}
                 </a>
               )}
               {d.latitude !== null && d.longitude !== null && (
@@ -187,25 +193,26 @@ export function DealerFinder({ dealers }: { dealers: Dealer[] }) {
                   rel="noopener noreferrer"
                   className="ml-4 underline"
                 >
-                  Street map
+                  {t("Street map")}
                 </a>
               )}
             </li>
           ))}
           {!rows.length && (
             <li className="rounded-xl border p-6">
-              No published dealers match this location.{" "}
+              {t("No published dealers match this location.")}{" "}
               <Link className="underline" href="/contact">
-                Contact our team
+                {t("Contact our team")}
               </Link>{" "}
-              for buying options.
+              {t("for buying options.")}
             </li>
           )}
         </ul>
       </div>
       {active && (
         <p role="status" className="mt-4">
-          Selected: {active.companyName}, {active.city}, {active.country}
+          {t("Selected:")}
+          {active.companyName}, {active.city}, {active.country}
         </p>
       )}
     </div>

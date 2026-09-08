@@ -14,13 +14,13 @@
 
 ### 1.1 课程测试账号与密码
 
-下表是 `npm run db:seed` 在新建本地测试库中建立的账号，用户已要求随提交材料明确列出。旧库重新执行 seed 不会重置已有用户密码。现场使用专用演示库，避免修改真实或原有业务数据。
+下表是 `npm run db:seed` 在本地测试库中建立并重置的演示账号，用户已要求随提交材料明确列出。重新执行 seed 会把三个演示账号重置为表中密码；只允许用于专用演示库，不得对生产库执行。
 
 | 角色 | 登录页面 | 用户名 | 密码 |
 | --- | --- | --- | --- |
-| 消费者 | `/login` | `customer@wemove.local` | `Demo@123456` |
-| 经销商（BUYER） | `/login` | `dealer@wemove.local` | `Demo@123456` |
-| 超级管理员 | `/login` | `admin@wemove.local` | `Admin@12345` |
+| 消费者 | `/login` | `customer@wemove.local` | `Demo1234` |
+| 经销商（BUYER） | `/login` | `dealer@wemove.local` | `Demo1234` |
+| 超级管理员 | `/login` | `admin@wemove.local` | `Demo1234` |
 
 三个账号共用 `http://localhost:3000/login`。系统验证账号后自动进入对应界面：消费者进入 `/customer/account`，经销商进入 `/dealer/catalog`（需要时先完成企业条款或 MFA），管理员完成 MFA 后进入 `/admin/dashboard`。无需手动选择身份。
 

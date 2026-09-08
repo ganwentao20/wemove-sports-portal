@@ -1,4 +1,8 @@
 "use client";
+import { uiError } from "../lib/ui-i18n";
+
+import { useUiText, useUiLocale } from "./ui-locale";
+
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { secureApiFetch } from "../lib/secure-api";
@@ -73,6 +77,10 @@ export function PurchaseOrderAfterSales({
   orderId: string;
   admin?: boolean;
 }) {
+  const uiLocale = useUiLocale();
+
+  const t = useUiText();
+
   const base = admin ? "/admin/b2b" : "/dealer",
     kind = admin ? "staff" : "dealer";
   const [data, setData] = useState<Data | null>(null),
@@ -124,7 +132,7 @@ export function PurchaseOrderAfterSales({
     }
   }
   const money = (n: number) =>
-    new Intl.NumberFormat("en", {
+    new Intl.NumberFormat(uiLocale, {
       style: "currency",
       currency: data?.currency ?? "USD",
     }).format(n / 100);
@@ -172,14 +180,14 @@ export function PurchaseOrderAfterSales({
         href={admin ? "/admin/b2b" : "/dealer/procurement"}
         className="underline"
       >
-        Back to purchase orders
+        {t("Back to purchase orders")}
       </Link>
       <h1 className="text-3xl font-bold">
-        Returns & refunds{data ? " · " + data.order.orderNo : ""}
+        {t("Returns & refunds")} {data ? " · " + data.order.orderNo : ""}
       </h1>
       {admin && (
         <label className="block max-w-xs">
-          Current MFA code
+          {t("Current MFA code")}
           <input
             className={input}
             inputMode="numeric"
@@ -193,31 +201,33 @@ export function PurchaseOrderAfterSales({
       )}
       {error && (
         <p role="alert" className="rounded bg-red-50 p-3 text-red-800">
-          {error}
+          {error ? uiError(uiLocale, error) : ""}
         </p>
       )}
       {notice && (
         <p role="status" className="rounded bg-emerald-50 p-3">
-          {notice}
+          {notice ? uiError(uiLocale, notice) : ""}
         </p>
       )}
-      {!data && !error && <p role="status">Loading after-sales records…</p>}
+      {!data && !error && (
+        <p role="status">{t("Loading after-sales records…")}</p>
+      )}
       {data && (
         <>
           <section className="rounded-xl bg-sky-50 p-5">
             <p>
-              {data.order.status} · {data.order.paymentStatus} ·{" "}
+              {t(data.order.status)} · {t(data.order.paymentStatus)} ·{" "}
               {data.order.market}
             </p>
             <p className="mt-2">
-              Paid {money(data.paidCents)} · Refunded{" "}
-              {money(data.refundedCents)} · Available to request{" "}
+              {t("Paid")} {money(data.paidCents)} {t("· Refunded")}{" "}
+              {money(data.refundedCents)} {t("· Available to request")}{" "}
               {money(remaining)}
             </p>
             <p className="mt-2 text-sm">
-              Pending refunds reserve the refund balance. Received returns
-              restore only the units confirmed as sellable; damaged goods remain
-              outside available inventory.
+              {t(
+                "Pending refunds reserve the refund balance. Received returns restore only the units confirmed as sellable; damaged goods remain outside available inventory.",
+              )}
             </p>
           </section>
           {data.canWrite && (
@@ -243,15 +253,19 @@ export function PurchaseOrderAfterSales({
                     setReturnKey(crypto.randomUUID());
                 }}
               >
-                <h2 className="text-xl font-semibold">Request a return</h2>
+                <h2 className="text-xl font-semibold">
+                  {t("Request a return")}
+                </h2>
                 <p className="text-sm">
-                  Choose shipped items. Wait for approval before sending goods
-                  back.
+                  {t(
+                    "Choose shipped items. Wait for approval before sending goods back.",
+                  )}
                 </p>
                 {data.order.items.map((item) => (
                   <label className="block text-sm" key={item.id}>
                     {item.sku} · {item.productName} (
-                    {availableReturn(item.id, item.shippedQuantity)} returnable)
+                    {availableReturn(item.id, item.shippedQuantity)}{" "}
+                    {t("returnable)")}
                     <input
                       className={input}
                       name={item.id}
@@ -264,7 +278,7 @@ export function PurchaseOrderAfterSales({
                   </label>
                 ))}
                 <label className="block text-sm">
-                  Reason
+                  {t("Reason")}
                   <textarea
                     className={input}
                     name="reason"
@@ -283,7 +297,7 @@ export function PurchaseOrderAfterSales({
                     )
                   }
                 >
-                  Submit return request
+                  {t("Submit return request")}
                 </button>
               </form>
               <form
@@ -303,14 +317,16 @@ export function PurchaseOrderAfterSales({
                     setRefundKey(crypto.randomUUID());
                 }}
               >
-                <h2 className="text-xl font-semibold">Request a refund</h2>
+                <h2 className="text-xl font-semibold">
+                  {t("Request a refund")}
+                </h2>
                 <p className="text-sm">
-                  Shipped goods require a received return. Approved bank/PO
-                  refunds need a recorded transfer; card refunds wait for the
-                  payment provider’s confirmation.
+                  {t(
+                    "Shipped goods require a received return. Approved bank/PO refunds need a recorded transfer; card refunds wait for the payment provider’s confirmation.",
+                  )}
                 </p>
                 <label className="block text-sm">
-                  Amount ({data.currency})
+                  {t("Amount ({currency})", { currency: data.currency })}
                   <input
                     className={input}
                     name="amount"
@@ -322,26 +338,28 @@ export function PurchaseOrderAfterSales({
                   />
                 </label>
                 <label className="block text-sm">
-                  Received return (when applicable)
+                  {t("Received return (when applicable)")}
                   <select className={input} name="returnId">
-                    <option value="">No return linked</option>
+                    <option value="">{t("No return linked")}</option>
                     {data.returns
                       .filter((r) => r.status === "RECEIVED")
                       .map((r) => (
                         <option key={r.id} value={r.id}>
-                          {r.id.slice(-8)} · up to {money(returnCap(r))}
+                          {r.id.slice(-8)} {t("· up to")} {money(returnCap(r))}
                         </option>
                       ))}
                   </select>
                 </label>
                 {!data.order.items.some((i) => i.shippedQuantity > 0) && (
                   <label className="block text-sm">
-                    <input type="checkbox" name="cancelOrder" /> Cancel the
-                    unshipped order after the full remaining balance is refunded
+                    <input type="checkbox" name="cancelOrder" />
+                    {t(
+                      "Cancel the unshipped order after the full remaining balance is refunded",
+                    )}
                   </label>
                 )}
                 <label className="block text-sm">
-                  Reason
+                  {t("Reason")}
                   <textarea
                     className={input}
                     name="reason"
@@ -351,15 +369,15 @@ export function PurchaseOrderAfterSales({
                   />
                 </label>
                 <button className={button} disabled={busy || remaining <= 0}>
-                  Submit refund request
+                  {t("Submit refund request")}
                 </button>
               </form>
             </div>
           )}
           <section className="space-y-4">
-            <h2 className="text-2xl font-semibold">Return history</h2>
+            <h2 className="text-2xl font-semibold">{t("Return history")}</h2>
             {!data.returns.length && (
-              <p className="text-neutral-500">No return requests.</p>
+              <p className="text-neutral-500">{t("No return requests.")}</p>
             )}
             {data.returns.map((request) => (
               <article
@@ -367,17 +385,20 @@ export function PurchaseOrderAfterSales({
                 className="space-y-3 rounded-xl border p-5"
               >
                 <p className="font-semibold">
-                  {request.id} · {request.status}
+                  {request.id} · {t(request.status)}
                 </p>
                 <p>{request.reason}</p>
                 {request.decisionReason && (
-                  <p className="text-sm">Review: {request.decisionReason}</p>
+                  <p className="text-sm">
+                    {t("Review:")} {request.decisionReason}
+                  </p>
                 )}
                 <ul className="text-sm">
                   {request.items.map((item) => (
                     <li key={item.orderItemId}>
-                      {item.orderItem.sku}: requested {item.quantity}, received{" "}
-                      {item.receivedQuantity}, restocked {item.restockQuantity}
+                      {item.orderItem.sku} {t(": requested")} {item.quantity}{" "}
+                      {t(", received")} {item.receivedQuantity}{" "}
+                      {t(", restocked")} {item.restockQuantity}
                     </li>
                   ))}
                 </ul>
@@ -402,7 +423,7 @@ export function PurchaseOrderAfterSales({
                     }}
                   >
                     <label className="grow text-sm">
-                      Review reason
+                      {t("Review reason")}
                       <input
                         className={input}
                         name="reason"
@@ -411,10 +432,10 @@ export function PurchaseOrderAfterSales({
                       />
                     </label>
                     <button className={button} value="APPROVE" disabled={busy}>
-                      Approve return
+                      {t("Approve return")}
                     </button>
                     <button className={button} value="REJECT" disabled={busy}>
-                      Reject return
+                      {t("Reject return")}
                     </button>
                   </form>
                 )}
@@ -432,7 +453,7 @@ export function PurchaseOrderAfterSales({
                       }}
                     >
                       <label className="text-sm">
-                        Return carrier
+                        {t("Return carrier")}
                         <input
                           className={input}
                           name="carrier"
@@ -441,7 +462,7 @@ export function PurchaseOrderAfterSales({
                         />
                       </label>
                       <label className="grow text-sm">
-                        Tracking number
+                        {t("Tracking number")}
                         <input
                           className={input}
                           name="trackingNumber"
@@ -450,7 +471,7 @@ export function PurchaseOrderAfterSales({
                         />
                       </label>
                       <button className={button} disabled={busy}>
-                        Save return shipment
+                        {t("Save return shipment")}
                       </button>
                     </form>
                   )}
@@ -469,13 +490,13 @@ export function PurchaseOrderAfterSales({
                       <input
                         className={input}
                         name="reason"
-                        aria-label="Withdrawal reason"
-                        placeholder="Withdrawal reason"
+                        aria-label={t("Withdrawal reason")}
+                        placeholder={t("Withdrawal reason")}
                         minLength={3}
                         required
                       />
                       <button className={button} disabled={busy}>
-                        Withdraw return
+                        {t("Withdraw return")}
                       </button>
                     </form>
                   )}
@@ -499,16 +520,16 @@ export function PurchaseOrderAfterSales({
                       }}
                     >
                       <h3 className="font-semibold">
-                        Confirm physical receipt
+                        {t("Confirm physical receipt")}
                       </h3>
                       <p className="text-sm">
-                        Confirm all units in this approved return have arrived.
-                        Record how many are sellable; the remainder will be
-                        recorded as received without restocking.
+                        {t(
+                          "Confirm all units in this approved return have arrived. Record how many are sellable; the remainder will be recorded as received without restocking.",
+                        )}
                       </p>
                       {request.items.map((item) => (
                         <label key={item.orderItemId} className="block text-sm">
-                          {item.orderItem.sku} · sellable units out of{" "}
+                          {item.orderItem.sku} {t("· sellable units out of")}{" "}
                           {item.quantity}
                           <input
                             className={input}
@@ -522,7 +543,7 @@ export function PurchaseOrderAfterSales({
                         </label>
                       ))}
                       <label className="block text-sm">
-                        Inspection note
+                        {t("Inspection note")}
                         <input
                           className={input}
                           name="note"
@@ -531,7 +552,7 @@ export function PurchaseOrderAfterSales({
                         />
                       </label>
                       <button className={button} disabled={busy}>
-                        Record receipt & restock sellable units
+                        {t("Record receipt & restock sellable units")}
                       </button>
                     </form>
                   )}
@@ -539,9 +560,9 @@ export function PurchaseOrderAfterSales({
             ))}
           </section>
           <section className="space-y-4">
-            <h2 className="text-2xl font-semibold">Refund history</h2>
+            <h2 className="text-2xl font-semibold">{t("Refund history")}</h2>
             {!data.refunds.length && (
-              <p className="text-neutral-500">No refund requests.</p>
+              <p className="text-neutral-500">{t("No refund requests.")}</p>
             )}
             {data.refunds.map((refund) => (
               <article
@@ -549,31 +570,36 @@ export function PurchaseOrderAfterSales({
                 className="space-y-3 rounded-xl border p-5"
               >
                 <p className="font-semibold">
-                  {money(refund.amountCents)} · {refund.status}
+                  {money(refund.amountCents)} · {t(refund.status)}
                 </p>
                 <p className="break-all text-xs">
                   {refund.id}
-                  {refund.returnId ? " · Return " + refund.returnId : ""}
+                  {refund.returnId ? t(" · Return ") + refund.returnId : ""}
                 </p>
                 <p>{refund.reason}</p>
                 {refund.cancelOrder && (
                   <p className="text-sm">
-                    The order will be cancelled only after the refund is
-                    confirmed.
+                    {t(
+                      "The order will be cancelled only after the refund is confirmed.",
+                    )}
                   </p>
                 )}
                 {refund.decisionReason && (
-                  <p className="text-sm">Review: {refund.decisionReason}</p>
+                  <p className="text-sm">
+                    {t("Review:")} {refund.decisionReason}
+                  </p>
                 )}
                 {refund.providerReference && (
                   <p className="text-sm">
-                    Provider/transfer reference: {refund.providerReference}
+                    {t("Provider/transfer reference:")}{" "}
+                    {refund.providerReference}
                   </p>
                 )}
                 {refund.lastError && (
                   <p role="status" className="text-sm text-amber-800">
-                    Refund confirmation pending · attempts {refund.attempts} ·
-                    retry after {new Date(refund.availableAt).toLocaleString()}
+                    {t("Refund confirmation pending · attempts")}{" "}
+                    {refund.attempts} {t("· retry after")}{" "}
+                    {new Date(refund.availableAt).toLocaleString(uiLocale)}
                   </p>
                 )}
                 {!admin && data.canWrite && refund.status === "REQUESTED" && (
@@ -589,13 +615,13 @@ export function PurchaseOrderAfterSales({
                     <input
                       className={input}
                       name="reason"
-                      aria-label="Refund withdrawal reason"
+                      aria-label={t("Refund withdrawal reason")}
                       minLength={3}
-                      placeholder="Withdrawal reason"
+                      placeholder={t("Withdrawal reason")}
                       required
                     />
                     <button className={button} disabled={busy}>
-                      Withdraw refund request
+                      {t("Withdraw refund request")}
                     </button>
                   </form>
                 )}
@@ -615,7 +641,7 @@ export function PurchaseOrderAfterSales({
                     }}
                   >
                     <label className="grow text-sm">
-                      Review reason
+                      {t("Review reason")}
                       <input
                         className={input}
                         name="reason"
@@ -624,10 +650,10 @@ export function PurchaseOrderAfterSales({
                       />
                     </label>
                     <button className={button} value="APPROVE" disabled={busy}>
-                      Approve refund
+                      {t("Approve refund")}
                     </button>
                     <button className={button} value="REJECT" disabled={busy}>
-                      Reject refund
+                      {t("Reject refund")}
                     </button>
                   </form>
                 )}
@@ -645,7 +671,7 @@ export function PurchaseOrderAfterSales({
                     }}
                   >
                     <label className="grow text-sm">
-                      Completed bank transfer reference
+                      {t("Completed bank transfer reference")}
                       <input
                         className={input}
                         name="reference"
@@ -655,7 +681,8 @@ export function PurchaseOrderAfterSales({
                       />
                     </label>
                     <button className={button} disabled={busy}>
-                      Confirm {money(refund.amountCents)} transferred
+                      {t("Confirm")} {money(refund.amountCents)}{" "}
+                      {t("transferred")}
                     </button>
                   </form>
                 )}
@@ -671,7 +698,7 @@ export function PurchaseOrderAfterSales({
                       void act("/refunds/" + refund.id + "/retry", {})
                     }
                   >
-                    Retry payment provider
+                    {t("Retry payment provider")}
                   </button>
                 )}
               </article>

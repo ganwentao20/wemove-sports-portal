@@ -1,4 +1,6 @@
 "use client";
+import { useUiText } from "./ui-locale";
+
 import { useRef, useState } from "react";
 import { RichText } from "./rich-text";
 export function RichTextEditor({
@@ -8,6 +10,8 @@ export function RichTextEditor({
   value: string;
   onChange: (value: string) => void;
 }) {
+  const t = useUiText();
+
   const ref = useRef<HTMLTextAreaElement>(null),
     [preview, setPreview] = useState(false);
   function insert(before: string, after = "") {
@@ -18,7 +22,7 @@ export function RichTextEditor({
     onChange(
       value.slice(0, from) +
         before +
-        (value.slice(from, to) || "Text") +
+        (value.slice(from, to) || t("Text")) +
         after +
         value.slice(to),
     );
@@ -31,7 +35,7 @@ export function RichTextEditor({
     <div>
       <div
         role="toolbar"
-        aria-label="Text formatting"
+        aria-label={t("Text formatting")}
         className="my-2 flex flex-wrap gap-2"
       >
         {[
@@ -46,7 +50,7 @@ export function RichTextEditor({
             onClick={() => insert(before, after)}
             className="rounded border bg-white px-3 py-1"
           >
-            {label}
+            {t(String(label))}
           </button>
         ))}
         <button
@@ -55,12 +59,12 @@ export function RichTextEditor({
           onClick={() => setPreview(!preview)}
           className="rounded border bg-white px-3 py-1"
         >
-          Preview formatting
+          {t("Preview formatting")}
         </button>
       </div>
       <textarea
         ref={ref}
-        aria-label="Body text"
+        aria-label={t("Body text")}
         rows={5}
         value={value}
         onChange={(e) => onChange(e.target.value)}

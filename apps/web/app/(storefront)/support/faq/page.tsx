@@ -1,10 +1,13 @@
-import { redirect } from "next/navigation";
+import { getUiText } from "../../../../lib/ui-i18n-server";
 import { serverApiGet } from "../../../../lib/server-api";
 import { ContentBlocks } from "../../../../components/content-blocks";
 import { getLocale, getMarket } from "../../../../lib/locale";
 import { contentText } from "../../../../lib/content-text";
 export const dynamic = "force-dynamic";
-export const metadata = { title: "Frequently asked questions" };
+export async function generateMetadata() {
+  const t = await getUiText();
+  return { title: t("Frequently asked questions") };
+}
 type Question = {
   id: string;
   title: string;
@@ -19,17 +22,12 @@ export default async function Page({
 }: {
   searchParams: Promise<{ q?: string; category?: string; productId?: string }>;
 }) {
+  const t = await getUiText();
   const filters = await searchParams,
     market = await getMarket(),
     locale = await getLocale();
-  if (locale !== "en") {
-    const query = new URLSearchParams({ market });
-    for (const key of ["q", "category", "productId"] as const)
-      if (filters[key]) query.set(key, filters[key]);
-    redirect("/en/support/faq?" + query);
-  }
   const result = await serverApiGet<Question[]>(
-      "/cms/pages?kind=FAQ&locale=en&market=" + market,
+      "/cms/pages?kind=FAQ&locale=" + locale + "&market=" + market,
     ),
     rows = result.ok ? result.data : [];
   const ids = [...new Set(rows.flatMap((p) => p.productIds ?? []))],
@@ -41,7 +39,9 @@ export default async function Page({
       serverApiGet<{ items: Product[] }>(
         "/products?ids=" +
           group.join(",") +
-          "&pageSize=24&locale=en&market=" +
+          "&pageSize=24&locale=" +
+          locale +
+          "&market=" +
           market,
       ),
     ),
@@ -68,11 +68,13 @@ export default async function Page({
   };
   return (
     <div className="mx-auto max-w-4xl px-4 py-14">
-      <h1 className="mb-8 text-4xl font-bold">Frequently asked questions</h1>
+      <h1 className="mb-8 text-4xl font-bold">
+        {t("Frequently asked questions")}
+      </h1>
       <form className="mb-8 flex flex-wrap items-end gap-3">
         <input type="hidden" name="market" value={market} />
         <label>
-          Search
+          {t("Search")}
           <input
             name="q"
             defaultValue={filters.q}
@@ -80,13 +82,13 @@ export default async function Page({
           />
         </label>
         <label>
-          Category
+          {t("Category")}
           <select
             name="category"
             defaultValue={filters.category}
             className="mt-1 block rounded-lg border p-2"
           >
-            <option value="">All categories</option>
+            <option value="">{t("All categories")}</option>
             {Array.from(
               new Set(rows.map((p) => p.category).filter(Boolean)),
             ).map((v) => (
@@ -95,13 +97,13 @@ export default async function Page({
           </select>
         </label>
         <label>
-          Product
+          {t("Product")}
           <select
             name="productId"
             defaultValue={filters.productId}
             className="mt-1 block max-w-72 rounded-lg border p-2"
           >
-            <option value="">All products and general questions</option>
+            <option value="">{t("All products and general questions")}</option>
             {products.map((p) => (
               <option key={p.id} value={p.id}>
                 {p.name}
@@ -109,12 +111,12 @@ export default async function Page({
             ))}
           </select>
         </label>
-        <button className="rounded-lg border px-4 py-2">Search</button>
+        <button className="rounded-lg border px-4 py-2">{t("Search")}</button>
         <a
           className="px-3 py-2 underline"
-          href={"/en/support/faq?market=" + market}
+          href={"/" + locale + "/support/faq?market=" + market}
         >
-          Clear filters
+          {t("Clear filters")}
         </a>
       </form>
       <div className="space-y-5">
@@ -124,14 +126,16 @@ export default async function Page({
               {p.title}
             </summary>
             <div className="mt-4">
-              <ContentBlocks sections={p.sections} locale="en" />
+              <ContentBlocks sections={p.sections} locale={locale} />
             </div>
           </details>
         ))}
       </div>
       {!matched.length && (
         <p role="status">
-          No published questions match your search. Please contact support.
+          {t(
+            "No published questions match your search. Please contact support.",
+          )}
         </p>
       )}
       <script

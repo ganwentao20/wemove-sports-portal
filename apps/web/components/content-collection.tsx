@@ -28,7 +28,9 @@ export async function ContentCollection({
     limit = Math.max(1, Math.min(24, Number(props.limit) || 8));
   let items: Entry[] = [];
   if (type === "categories") {
-    const result = await serverApiGet<Array<Entry>>("/categories");
+    const result = await serverApiGet<Array<Entry>>(
+      `/categories?locale=${locale}&market=${market}`,
+    );
     items = result.ok ? result.data : [];
   } else if (type === "articles") {
     const result = await serverApiGet<Array<Entry>>(

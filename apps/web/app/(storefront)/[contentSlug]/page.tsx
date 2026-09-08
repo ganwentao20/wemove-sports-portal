@@ -2,7 +2,17 @@ import ContentPage, {
   generateMetadata as contentMetadata,
 } from "../content/[slug]/page";
 import { notFound } from "next/navigation";
-const slugs = ["about", "quality-safety", "privacy", "terms"];
+const slugs = [
+  "about",
+  "quality-safety",
+  "privacy",
+  "terms",
+  "furniture",
+  "woodlab",
+  "library",
+  "public-benefit",
+  "craft-dream",
+];
 export async function generateMetadata({
   params,
 }: {

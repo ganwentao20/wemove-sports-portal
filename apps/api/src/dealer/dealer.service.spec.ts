@@ -502,4 +502,53 @@ describe('DealerService', () => {
       results: [{ ok: false, code: 'INSUFFICIENT_STOCK' }],
     });
   });
+
+  it('Quick Order 仅在实时预览中采用完整已发布译文，草稿与默认单据语言不受影响', async () => {
+    const { service, prisma } = setup();
+    const translation = {
+      status: 'PUBLISHED',
+      name: '训练球',
+      summary: '中文介绍',
+      variants: { 'BALL-1': { name: '红色款' } },
+    };
+    vi.mocked(prisma.productVariant.findMany).mockResolvedValue([
+      {
+        id: 'variant-1',
+        sku: 'BALL-1',
+        name: 'Red',
+        attrs: {},
+        b2bDefaultPriceCents: 3000,
+        stock: { available: 20 },
+        product: {
+          name: 'Ball',
+          summary: 'Training ball',
+          specifications: { translations: { zh: translation } },
+        },
+      },
+    ] as never);
+    const lines = [{ sku: 'BALL-1', quantity: 2 }];
+    const actor = customer({ companyId: 'company-a' });
+    const translated = await service.validateQuickOrder(lines, actor, 'zh');
+    expect(translated.results[0]).toMatchObject({
+      sku: 'BALL-1',
+      productName: '训练球',
+      variantName: '红色款',
+      quantity: 2,
+      unitPriceCents: 3000,
+      lineTotalCents: 6000,
+    });
+    const original = await service.validateQuickOrder(lines, actor);
+    expect(original.results[0]).toMatchObject({
+      productName: 'Ball',
+      variantName: 'Red',
+    });
+    translation.status = 'IN_PROGRESS';
+    const draft = await service.validateQuickOrder(lines, actor, 'zh');
+    expect(draft.results[0]).toMatchObject({
+      productName: 'Ball',
+      variantName: 'Red',
+    });
+    expect(translated.totalCents).toBe(original.totalCents);
+    expect(draft.totalCents).toBe(original.totalCents);
+  });
 });

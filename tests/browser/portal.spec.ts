@@ -104,7 +104,7 @@ test("customer login reaches real profile, address and order interfaces", async 
 }) => {
   await page.goto("/customer/login");
   await page.getByLabel("Email", { exact: true }).fill("customer@wemove.local");
-  await page.getByLabel("Password", { exact: true }).fill("Demo@123456");
+  await page.getByLabel("Password", { exact: true }).fill("Demo1234");
   await page.getByRole("button", { name: /sign in|log in/i }).click();
   await expect(page).toHaveURL(/customer\/account/, { timeout: 15000 });
   await expect(page.locator("main")).toContainText("Profile");

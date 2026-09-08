@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { localizedVariant } from '../catalog/product-locales.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { BizException, ERROR_CODES } from '../common/errors.js';
 import { resolveRetailPrice } from '../pricing/pricing-engine.js';
@@ -16,7 +17,10 @@ interface CartWithItems {
     variantId: string;
     quantity: number;
     unitPriceCents: number;
-    variant: { sku: string; name: string | null; status: boolean } | null;
+    variant: {
+      sku: string; name: string | null; status: boolean; attrs: unknown;
+      product?: { slug: string; specifications: unknown; description?: string | null; ageGuidance?: string | null; playGuide?: string | null; productFaq?: unknown };
+    } | null;
   }>;
 }
 
@@ -61,10 +65,10 @@ export class CartService {
       : null;
   }
 
-  async getMyCart(actor: JwtPayload) {
+  async getMyCart(actor: JwtPayload, locale = 'en') {
     this.assertCustomer(actor);
     const cart = await this.ensureCart(actor.sub);
-    return this.mapCart(cart);
+    return this.mapCart(cart, locale);
   }
 
   async addItem(
@@ -313,14 +317,16 @@ export class CartService {
         items: {
           orderBy: { createdAt: 'asc' },
           include: {
-            variant: { select: { sku: true, name: true, status: true } },
+            variant: { select: { sku: true, name: true, status: true, attrs: true, product: { select: {
+              slug: true, specifications: true, description: true, ageGuidance: true, playGuide: true, productFaq: true,
+            } } } },
           },
         },
       },
     }) as Promise<CartWithItems>;
   }
 
-  private mapCart(cart: CartWithItems) {
+  private mapCart(cart: CartWithItems, locale = 'en') {
     let totalCents = 0;
     const items = cart.items.map((it) => {
       const lineCents = it.unitPriceCents * it.quantity;
@@ -329,7 +335,8 @@ export class CartService {
         id: it.id,
         variantId: it.variantId,
         sku: it.variant?.sku ?? null,
-        name: it.variant?.name ?? null,
+        name: it.variant?.product ? localizedVariant(it.variant, it.variant.product, locale).name : it.variant?.name ?? null,
+        productSlug: it.variant?.product?.slug ?? null,
         quantity: it.quantity,
         unitPriceCents: it.unitPriceCents,
         lineCents,

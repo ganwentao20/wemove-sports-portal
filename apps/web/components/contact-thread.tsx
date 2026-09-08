@@ -1,4 +1,8 @@
 "use client";
+import { uiError } from "../lib/ui-i18n";
+
+import { useUiText, useUiLocale } from "./ui-locale";
+
 import { useEffect, useState } from "react";
 import { secureApiFetch } from "../lib/secure-api";
 
@@ -19,6 +23,10 @@ export function ContactThread({
   reload: () => Promise<void>;
   current: Assignment;
 }) {
+  const uiLocale = useUiLocale();
+
+  const t = useUiText();
+
   const [message, setMessage] = useState(""),
     [busy, setBusy] = useState(false),
     [staff, setStaff] = useState<Array<{ id: string; name: string }>>([]);
@@ -76,17 +84,17 @@ export function ContactThread({
         }}
       >
         <label>
-          Assigned to
+          {t("Assigned to")}
           <select
             name="assignedTo"
             defaultValue={current.assignedTo ?? ""}
             className="mt-1 block rounded border p-2"
           >
-            <option value="">Unassigned</option>
+            <option value="">{t("Unassigned")}</option>
             {current.assignedTo &&
               !staff.some((s) => s.id === current.assignedTo) && (
                 <option value={current.assignedTo}>
-                  Current staff ({current.assignedTo})
+                  {t("Current staff ({id})", { id: current.assignedTo })}
                 </option>
               )}
             {staff.map((member) => (
@@ -97,7 +105,7 @@ export function ContactThread({
           </select>
         </label>
         <label>
-          Team
+          {t("Team")}
           <input
             name="assignedTeam"
             maxLength={100}
@@ -106,19 +114,21 @@ export function ContactThread({
           />
         </label>
         <label>
-          Priority
+          {t("Priority")}
           <select
             name="priority"
             defaultValue={current.priority}
             className="mt-1 block rounded border p-2"
           >
             {["LOW", "NORMAL", "HIGH", "URGENT"].map((v) => (
-              <option key={v}>{v}</option>
+              <option key={v} value={v}>
+                {t(v)}
+              </option>
             ))}
           </select>
         </label>
         <label>
-          Tags (comma separated)
+          {t("Tags (comma separated)")}
           <input
             name="tags"
             defaultValue={current.tags.join(", ")}
@@ -126,7 +136,7 @@ export function ContactThread({
           />
         </label>
         <button disabled={busy} className="rounded border px-4 py-2">
-          Save assignment
+          {t("Save assignment")}
         </button>
       </form>
       <form
@@ -156,7 +166,7 @@ export function ContactThread({
         }}
       >
         <label>
-          Reply or internal note
+          {t("Reply or internal note")}
           <textarea
             required
             name="text"
@@ -168,16 +178,16 @@ export function ContactThread({
         </label>
         <div className="mt-3 flex flex-wrap gap-5">
           <label>
-            <input type="checkbox" name="internal" defaultChecked /> Internal
-            note (uncheck to email customer)
+            <input type="checkbox" name="internal" defaultChecked />
+            {t("Internal note (uncheck to email customer)")}
           </label>
           <button disabled={busy} className="rounded border px-4 py-2">
-            Save message
+            {t("Save message")}
           </button>
         </div>
       </form>
       <p role="status" className="mt-3">
-        {message}
+        {message ? uiError(uiLocale, message) : ""}
       </p>
     </div>
   );

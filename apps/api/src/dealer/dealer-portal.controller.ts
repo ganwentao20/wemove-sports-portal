@@ -8,6 +8,7 @@ import {
   Patch,
   Post,
   Put,
+  Query,
   UseGuards,
 } from '@nestjs/common';
 import { CurrentUser } from '../auth/current-user.decorator.js';
@@ -30,7 +31,10 @@ import {
   MemberDto,
 } from './dto/portal.dto.js';
 import { CreateDealerApplicationDto } from './dto/dealer-application.dto.js';
-import { QuickOrderDto } from './dto/quick-order.dto.js';
+import {
+  QuickOrderDto,
+  QuickOrderLocaleQueryDto,
+} from './dto/quick-order.dto.js';
 import { parseQuickOrderCsv } from './catalog-policy.js';
 import { BizException, ERROR_CODES } from '../common/errors.js';
 @Controller('dealer')
@@ -130,6 +134,7 @@ export class DealerPortalController {
   @Post('quick-order/csv') csv(
     @CurrentUser() a: JwtPayload,
     @Body() d: CsvDto,
+    @Query() query: QuickOrderLocaleQueryDto,
   ) {
     let lines;
     try {
@@ -137,7 +142,7 @@ export class DealerPortalController {
     } catch (e) {
       throw new BizException(ERROR_CODES.VALIDATION, (e as Error).message, 422);
     }
-    return this.dealer.validateQuickOrder(lines, a);
+    return this.dealer.validateQuickOrder(lines, a, query.locale);
   }
   @Get('cart') cart(@CurrentUser() a: JwtPayload) {
     return this.b2b.cart(a);

@@ -14,7 +14,7 @@ from docx.shared import Cm, Pt, RGBColor
 
 ROOT = Path(__file__).resolve().parents[1]
 SOURCE = ROOT / "docs" / "requirements.md"
-OUTPUT = ROOT / "docs" / "deliverables" / "下午班-08组-WEMOVE-SPORTS-项目需求文档-v0.4.docx"
+OUTPUT = ROOT / "docs" / "deliverables" / "下午班-08组-WEMOVE-原网站重构-项目需求文档-v0.7.docx"
 
 NAVY = "000000"
 TEAL = "000000"
@@ -61,6 +61,7 @@ def set_run_font(run, east_asia="等线", latin="Aptos", size=None, bold=None, c
 
 
 def clean_inline(text: str) -> str:
+    text = re.sub(r"\[([^\]]+)\]\([^)]+\)", r"\1", text)
     return re.sub(r"(`|\*\*)", "", text).strip()
 
 
@@ -127,7 +128,7 @@ def add_header_footer(section) -> None:
     header = section.header
     p = header.paragraphs[0]
     p.alignment = WD_ALIGN_PARAGRAPH.RIGHT
-    run = p.add_run("WEMOVE SPORTS  ·  软件开发实践2  ·  第8组")
+    run = p.add_run("WEMOVE 原网站重构  ·  软件开发实践2  ·  第8组")
     set_run_font(run, size=8, bold=True, color=TEAL)
 
     footer = section.footer
@@ -137,7 +138,7 @@ def add_header_footer(section) -> None:
     table.columns[0].width = Cm(12.5)
     table.columns[1].width = Cm(4)
     left = table.cell(0, 0).paragraphs[0]
-    run = left.add_run("项目需求文档 · v0.4 · 2026-09-07")
+    run = left.add_run("项目需求文档 · v0.7 · 2026-09-08")
     set_run_font(run, size=8, color=GRAY)
     right = table.cell(0, 1).paragraphs[0]
     right.alignment = WD_ALIGN_PARAGRAPH.RIGHT
@@ -158,7 +159,7 @@ def add_cover(doc: Document) -> None:
     title = doc.add_paragraph(style="Title")
     title.paragraph_format.space_before = Pt(18)
     title.paragraph_format.space_after = Pt(10)
-    title.add_run("WEMOVE SPORTS\n官网与业务门户重构")
+    title.add_run("WEMOVE\n原网站与业务门户重构")
 
     subtitle = doc.add_paragraph()
     subtitle.paragraph_format.space_after = Pt(24)
@@ -173,7 +174,7 @@ def add_cover(doc: Document) -> None:
     values = [
         "软件开发实践2",
         "下午班 · 第 8 组",
-        "v0.4 · 2026-09-07",
+        "v0.7 · 2026-09-08",
         "甘文韬（组长） · 陈婧琳 · 周慧莹 · 倪依玲 · 龙祖怡",
     ]
     for idx, (label, value) in enumerate(zip(labels, values)):
@@ -198,13 +199,6 @@ def add_cover(doc: Document) -> None:
     )
     note.paragraph_format.left_indent = Cm(0.5)
 
-    doc.add_page_break()
-    toc = doc.add_paragraph()
-    toc.paragraph_format.space_after = Pt(12)
-    toc_run = toc.add_run("目录")
-    set_run_font(toc_run, size=18, bold=True, color=NAVY)
-    p = doc.add_paragraph()
-    add_field(p, ' TOC \\o "1-3" \\h \\z \\u ')
     doc.add_page_break()
 
 
@@ -318,10 +312,10 @@ def build() -> None:
 
     for section in doc.sections:
         configure_page(section)
-    doc.core_properties.title = "WEMOVE SPORTS 官网与业务门户重构——项目需求文档"
+    doc.core_properties.title = "WEMOVE 原网站与业务门户重构项目需求文档"
     doc.core_properties.subject = "软件开发实践2 · 下午班第8组"
     doc.core_properties.author = "甘文韬、陈婧琳、周慧莹、倪依玲、龙祖怡"
-    doc.core_properties.keywords = "WEMOVE SPORTS, 软件开发实践2, 需求文档, 第8组"
+    doc.core_properties.keywords = "WEMOVE, 原网站重构, 软件开发实践2, 需求文档, 第8组"
     doc.save(OUTPUT)
     print(OUTPUT)
 

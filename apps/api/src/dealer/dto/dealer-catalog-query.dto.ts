@@ -20,4 +20,9 @@ export class DealerCatalogQueryDto {
   @IsString()
   @MaxLength(100)
   productId?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(12)
+  locale = 'en';
 }

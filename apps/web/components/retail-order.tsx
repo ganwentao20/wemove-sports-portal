@@ -1,4 +1,7 @@
 "use client";
+import { uiError } from "../lib/ui-i18n";
+import { useUiText, useUiLocale } from "./ui-locale";
+
 import Link from "next/link";
 import {
   ReturnEvidenceFields,
@@ -88,6 +91,8 @@ export function RetailOrder({
   id: string;
   admin?: boolean;
 }) {
+  const t = useUiText();
+  const uiLocale = useUiLocale();
   const Container = admin ? "main" : "div";
   const requestKeys = useRef<Record<string, string>>({});
   const kind = admin ? "staff" : "customer";
@@ -105,7 +110,7 @@ export function RetailOrder({
     [uploadingEvidence, setUploadingEvidence] = useState(false);
   const [cancelReason, setCancelReason] = useState("Changed my mind");
   const money = (cents: number) =>
-    new Intl.NumberFormat("en", {
+    new Intl.NumberFormat(uiLocale, {
       style: "currency",
       currency: order?.currency ?? "USD",
     }).format(cents / 100);
@@ -272,9 +277,9 @@ export function RetailOrder({
         tabIndex={admin ? -1 : undefined}
         className="mx-auto max-w-6xl p-8"
       >
-        <h1 className="text-3xl font-bold">Order details</h1>
+        <h1 className="text-3xl font-bold">{t("Order details")}</h1>
         <p role={error ? "alert" : "status"} className="mt-5">
-          {error || "Loading order…"}
+          {error ? uiError(uiLocale, error) : t("Loading order…")}
         </p>
       </Container>
     );
@@ -289,20 +294,23 @@ export function RetailOrder({
         href={admin ? "/admin/orders" : "/customer/account"}
         className="text-sm underline"
       >
-        Back to {admin ? "orders" : "account"}
+        {t("Back to")} {admin ? t("orders") : t("account")}
       </Link>
       <div className="mt-4 flex flex-wrap items-end justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold">{order.orderNo}</h1>
           <p className="mt-2">
-            {order.status} · Payment {order.paymentStatus}
+            {t("{status} · Payment {payment}", {
+              status: t(order.status),
+              payment: t(order.paymentStatus),
+            })}
           </p>
         </div>
         <strong className="text-2xl">{money(order.totalCents)}</strong>
       </div>
       {error && (
         <p role="alert" className="mt-5 rounded-lg bg-red-50 p-4 text-red-800">
-          {error}
+          {uiError(uiLocale, error)}
         </p>
       )}
       {notice && (
@@ -310,12 +318,12 @@ export function RetailOrder({
           role="status"
           className="mt-5 rounded-lg bg-green-50 p-4 text-green-900"
         >
-          {notice}
+          {t(String(notice))}
         </p>
       )}
       {admin && (
         <label className="mt-5 block max-w-xs">
-          Current MFA code
+          {t("Current MFA code")}
           <input
             className={input}
             inputMode="numeric"
@@ -327,13 +335,13 @@ export function RetailOrder({
       )}
       <section className="mt-7 grid gap-5 sm:grid-cols-2">
         <div className="rounded-xl border p-5">
-          <h2 className="font-bold">Shipping address</h2>
+          <h2 className="font-bold">{t("Shipping address")}</h2>
           <p className="mt-2 whitespace-pre-line text-sm">
             {Object.values(order.shippingAddress).filter(Boolean).join("\n")}
           </p>
         </div>
         <div className="rounded-xl border p-5">
-          <h2 className="font-bold">Charges</h2>
+          <h2 className="font-bold">{t("Charges")}</h2>
           <dl className="mt-2 space-y-2 text-sm">
             {[
               ["Subtotal", order.subtotalCents],
@@ -341,8 +349,8 @@ export function RetailOrder({
               ["Shipping", order.shippingCents],
               ["Tax", order.taxCents],
             ].map(([label, value]) => (
-              <div className="flex justify-between" key={label}>
-                <dt>{label}</dt>
+              <div className="flex justify-between" key={t(String(label))}>
+                <dt>{t(String(label))}</dt>
                 <dd>{money(Number(value))}</dd>
               </div>
             ))}
@@ -350,17 +358,17 @@ export function RetailOrder({
         </div>
       </section>
       <section className="mt-7">
-        <h2 className="text-xl font-bold">Order items</h2>
+        <h2 className="text-xl font-bold">{t("Order items")}</h2>
         <div className="mt-3 overflow-x-auto">
           <table className="w-full min-w-[560px] text-left text-sm">
             <thead>
               <tr className="border-b">
-                <th className="p-3">Product</th>
-                <th>Ordered</th>
-                <th>Shipped</th>
-                <th>Returned</th>
-                <th>{admin ? "Ship quantity" : "Return quantity"}</th>
-                <th>Line total</th>
+                <th className="p-3">{t("Product")}</th>
+                <th>{t("Ordered")}</th>
+                <th>{t("Shipped")}</th>
+                <th>{t("Returned")}</th>
+                <th>{admin ? t("Ship quantity") : t("Return quantity")}</th>
+                <th>{t("Line total")}</th>
               </tr>
             </thead>
             <tbody>
@@ -375,7 +383,8 @@ export function RetailOrder({
                   <td>{line.returnedQuantity}</td>
                   <td>
                     <label className="sr-only" htmlFor={`qty-${line.id}`}>
-                      {admin ? "Ship" : "Return"} {line.sku} quantity
+                      {admin ? t("Ship") : t("Return")} {line.sku}{" "}
+                      {t("quantity")}
                     </label>
                     <input
                       id={`qty-${line.id}`}
@@ -405,18 +414,18 @@ export function RetailOrder({
       </section>
       {!admin && order.status === "PENDING" && (
         <section className="mt-7 rounded-xl border p-5">
-          <h2 className="text-xl font-bold">Payment</h2>
+          <h2 className="text-xl font-bold">{t("Payment")}</h2>
           {order.reservationExpiresAt && (
             <p className="mt-2 text-sm">
-              Inventory held until{" "}
-              {new Date(order.reservationExpiresAt).toLocaleString()}. Unpaid
-              orders expire automatically.
+              {t("Inventory held until")}{" "}
+              {new Date(order.reservationExpiresAt).toLocaleString(uiLocale)}
+              {t(". Unpaid orders expire automatically.")}
             </p>
           )}
           {pending?.mode === "DEMO" ? (
             <>
               <p className="my-4 font-semibold text-amber-900">
-                Demo payment session. No real money is charged.
+                {t("Demo payment session. No real money is charged.")}
               </p>
               <div className="flex flex-wrap gap-3">
                 {["SUCCEEDED", "FAILED", "CANCELLED"].map((s) => (
@@ -431,10 +440,10 @@ export function RetailOrder({
                     }
                   >
                     {s === "SUCCEEDED"
-                      ? "Simulate success"
+                      ? t("Simulate success")
                       : s === "FAILED"
-                        ? "Simulate failure"
-                        : "Cancel payment"}
+                        ? t("Simulate failure")
+                        : t("Cancel payment")}
                   </button>
                 ))}
               </div>
@@ -445,11 +454,13 @@ export function RetailOrder({
               disabled={busy}
               onClick={() => void payment()}
             >
-              {pending?.checkoutUrl ? "Continue payment" : "Start payment"}
+              {pending?.checkoutUrl
+                ? t("Continue payment")
+                : t("Start payment")}
             </button>
           )}
           <label className="mt-4 block text-sm">
-            Cancellation reason
+            {t("Cancellation reason")}
             <select
               className={input}
               value={cancelReason}
@@ -461,7 +472,9 @@ export function RetailOrder({
                 "Ordered the wrong items",
                 "Delivery estimate is too long",
               ].map((r) => (
-                <option key={r}>{r}</option>
+                <option key={r} value={r}>
+                  {t(r)}
+                </option>
               ))}
             </select>
           </label>
@@ -476,14 +489,14 @@ export function RetailOrder({
               )
             }
           >
-            Cancel unpaid order
+            {t("Cancel unpaid order")}
           </button>
         </section>
       )}
       <div className="mt-6 flex flex-wrap gap-3">
         {["invoice", "receipt", "packing-list"].map((d) => (
           <button key={d} className={button} onClick={() => void document(d)}>
-            Download {d.replace("-", " ")}
+            {t("Download {document}", { document: t(d.replace("-", " ")) })}
           </button>
         ))}
         {!admin && (
@@ -496,7 +509,7 @@ export function RetailOrder({
               })
             }
           >
-            Reorder at current prices
+            {t("Reorder at current prices")}
           </button>
         )}
       </div>
@@ -505,33 +518,34 @@ export function RetailOrder({
           onSubmit={shipment}
           className="mt-7 space-y-3 rounded-xl border p-5"
         >
-          <h2 className="text-xl font-bold">Create a shipment</h2>
+          <h2 className="text-xl font-bold">{t("Create a shipment")}</h2>
           <p className="text-sm">
-            Select quantities above. Each shipment removes only those reserved
-            units.
+            {t(
+              "Select quantities above. Each shipment removes only those reserved units.",
+            )}
           </p>
           <div className="grid gap-3 sm:grid-cols-3">
             <label>
-              Carrier
+              {t("Carrier")}
               <input className={input} name="carrier" required />
             </label>
             <label>
-              Tracking number
+              {t("Tracking number")}
               <input className={input} name="trackingNumber" required />
             </label>
             <label>
-              Tracking URL (optional)
+              {t("Tracking URL (optional)")}
               <input className={input} name="trackingUrl" type="url" />
             </label>
           </div>
           <button className={button} disabled={busy || !selectedLines().length}>
-            Record shipment
+            {t("Record shipment")}
           </button>
         </form>
       )}
       {order.shipments.length > 0 && (
         <section className="mt-7">
-          <h2 className="text-xl font-bold">Shipment tracking</h2>
+          <h2 className="text-xl font-bold">{t("Shipment tracking")}</h2>
           <div className="mt-3 grid gap-3 sm:grid-cols-2">
             {order.shipments.map((s) => (
               <article className="rounded-xl border p-4" key={s.id}>
@@ -539,7 +553,7 @@ export function RetailOrder({
                   {s.carrier} · {s.trackingNumber}
                 </strong>
                 <p className="mt-1 text-sm">
-                  {new Date(s.createdAt).toLocaleString()}
+                  {new Date(s.createdAt).toLocaleString(uiLocale)}
                 </p>
                 <p className="mt-2 text-sm">
                   {s.items
@@ -556,7 +570,7 @@ export function RetailOrder({
                     target="_blank"
                     rel="noreferrer"
                   >
-                    Track shipment
+                    {t("Track shipment")}
                   </a>
                 )}
               </article>
@@ -570,23 +584,25 @@ export function RetailOrder({
             onSubmit={returnRequest}
             className="mt-7 space-y-3 rounded-xl border p-5"
           >
-            <h2 className="text-xl font-bold">Request a return or exchange</h2>
+            <h2 className="text-xl font-bold">
+              {t("Request a return or exchange")}
+            </h2>
             <p className="text-sm">
-              Select the return quantities in the items table.
+              {t("Select the return quantities in the items table.")}
             </p>
             <label className="block">
-              Resolution
+              {t("Resolution")}
               <select
                 className={input}
                 value={resolution}
                 onChange={(e) => setResolution(e.target.value)}
               >
-                <option value="REFUND">Return for refund</option>
-                <option value="EXCHANGE">Exchange</option>
+                <option value="REFUND">{t("Return for refund")}</option>
+                <option value="EXCHANGE">{t("Exchange")}</option>
               </select>
             </label>
             <label className="block">
-              Reason
+              {t("Reason")}
               <textarea
                 className={input}
                 minLength={3}
@@ -596,7 +612,7 @@ export function RetailOrder({
               />
             </label>
             <label className="block">
-              Additional details
+              {t("Additional details")}
               <textarea
                 className={input}
                 maxLength={4000}
@@ -619,17 +635,17 @@ export function RetailOrder({
               className={button}
               disabled={busy || uploadingEvidence || !selectedLines().length}
             >
-              Submit request
+              {t("Submit request")}
             </button>
           </form>
         )}
       {order.returns.length > 0 && (
         <section className="mt-7">
-          <h2 className="text-xl font-bold">Returns & exchanges</h2>
+          <h2 className="text-xl font-bold">{t("Returns & exchanges")}</h2>
           {order.returns.map((r) => (
             <article key={r.id} className="mt-3 rounded-xl border p-5">
               <strong>
-                {r.resolution} · {r.status}
+                {t(r.resolution)} · {t(r.status)}
               </strong>
               <p className="mt-2">{r.reason}</p>
               {r.description && (
@@ -683,7 +699,8 @@ export function RetailOrder({
                         }
                       }}
                     >
-                      Download private photo: {file.fileName}
+                      {t("Download private photo:")}
+                      {file.fileName}
                     </button>
                   ))}
                 </div>
@@ -709,15 +726,15 @@ export function RetailOrder({
                     }}
                   >
                     <label>
-                      Replacement carrier
+                      {t("Replacement carrier")}
                       <input className={input} name="carrier" required />
                     </label>
                     <label>
-                      Replacement tracking number
+                      {t("Replacement tracking number")}
                       <input className={input} name="tracking" required />
                     </label>
                     <button className={button} disabled={busy}>
-                      Ship exchange replacement
+                      {t("Ship exchange replacement")}
                     </button>
                   </form>
                 )}
@@ -735,7 +752,7 @@ export function RetailOrder({
                   }}
                 >
                   <label className="grow">
-                    Decision note
+                    {t("Decision note")}
                     <input
                       className={input}
                       name="note"
@@ -744,7 +761,7 @@ export function RetailOrder({
                     />
                   </label>
                   <label>
-                    Next status
+                    {t("Next status")}
                     <select className={input} name="status">
                       {(r.status === "REQUESTED"
                         ? ["APPROVED", "REJECTED"]
@@ -754,7 +771,9 @@ export function RetailOrder({
                             ? ["COMPLETED"]
                             : []
                       ).map((s) => (
-                        <option key={s}>{s}</option>
+                        <option key={s} value={s}>
+                          {t(s)}
+                        </option>
                       ))}
                     </select>
                   </label>
@@ -764,7 +783,7 @@ export function RetailOrder({
                       busy || ["COMPLETED", "REJECTED"].includes(r.status)
                     }
                   >
-                    Update return
+                    {t("Update return")}
                   </button>
                 </form>
               )}
@@ -778,10 +797,10 @@ export function RetailOrder({
             onSubmit={refund}
             className="mt-7 space-y-3 rounded-xl border p-5"
           >
-            <h2 className="text-xl font-bold">Issue a refund</h2>
+            <h2 className="text-xl font-bold">{t("Issue a refund")}</h2>
             <div className="grid gap-3 sm:grid-cols-2">
               <label>
-                Amount ({order.currency})
+                {t("Amount ({currency})", { currency: order.currency })}
                 <input
                   className={input}
                   name="amount"
@@ -793,21 +812,21 @@ export function RetailOrder({
                 />
               </label>
               <label>
-                Related return (optional)
+                {t("Related return (optional)")}
                 <select className={input} name="returnId">
-                  <option value="">Order adjustment</option>
+                  <option value="">{t("Order adjustment")}</option>
                   {order.returns
                     .filter((r) => ["RECEIVED", "COMPLETED"].includes(r.status))
                     .map((r) => (
                       <option key={r.id} value={r.id}>
-                        {r.resolution} · {r.reason}
+                        {t(r.resolution)} · {r.reason}
                       </option>
                     ))}
                 </select>
               </label>
             </div>
             <label className="block">
-              Refund reason
+              {t("Refund reason")}
               <textarea
                 className={input}
                 name="reason"
@@ -816,17 +835,17 @@ export function RetailOrder({
               />
             </label>
             <button className={button} disabled={busy}>
-              Submit refund
+              {t("Submit refund")}
             </button>
           </form>
         )}
       {order.refunds.length > 0 && (
         <section className="mt-7">
-          <h2 className="text-xl font-bold">Refund history</h2>
+          <h2 className="text-xl font-bold">{t("Refund history")}</h2>
           {order.refunds.map((r) => (
             <article key={r.id} className="mt-3 rounded-xl border p-4">
               <strong>
-                {money(r.amountCents)} · {r.status}
+                {money(r.amountCents)} · {t(r.status)}
               </strong>
               <p>{r.reason}</p>
               <p className="text-sm">{r.providerReference}</p>
@@ -847,7 +866,7 @@ export function RetailOrder({
                   }}
                 >
                   <label>
-                    Provider reference
+                    {t("Provider reference")}
                     <input
                       className={input}
                       name="reference"
@@ -856,14 +875,14 @@ export function RetailOrder({
                     />
                   </label>
                   <label>
-                    Provider result
+                    {t("Provider result")}
                     <select className={input} name="status">
-                      <option>SUCCEEDED</option>
-                      <option>FAILED</option>
+                      <option value="SUCCEEDED">{t("SUCCEEDED")}</option>
+                      <option value="FAILED">{t("FAILED")}</option>
                     </select>
                   </label>
                   <button className={`${button} self-end`} disabled={busy}>
-                    Record external result
+                    {t("Record external result")}
                   </button>
                 </form>
               )}
@@ -873,12 +892,14 @@ export function RetailOrder({
       )}
       {!!order.history?.length && (
         <section className="mt-8 rounded-xl border p-5">
-          <h2 className="text-xl font-semibold">Order history</h2>
+          <h2 className="text-xl font-semibold">{t("Order history")}</h2>
           <ol className="mt-4 space-y-3 text-sm">
             {order.history.map((entry, index) => (
               <li key={`${entry.createdAt}-${index}`}>
-                <time>{new Date(entry.createdAt).toLocaleString()}</time> ·{" "}
-                {entry.action.replace("order.", "").replaceAll(".", " ")}
+                <time>
+                  {new Date(entry.createdAt).toLocaleString(uiLocale)}
+                </time>{" "}
+                · {t(entry.action.replace("order.", "").replaceAll(".", " "))}
                 {entry.reason && (
                   <p className="mt-1 text-neutral-600">{entry.reason}</p>
                 )}

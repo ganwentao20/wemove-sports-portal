@@ -1,4 +1,8 @@
 "use client";
+import { uiError } from "../lib/ui-i18n";
+
+import { useUiText, useUiLocale } from "./ui-locale";
+
 import { useState } from "react";
 import { secureApiFetch } from "../lib/secure-api";
 export type ReturnEvidence = {
@@ -24,25 +28,31 @@ export function ReturnEvidenceFields({
   onDescriptions: (value: Record<string, string>) => void;
   onBusy: (value: boolean) => void;
 }) {
+  const uiLocale = useUiLocale();
+
+  const t = useUiText();
+
   const [error, setError] = useState(""),
     [uploading, setUploading] = useState(false);
   return (
     <fieldset disabled={uploading} className="space-y-4">
-      <legend className="font-semibold">Item details and private photos</legend>
+      <legend className="font-semibold">
+        {t("Item details and private photos")}
+      </legend>
       <p className="text-sm text-neutral-700">
-        Optional: describe each selected item and attach up to five JPG, PNG or
-        WebP photos, 5 MB each. Photos are available to you and authorized
-        support staff.
+        {t(
+          "Optional: describe each selected item and attach up to five JPG, PNG or WebP photos, 5 MB each. Photos are available to you and authorized support staff.",
+        )}
       </p>
       {error && (
         <p role="alert" className="text-red-700">
-          {error}
+          {error ? uiError(uiLocale, error) : ""}
         </p>
       )}
       {lines.map((line) => (
         <div key={line.id} className="space-y-2 rounded border p-3">
           <label className="block">
-            {line.sku} — what happened?
+            {line.sku} {t("— what happened?")}
             <textarea
               className="mt-1 block w-full rounded border p-2"
               maxLength={2000}
@@ -53,7 +63,7 @@ export function ReturnEvidenceFields({
             />
           </label>
           <label className="block">
-            Photo for {line.sku}
+            {t("Photo for")} {line.sku}
             <input
               className="mt-1 block w-full"
               type="file"
@@ -100,7 +110,7 @@ export function ReturnEvidenceFields({
             .filter((file) => file.orderItemId === line.id)
             .map((file) => (
               <p className="text-sm" key={file.mediaId}>
-                {file.fileName} — uploaded privately{" "}
+                {file.fileName} {t("— uploaded privately")}{" "}
                 <button
                   type="button"
                   className="ml-2 underline"
@@ -131,13 +141,13 @@ export function ReturnEvidenceFields({
                     }
                   }}
                 >
-                  Remove
+                  {t("Remove")}
                 </button>
               </p>
             ))}
         </div>
       ))}
-      {uploading && <p role="status">Checking and uploading image…</p>}
+      {uploading && <p role="status">{t("Checking and uploading image…")}</p>}
     </fieldset>
   );
 }

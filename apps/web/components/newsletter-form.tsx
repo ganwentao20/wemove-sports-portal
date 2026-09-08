@@ -1,4 +1,5 @@
 "use client";
+import { uiError } from "../lib/ui-i18n";
 import { recordEvent } from "./consent-analytics";
 import { ui } from "../lib/ui-strings";
 import { useState } from "react";
@@ -33,7 +34,7 @@ export function NewsletterForm({ locale = "en" }: { locale?: string }) {
           );
         } catch (error) {
           setMessage(
-            error instanceof Error ? error.message : "Unable to subscribe",
+            uiError(locale, error),
           );
         } finally {
           setBusy(false);
@@ -41,7 +42,7 @@ export function NewsletterForm({ locale = "en" }: { locale?: string }) {
       }}
     >
       <h2 className="text-2xl font-bold">
-        {ui(locale, "Ideas for active play")}
+        {ui(locale, "WEMOVE ideas and updates")}
       </h2>
       <label className="mt-5 block">
         {ui(locale, "Email")}

@@ -1,7 +1,9 @@
 "use client";
+import { uiError } from "../../../lib/ui-i18n";
+import { useUiText, useUiLocale } from "../../../components/ui-locale";
+
 import Link from "next/link";
 import { apiFetch } from "../../../lib/api";
-import { languageName } from "../../../lib/language-code";
 import { CmsProductAssociations } from "../../../components/cms-product-associations";
 import { CmsBlockOptions } from "../../../components/cms-block-options";
 import { RichTextEditor } from "../../../components/rich-text-editor";
@@ -68,6 +70,7 @@ const kinds = [
   "download",
   "newsletter",
   "values",
+  "original-feature",
 ];
 const normalize = (blocks: unknown): Block[] =>
   Array.isArray(blocks)
@@ -87,6 +90,9 @@ const normalize = (blocks: unknown): Block[] =>
 const field =
   "mt-1 w-full rounded-lg border border-neutral-300 bg-white px-3 py-2";
 export function CmsWorkbench() {
+  const t = useUiText();
+  const uiLocale = useUiLocale();
+
   const [languages, setLanguages] = useState<string[]>(["en", "zh"]);
   useEffect(() => {
     void apiFetch<{ locale: { languages: string[] } }>("/site/config")
@@ -226,15 +232,16 @@ export function CmsWorkbench() {
       className="mx-auto max-w-7xl px-4 py-10"
     >
       <Link className="underline" href="/admin/dashboard">
-        Operations dashboard
+        {t("Operations dashboard")}
       </Link>
-      <h1 className="my-5 text-3xl font-bold">Content studio</h1>
+      <h1 className="my-5 text-3xl font-bold">{t("Content studio")}</h1>
       <p className="mb-6 text-neutral-600">
-        Build pages with content blocks, schedule publishing, and manage
-        complete translations.
+        {t(
+          "Build pages with content blocks, schedule publishing, and manage complete translations.",
+        )}
       </p>
       <p role="status" className="mb-4">
-        {message}
+        {message ? uiError(uiLocale, message) : ""}
       </p>
       <div className="grid gap-6 lg:grid-cols-[250px_1fr]">
         <aside>
@@ -242,7 +249,7 @@ export function CmsWorkbench() {
             onClick={() => select({ ...blank })}
             className="mb-4 w-full rounded-lg border p-3 font-semibold"
           >
-            New page
+            {t("New page")}
           </button>
           <ul className="space-y-2">
             {pages.map((p) => (
@@ -253,7 +260,7 @@ export function CmsWorkbench() {
                 >
                   <strong>{p.title}</strong>
                   <small className="block">
-                    {p.slug} · {p.status}
+                    {p.slug} · {t(String(p.status))}
                   </small>
                 </button>
               </li>
@@ -263,7 +270,7 @@ export function CmsWorkbench() {
         <section className="min-w-0">
           <div className="grid gap-4 rounded-xl border p-5 sm:grid-cols-2">
             <label>
-              Slug
+              {t("Slug")}
               <input
                 value={page.slug}
                 onChange={(e) => setPage({ ...page, slug: e.target.value })}
@@ -271,7 +278,7 @@ export function CmsWorkbench() {
               />
             </label>
             <label>
-              Content type
+              {t("Content type")}
               <select
                 value={page.kind}
                 onChange={(e) => setPage({ ...page, kind: e.target.value })}
@@ -279,13 +286,15 @@ export function CmsWorkbench() {
               >
                 {["PAGE", "HOME", "ARTICLE", "FAQ", "BANNER", "NAVIGATION"].map(
                   (v) => (
-                    <option key={v}>{v}</option>
+                    <option key={v} value={v}>
+                      {t(String(v))}
+                    </option>
                   ),
                 )}
               </select>
             </label>
             <label>
-              Base language
+              {t("Base language")}
               <select
                 value={page.locale}
                 onChange={(e) => {
@@ -296,13 +305,16 @@ export function CmsWorkbench() {
               >
                 {availableLanguages.map((code) => (
                   <option key={code} value={code}>
-                    {languageName(code)}
+                    {new Intl.DisplayNames(
+                      [uiLocale === "zh" ? "zh-CN" : "en-US"],
+                      { type: "language" },
+                    ).of(code) ?? code}
                   </option>
                 ))}
               </select>
             </label>
             <label>
-              Market (ALL or market code)
+              {t("Market (ALL or market code)")}
               <input
                 value={page.market}
                 onChange={(e) =>
@@ -312,7 +324,7 @@ export function CmsWorkbench() {
               />
             </label>
             <label>
-              Author
+              {t("Author")}
               <input
                 value={page.author ?? ""}
                 onChange={(e) => setPage({ ...page, author: e.target.value })}
@@ -320,7 +332,7 @@ export function CmsWorkbench() {
               />
             </label>
             <label>
-              Category
+              {t("Category")}
               <input
                 value={page.category ?? ""}
                 onChange={(e) => setPage({ ...page, category: e.target.value })}
@@ -328,7 +340,7 @@ export function CmsWorkbench() {
               />
             </label>
             <label>
-              Display order (smaller first)
+              {t("Display order (smaller first)")}
               <input
                 type="number"
                 min={0}
@@ -345,19 +357,21 @@ export function CmsWorkbench() {
               onChange={(productIds) => setPage({ ...page, productIds })}
             />
             <label>
-              Publish state
+              {t("Publish state")}
               <select
                 value={page.status}
                 onChange={(e) => setPage({ ...page, status: e.target.value })}
                 className={field}
               >
                 {["DRAFT", "SCHEDULED", "PUBLISHED", "ARCHIVED"].map((v) => (
-                  <option key={v}>{v}</option>
+                  <option key={v} value={v}>
+                    {t(String(v))}
+                  </option>
                 ))}
               </select>
             </label>
             <label>
-              Edit language
+              {t("Edit language")}
               <select
                 value={locale}
                 onChange={(e) => setLocale(e.target.value)}
@@ -365,14 +379,17 @@ export function CmsWorkbench() {
               >
                 {availableLanguages.map((code) => (
                   <option key={code} value={code}>
-                    {languageName(code)}
+                    {new Intl.DisplayNames(
+                      [uiLocale === "zh" ? "zh-CN" : "en-US"],
+                      { type: "language" },
+                    ).of(code) ?? code}
                   </option>
                 ))}
               </select>
             </label>
             {translated && (
               <label>
-                Translation status
+                {t("Translation status")}
                 <select
                   value={version.status}
                   onChange={(e) => content({ status: e.target.value })}
@@ -380,14 +397,16 @@ export function CmsWorkbench() {
                 >
                   {["NOT_STARTED", "IN_PROGRESS", "READY", "PUBLISHED"].map(
                     (v) => (
-                      <option key={v}>{v}</option>
+                      <option key={v} value={v}>
+                        {t(String(v))}
+                      </option>
                     ),
                   )}
                 </select>
               </label>
             )}
             <label>
-              Publish at (UTC)
+              {t("Publish at (UTC)")}
               <input
                 type="datetime-local"
                 value={page.publishAt?.slice(0, 16) ?? ""}
@@ -403,7 +422,7 @@ export function CmsWorkbench() {
               />
             </label>
             <label>
-              Unpublish at (UTC)
+              {t("Unpublish at (UTC)")}
               <input
                 type="datetime-local"
                 value={page.unpublishAt?.slice(0, 16) ?? ""}
@@ -419,7 +438,7 @@ export function CmsWorkbench() {
               />
             </label>
             <label className="sm:col-span-2">
-              Page title
+              {t("Page title")}
               <input
                 value={title}
                 onChange={(e) => content({ title: e.target.value })}
@@ -442,13 +461,15 @@ export function CmsWorkbench() {
               >
                 <div className="mb-3 flex flex-wrap items-center gap-3">
                   <strong>
-                    {index + 1}. {b.type}
+                    {index + 1}. {t(String(b.type))}
                   </strong>
                   <button
                     onClick={() => move(index, index - 1)}
                     disabled={index === 0}
                     className="rounded border px-2"
-                    aria-label={`Move block ${index + 1} up`}
+                    aria-label={t("Move block {value1} up", {
+                      value1: index + 1,
+                    })}
                   >
                     ↑
                   </button>
@@ -456,7 +477,9 @@ export function CmsWorkbench() {
                     onClick={() => move(index, index + 1)}
                     disabled={index === blocks.length - 1}
                     className="rounded border px-2"
-                    aria-label={`Move block ${index + 1} down`}
+                    aria-label={t("Move block {value1} down", {
+                      value1: index + 1,
+                    })}
                   >
                     ↓
                   </button>
@@ -468,7 +491,7 @@ export function CmsWorkbench() {
                     }
                     className="ml-auto underline"
                   >
-                    Remove
+                    {t("Remove")}
                   </button>
                 </div>
                 <div className="grid gap-3 sm:grid-cols-2">
@@ -486,8 +509,11 @@ export function CmsWorkbench() {
                     "text",
                     "href",
                     "label",
-                    ...(["hero", "image", "video"].includes(b.type)
+                    ...(["hero", "image", "video", "original-feature"].includes(b.type)
                       ? ["image", "mobileImage", "src", "alt", "poster"]
+                      : []),
+                    ...(b.type === "original-feature"
+                      ? ["id", "tone", "imageSide"]
                       : []),
                     ...(["products", "articles"].includes(b.type)
                       ? ["category"]
@@ -498,18 +524,22 @@ export function CmsWorkbench() {
                       key={key}
                       className={key === "text" ? "sm:col-span-2" : ""}
                     >
-                      {(
-                        {
-                          text: "Body text",
-                          href: "Link",
-                          label: "Button label",
-                          image: "Desktop image URL",
-                          mobileImage: "Mobile image URL",
-                          src: "Image or video URL",
-                          alt: "Image description",
-                          poster: "Video poster URL",
-                        } as Record<string, string>
-                      )[key] ?? key}
+                      {t(
+                        String(
+                          (
+                            {
+                              text: "Body text",
+                              href: "Link",
+                              label: "Button label",
+                              image: "Desktop image URL",
+                              mobileImage: "Mobile image URL",
+                              src: "Image or video URL",
+                              alt: "Image description",
+                              poster: "Video poster URL",
+                            } as Record<string, string>
+                          )[key] ?? key,
+                        ),
+                      )}
                       {key === "text" ? (
                         <RichTextEditor
                           value={String(b.props[key] ?? "")}
@@ -529,7 +559,7 @@ export function CmsWorkbench() {
                   {b.type === "products" && (
                     <>
                       <label>
-                        Selection rule
+                        {t("Selection rule")}
                         <select
                           value={String(b.props.sort ?? "featured")}
                           onChange={(e) =>
@@ -537,12 +567,12 @@ export function CmsWorkbench() {
                           }
                           className={field}
                         >
-                          <option value="featured">Featured</option>
-                          <option value="newest">Newest</option>
+                          <option value="featured">{t("Featured")}</option>
+                          <option value="newest">{t("Newest")}</option>
                         </select>
                       </label>
                       <label>
-                        Selected product IDs (comma separated)
+                        {t("Selected product IDs (comma separated)")}
                         <input
                           value={(Array.isArray(b.props.productIds)
                             ? b.props.productIds
@@ -563,7 +593,7 @@ export function CmsWorkbench() {
                   )}
                   {["products", "articles", "categories"].includes(b.type) && (
                     <label>
-                      Number of cards
+                      {t("Number of cards")}
                       <input
                         type="number"
                         min={1}
@@ -578,7 +608,7 @@ export function CmsWorkbench() {
                   )}
                   {["list", "values"].includes(b.type) && (
                     <label className="sm:col-span-2">
-                      List items (one per line)
+                      {t("List items (one per line)")}
                       <textarea
                         value={(Array.isArray(b.props.items)
                           ? b.props.items
@@ -610,12 +640,14 @@ export function CmsWorkbench() {
                 }
                 className="rounded-lg border px-3 py-2"
               >
-                + {type}
+                + {t(String(type))}
               </button>
             ))}
           </div>
           <details className="rounded-xl border p-5">
-            <summary className="font-semibold">SEO and social sharing</summary>
+            <summary className="font-semibold">
+              {t("SEO and social sharing")}
+            </summary>
             <div className="mt-4 grid gap-3 sm:grid-cols-2">
               {[
                 "title",
@@ -626,7 +658,7 @@ export function CmsWorkbench() {
                 "canonical",
               ].map((key) => (
                 <label key={key}>
-                  {key}
+                  {t(String(key))}
                   <input
                     value={String(seo?.[key] ?? "")}
                     onChange={(e) =>
@@ -644,13 +676,13 @@ export function CmsWorkbench() {
                     content({ seo: { ...seo, noindex: e.target.checked } })
                   }
                 />{" "}
-                Exclude from search engines
+                {t("Exclude from search engines")}
               </label>
             </div>
           </details>
           <div className="sticky bottom-0 mt-5 flex flex-wrap gap-3 rounded-xl border bg-white p-4">
             <label>
-              MFA code
+              {t("MFA code")}
               <input
                 value={mfa}
                 onChange={(e) => setMfa(e.target.value)}
@@ -664,7 +696,7 @@ export function CmsWorkbench() {
               disabled={busy}
               className="rounded-lg bg-[#245f7e] px-5 py-2 font-semibold text-white"
             >
-              Save content
+              {t("Save content")}
             </button>
             {page.id && (
               <>
@@ -673,7 +705,7 @@ export function CmsWorkbench() {
                   className="rounded-lg border px-4 py-2"
                   href={`/admin/cms/preview?id=${page.id}`}
                 >
-                  Preview
+                  {t("Preview")}
                 </Link>
                 <button
                   onClick={async () => {
@@ -690,7 +722,7 @@ export function CmsWorkbench() {
                   }}
                   className="rounded-lg border px-4 py-2"
                 >
-                  Version history
+                  {t("Version history")}
                 </button>
               </>
             )}
@@ -702,8 +734,11 @@ export function CmsWorkbench() {
                   key={v.revision}
                   className="flex gap-5 rounded-lg border p-3"
                 >
-                  Version {v.revision} ·{" "}
-                  {new Date(v.createdAt).toLocaleString()}
+                  {t("Version")}
+                  {v.revision} ·{" "}
+                  {new Date(v.createdAt).toLocaleString(
+                    uiLocale === "zh" ? "zh-CN" : "en-US",
+                  )}
                   <button
                     className="underline"
                     onClick={async () => {
@@ -726,7 +761,7 @@ export function CmsWorkbench() {
                       }
                     }}
                   >
-                    Restore as draft
+                    {t("Restore as draft")}
                   </button>
                 </li>
               ))}

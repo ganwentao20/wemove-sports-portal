@@ -1,4 +1,7 @@
 "use client";
+import { uiError } from "../../../lib/ui-i18n";
+import { useUiText, useUiLocale } from "../../../components/ui-locale";
+
 import Link from "next/link";
 import { useEffect, useState, type FormEvent } from "react";
 import { secureApiFetch } from "../../../lib/secure-api";
@@ -66,6 +69,9 @@ const split = (v: FormDataEntryValue | null) =>
     .map((s) => s.trim())
     .filter(Boolean);
 export function PricingWorkbench() {
+  const t = useUiText();
+  const uiLocale = useUiLocale();
+
   const [markets, setMarkets] = useState<Market[]>([]);
   const [coupons, setCoupons] = useState<Coupon[]>([]);
   const [rules, setRules] = useState<Rule[]>([]);
@@ -205,26 +211,28 @@ export function PricingWorkbench() {
       className="mx-auto max-w-7xl px-4 py-10"
     >
       <Link href="/admin/dashboard" className="underline text-sm">
-        Admin dashboard
+        {t("Admin dashboard")}
       </Link>
-      <h1 className="mt-4 text-3xl font-bold">Prices, promotions & markets</h1>
+      <h1 className="mt-4 text-3xl font-bold">
+        {t("Prices, promotions & markets")}
+      </h1>
       <p className="mt-2 text-sm text-neutral-600">
-        Market tax and delivery rates are configurable commercial rules. Confirm
-        production tax treatment and payment provider settings before opening
-        retail.
+        {t(
+          "Market tax and delivery rates are configurable commercial rules. Confirm production tax treatment and payment provider settings before opening retail.",
+        )}
       </p>
       {error && (
         <p role="alert" className="mt-4 bg-red-50 p-4 text-red-800">
-          {error}
+          {error ? uiError(uiLocale, error) : ""}
         </p>
       )}
       {notice && (
         <p role="status" className="mt-4 bg-green-50 p-4">
-          {notice}
+          {notice ? uiError(uiLocale, notice) : ""}
         </p>
       )}
       <label className="mt-5 block max-w-xs">
-        Current MFA code
+        {t("Current MFA code")}
         <input
           className={input}
           inputMode="numeric"
@@ -234,7 +242,7 @@ export function PricingWorkbench() {
         />
       </label>
       <section className="mt-8">
-        <h2 className="text-xl font-bold">Market configuration</h2>
+        <h2 className="text-xl font-bold">{t("Market configuration")}</h2>
         <div className="mt-3 flex flex-wrap gap-3">
           {markets.map((m) => (
             <button
@@ -242,11 +250,12 @@ export function PricingWorkbench() {
               className={button}
               onClick={() => setSelected(m)}
             >
-              {m.label} · {m.currency} · {m.retailEnabled ? "Open" : "Closed"}
+              {m.label} · {m.currency} ·{" "}
+              {m.retailEnabled ? t("Open") : t("Closed")}
             </button>
           ))}
           <button className={button} onClick={() => setSelected(null)}>
-            New market
+            {t("New market")}
           </button>
         </div>
         <form
@@ -288,7 +297,7 @@ export function PricingWorkbench() {
             ],
           ].map(([name, label, value]) => (
             <label key={name}>
-              {label}
+              {t(String(label))}
               <input
                 className={input}
                 name={name}
@@ -298,14 +307,16 @@ export function PricingWorkbench() {
             </label>
           ))}
           <label>
-            Payment mode
+            {t("Payment mode")}
             <select
               className={input}
               name="mode"
               defaultValue={selected?.paymentMode ?? "DEMO"}
             >
-              <option value="DEMO">Demo (no money charged)</option>
-              <option value="WEBHOOK">Configured payment provider</option>
+              <option value="DEMO">{t("Demo (no money charged)")}</option>
+              <option value="WEBHOOK">
+                {t("Configured payment provider")}
+              </option>
             </select>
           </label>
           <MarketRulesFields market={selected} />
@@ -315,20 +326,20 @@ export function PricingWorkbench() {
               type="checkbox"
               defaultChecked={selected?.retailEnabled ?? true}
             />{" "}
-            Retail enabled
+            {t("Retail enabled")}
           </label>
           <button className={`${button} self-end`} disabled={busy}>
-            Save market
+            {t("Save market")}
           </button>
         </form>
       </section>
       <section className="mt-8">
-        <h2 className="text-xl font-bold">Discount codes</h2>
+        <h2 className="text-xl font-bold">{t("Discount codes")}</h2>
         <button
           className={`${button} mt-3`}
           onClick={() => setSelectedCoupon(null)}
         >
-          New discount code
+          {t("New discount code")}
         </button>
         <form
           id="coupon-editor"
@@ -375,7 +386,7 @@ export function PricingWorkbench() {
             ],
           ].map(([name, label, value]) => (
             <label key={name}>
-              {label}
+              {t(String(label))}
               <input
                 name={name}
                 className={input}
@@ -386,19 +397,21 @@ export function PricingWorkbench() {
             </label>
           ))}
           <label>
-            Market
+            {t("Market")}
             <select
               name="market"
               className={input}
               defaultValue={selectedCoupon?.market}
             >
               {markets.map((m) => (
-                <option key={m.code}>{m.code}</option>
+                <option key={m.code} value={m.code}>
+                  {m.code}
+                </option>
               ))}
             </select>
           </label>
           <label>
-            Starts at
+            {t("Starts at")}
             <input
               type="datetime-local"
               name="startsAt"
@@ -407,7 +420,7 @@ export function PricingWorkbench() {
             />
           </label>
           <label>
-            Ends at
+            {t("Ends at")}
             <input
               type="datetime-local"
               name="endsAt"
@@ -422,7 +435,7 @@ export function PricingWorkbench() {
                 type="checkbox"
                 defaultChecked={selectedCoupon?.active ?? true}
               />{" "}
-              Active
+              {t("Active")}
             </label>
             <label>
               <input
@@ -430,22 +443,22 @@ export function PricingWorkbench() {
                 type="checkbox"
                 defaultChecked={selectedCoupon?.freeShipping ?? false}
               />{" "}
-              Free shipping
+              {t("Free shipping")}
             </label>
           </div>
           <button className={button} disabled={busy}>
-            Save code
+            {t("Save code")}
           </button>
         </form>
         <div className="mt-4 overflow-auto">
           <table className="w-full text-left text-sm">
             <thead>
               <tr>
-                <th>Code / market</th>
-                <th>Discount</th>
-                <th>Redemptions</th>
-                <th>Status</th>
-                <th>Action</th>
+                <th>{t("Code / market")}</th>
+                <th>{t("Discount")}</th>
+                <th>{t("Redemptions")}</th>
+                <th>{t("Status")}</th>
+                <th>{t("Action")}</th>
               </tr>
             </thead>
             <tbody>
@@ -456,19 +469,19 @@ export function PricingWorkbench() {
                   </td>
                   <td>
                     {c.percentBps / 100}% + {(c.amountCents / 100).toFixed(2)}{" "}
-                    {c.freeShipping ? " · free shipping" : ""}
+                    {c.freeShipping ? t(" · free shipping") : ""}
                   </td>
                   <td>
-                    {c.uses} / {c.maxUses ?? "unlimited"}
+                    {c.uses} / {c.maxUses ?? t("unlimited")}
                   </td>
-                  <td>{c.active ? "Active" : "Paused"}</td>
+                  <td>{c.active ? t("Active") : t("Paused")}</td>
                   <td>
                     <a
                       href="#coupon-editor"
                       className={button}
                       onClick={() => setSelectedCoupon(c)}
                     >
-                      Edit
+                      {t("Edit")}
                     </a>
                     <button
                       className={button}
@@ -487,7 +500,7 @@ export function PricingWorkbench() {
                         })
                       }
                     >
-                      {c.active ? "Pause" : "Activate"}
+                      {c.active ? t("Pause") : t("Activate")}
                     </button>
                   </td>
                 </tr>
@@ -497,12 +510,12 @@ export function PricingWorkbench() {
         </div>
       </section>
       <section className="mt-8">
-        <h2 className="text-xl font-bold">Dealer price rules</h2>
+        <h2 className="text-xl font-bold">{t("Dealer price rules")}</h2>
         <button
           className={`${button} mt-3`}
           onClick={() => setSelectedRule(null)}
         >
-          New price rule
+          {t("New price rule")}
         </button>
         <form
           id="rule-editor"
@@ -531,7 +544,7 @@ export function PricingWorkbench() {
             ["currency", "Currency", selectedRule?.currency ?? "USD"],
           ].map(([name, label, value]) => (
             <label key={name}>
-              {label}
+              {t(String(label))}
               <input
                 name={name}
                 className={input}
@@ -542,7 +555,7 @@ export function PricingWorkbench() {
             </label>
           ))}
           <label>
-            Scope
+            {t("Scope")}
             <select
               className={input}
               name="scope"
@@ -554,12 +567,14 @@ export function PricingWorkbench() {
                 "TIER_LEVEL",
                 "B2B_DEFAULT",
               ].map((s) => (
-                <option key={s}>{s}</option>
+                <option key={s} value={s}>
+                  {t(String(s))}
+                </option>
               ))}
             </select>
           </label>
           <label>
-            Starts at
+            {t("Starts at")}
             <input
               name="startsAt"
               type="datetime-local"
@@ -568,7 +583,7 @@ export function PricingWorkbench() {
             />
           </label>
           <label>
-            Ends at
+            {t("Ends at")}
             <input
               name="endsAt"
               type="datetime-local"
@@ -577,18 +592,18 @@ export function PricingWorkbench() {
             />
           </label>
           <button className={`${button} self-end`} disabled={busy}>
-            {selectedRule ? "Save price rule" : "Create rule"}
+            {selectedRule ? t("Save price rule") : t("Create rule")}
           </button>
         </form>
         <div className="mt-4 overflow-auto">
           <table className="w-full text-left text-sm">
             <thead>
               <tr>
-                <th>Variant / scope</th>
-                <th>Price</th>
-                <th>MOQ</th>
-                <th>Window</th>
-                <th>Status</th>
+                <th>{t("Variant / scope")}</th>
+                <th>{t("Price")}</th>
+                <th>{t("MOQ")}</th>
+                <th>{t("Window")}</th>
+                <th>{t("Status")}</th>
               </tr>
             </thead>
             <tbody>
@@ -597,15 +612,15 @@ export function PricingWorkbench() {
                   <td className="py-3">
                     {r.variantId}
                     <br />
-                    {r.scope}
+                    {t(String(r.scope))}
                   </td>
                   <td>
                     {r.currency} {(r.priceCents / 100).toFixed(2)}
                   </td>
                   <td>{r.minQty}</td>
                   <td>
-                    {r.startsAt?.slice(0, 10) ?? "Any"} –{" "}
-                    {r.endsAt?.slice(0, 10) ?? "Any"}
+                    {r.startsAt?.slice(0, 10) ?? t("Any")} –{" "}
+                    {r.endsAt?.slice(0, 10) ?? t("Any")}
                   </td>
                   <td>
                     <a
@@ -613,7 +628,7 @@ export function PricingWorkbench() {
                       className={button}
                       onClick={() => setSelectedRule(r)}
                     >
-                      Edit
+                      {t("Edit")}
                     </a>
                     <button
                       className={button}
@@ -626,7 +641,7 @@ export function PricingWorkbench() {
                         )
                       }
                     >
-                      {r.active ? "Pause" : "Activate"}
+                      {r.active ? t("Pause") : t("Activate")}
                     </button>
                   </td>
                 </tr>

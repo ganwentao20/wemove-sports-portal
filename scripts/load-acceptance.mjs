@@ -32,7 +32,7 @@ if (mode === "mixed") {
       headers: { "content-type": "application/json" },
       body: JSON.stringify({
         email: process.env.LOAD_EMAIL || "customer@wemove.local",
-        password: process.env.LOAD_PASSWORD || "Demo@123456",
+        password: process.env.LOAD_PASSWORD || "Demo1234",
       }),
       signal: AbortSignal.timeout(10000),
     });

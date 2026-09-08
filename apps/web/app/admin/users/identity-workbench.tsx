@@ -1,4 +1,8 @@
 "use client";
+import { adminPermissionLabels, adminRoleLabels } from "../../../lib/ui-admin";
+import { uiError } from "../../../lib/ui-i18n";
+import { useUiText, useUiLocale } from "../../../components/ui-locale";
+
 import { useCallback, useEffect, useState, type FormEvent } from "react";
 import Link from "next/link";
 import { CustomerAccountReview } from "./customer-account-review";
@@ -47,6 +51,9 @@ export function IdentityWorkbench({
 }: {
   mode: "users" | "roles" | "audit";
 }) {
+  const t = useUiText();
+  const uiLocale = useUiLocale();
+
   const [access, setAccess] = useState<{
     roles: string[];
     permissions: string[];
@@ -167,37 +174,41 @@ export function IdentityWorkbench({
       className="mx-auto max-w-6xl px-4 py-8"
     >
       <nav className="flex flex-wrap gap-4 text-sm underline">
-        <Link href="/admin/dashboard">Dashboard</Link>
+        <Link href="/admin/dashboard">{t("Dashboard")}</Link>
         {(can("user:read") || can("system:staff:read")) && (
-          <Link href="/admin/users">Users and staff</Link>
+          <Link href="/admin/users">{t("Users and staff")}</Link>
         )}
-        {can("system:rbac:write") && <Link href="/admin/roles">Roles</Link>}
-        {can("system:audit:read") && <Link href="/admin/audit">Audit log</Link>}
-        <Link href="/admin/security">My security</Link>
+        {can("system:rbac:write") && (
+          <Link href="/admin/roles">{t("Roles")}</Link>
+        )}
+        {can("system:audit:read") && (
+          <Link href="/admin/audit">{t("Audit log")}</Link>
+        )}
+        <Link href="/admin/security">{t("My security")}</Link>
       </nav>
       <h1 className="my-6 text-3xl font-bold">
         {mode === "users"
-          ? "Users and staff"
+          ? t("Users and staff")
           : mode === "roles"
-            ? "Roles and permissions"
-            : "Audit log"}
+            ? t("Roles and permissions")
+            : t("Audit log")}
       </h1>
       {error && (
         <p role="alert" className="my-4 rounded bg-red-50 p-3 text-red-700">
-          {error}{" "}
+          {error ? uiError(uiLocale, error) : ""}{" "}
           <Link href="/admin/login" className="underline">
-            Sign in
+            {t("Sign in")}
           </Link>
         </p>
       )}
       {notice && (
         <p role="status" className="my-4 rounded bg-green-50 p-3">
-          {notice}
+          {notice ? uiError(uiLocale, notice) : ""}
         </p>
       )}
       {mode !== "audit" && (
         <label className="mb-6 block max-w-xs">
-          Authenticator code for sensitive changes
+          {t("Authenticator code for sensitive changes")}
           <input
             value={code}
             onChange={(e) => setCode(e.target.value)}
@@ -210,7 +221,7 @@ export function IdentityWorkbench({
       )}
       {mode !== "roles" && (mode !== "users" || can("user:read")) && (
         <label className="mb-5 block max-w-md">
-          {mode === "users" ? "Search customers" : "Filter audit action"}
+          {mode === "users" ? t("Search customers") : t("Filter audit action")}
           <input
             value={search}
             onChange={(e) => {
@@ -226,7 +237,9 @@ export function IdentityWorkbench({
           {can("user:read") && (
             <>
               <section className="rounded-xl border p-4">
-                <h2 className="text-xl font-semibold">Customer accounts</h2>
+                <h2 className="text-xl font-semibold">
+                  {t("Customer accounts")}
+                </h2>
                 <div className="mt-3 divide-y">
                   {users.map((u) => (
                     <div
@@ -238,7 +251,8 @@ export function IdentityWorkbench({
                           {u.name} · {u.email}
                         </p>
                         <p className="text-sm">
-                          {u.status} · MFA {u.mfaEnabled ? "enabled" : "off"}
+                          {t(String(u.status))} {t("· MFA")}
+                          {u.mfaEnabled ? t("enabled") : t("off")}
                         </p>
                       </div>
                       <CustomerAccountReview
@@ -254,7 +268,9 @@ export function IdentityWorkbench({
                         onClick={() =>
                           void run(async () => {
                             const reason = window.prompt(
-                              "Reason for account access change (at least 5 characters)",
+                              t(
+                                "Reason for account access change (at least 5 characters)",
+                              ),
                             );
                             if (!reason || reason.trim().length < 5)
                               throw new Error(
@@ -274,12 +290,12 @@ export function IdentityWorkbench({
                           })
                         }
                       >
-                        {u.status === "ACTIVE" ? "Suspend" : "Activate"}
+                        {u.status === "ACTIVE" ? t("Suspend") : t("Activate")}
                       </button>
                       {u.mfaEnabled && can("user:write") && (
                         <details>
                           <summary className="cursor-pointer text-sm underline">
-                            Recover authenticator
+                            {t("Recover authenticator")}
                           </summary>
                           <form
                             onSubmit={(e) => {
@@ -295,7 +311,7 @@ export function IdentityWorkbench({
                             className="mt-2 flex flex-wrap items-end gap-2"
                           >
                             <label>
-                              Verified identity / recovery reason
+                              {t("Verified identity / recovery reason")}
                               <input
                                 name="reason"
                                 required
@@ -305,7 +321,7 @@ export function IdentityWorkbench({
                               />
                             </label>
                             <button className={button} disabled={busy}>
-                              Reset MFA and revoke sessions
+                              {t("Reset MFA and revoke sessions")}
                             </button>
                           </form>
                         </details>
@@ -319,27 +335,32 @@ export function IdentityWorkbench({
                     disabled={page === 1}
                     onClick={() => setPage((p) => p - 1)}
                   >
-                    Previous
+                    {t("Previous")}
                   </button>
                   <span>
-                    Page {page} · {total} customers
+                    {t("Page")}
+                    {page} · {total} {t("customers")}
                   </span>
                   <button
                     className={button}
                     disabled={page * 20 >= total}
                     onClick={() => setPage((p) => p + 1)}
                   >
-                    Next
+                    {t("Next")}
                   </button>
                 </div>
               </section>
               <section className="mt-5 rounded-xl border p-4">
-                <h2 className="text-xl font-semibold">Privacy requests</h2>
-                {privacy.length === 0 && <p className="mt-3">No requests.</p>}
+                <h2 className="text-xl font-semibold">
+                  {t("Privacy requests")}
+                </h2>
+                {privacy.length === 0 && (
+                  <p className="mt-3">{t("No requests.")}</p>
+                )}
                 {privacy.map((r) => (
                   <article key={r.id} className="mt-4 border-t pt-4">
                     <p>
-                      {r.user.email} · {r.status}
+                      {r.user.email} · {t(r.status)}
                     </p>
                     <p className="my-2">{r.reason}</p>
                     {r.resolution && <p>{r.resolution}</p>}
@@ -367,18 +388,18 @@ export function IdentityWorkbench({
                         className="grid gap-3 sm:grid-cols-2"
                       >
                         <label>
-                          Decision
+                          {t("Decision")}
                           <select name="status" className={input}>
                             <option value="REJECTED">
-                              Reject with explanation
+                              {t("Reject with explanation")}
                             </option>
                             <option value="COMPLETED">
-                              Delete account personal data
+                              {t("Delete account personal data")}
                             </option>
                           </select>
                         </label>
                         <label>
-                          Resolution / retention explanation
+                          {t("Resolution / retention explanation")}
                           <textarea
                             name="resolution"
                             minLength={10}
@@ -388,14 +409,12 @@ export function IdentityWorkbench({
                           />
                         </label>
                         <p className="text-sm sm:col-span-2">
-                          Completion removes profile, addresses, favorites,
-                          subscriptions, support message personal data and
-                          access. Unapproved applications are withdrawn;
-                          approved company and order records are retained.
-                          Active orders or company membership block completion.
+                          {t(
+                            "Completion removes profile, addresses, favorites, subscriptions, support message personal data and access. Unapproved applications are withdrawn; approved company and order records are retained. Active orders or company membership block completion.",
+                          )}
                         </p>
                         <button disabled={busy} className={button}>
-                          Resolve request
+                          {t("Resolve request")}
                         </button>
                       </form>
                     )}
@@ -406,10 +425,10 @@ export function IdentityWorkbench({
           )}
           {can("system:staff:read") && (
             <section className="mt-5 rounded-xl border p-4">
-              <h2 className="text-xl font-semibold">Staff accounts</h2>
+              <h2 className="text-xl font-semibold">{t("Staff accounts")}</h2>
               <div className="mt-3 grid gap-3 sm:grid-cols-2">
                 <label>
-                  Search staff
+                  {t("Search staff")}
                   <input
                     value={staffSearch}
                     onChange={(e) => setStaffSearch(e.target.value)}
@@ -417,7 +436,7 @@ export function IdentityWorkbench({
                   />
                 </label>
                 <label>
-                  Staff page
+                  {t("Staff page")}
                   <input
                     type="number"
                     min={1}
@@ -434,7 +453,7 @@ export function IdentityWorkbench({
                 disabled={busy}
                 onClick={() => void run(loadStaff)}
               >
-                Load staff administration
+                {t("Load staff administration")}
               </button>
               <fieldset
                 disabled={
@@ -457,7 +476,7 @@ export function IdentityWorkbench({
                   className="grid gap-3 sm:grid-cols-3"
                 >
                   <label>
-                    Name
+                    {t("Name")}
                     <input
                       name="name"
                       minLength={2}
@@ -467,7 +486,7 @@ export function IdentityWorkbench({
                     />
                   </label>
                   <label>
-                    Email
+                    {t("Email")}
                     <input
                       name="email"
                       type="email"
@@ -476,7 +495,7 @@ export function IdentityWorkbench({
                     />
                   </label>
                   <label>
-                    Initial password
+                    {t("Initial password")}
                     <input
                       name="password"
                       type="password"
@@ -487,7 +506,7 @@ export function IdentityWorkbench({
                     />
                   </label>
                   <fieldset className="sm:col-span-3 flex flex-wrap gap-4">
-                    <legend className="mb-2">Roles</legend>
+                    <legend className="mb-2">{t("Roles")}</legend>
                     {roles.map((r) => (
                       <label key={r.id} className="flex gap-2">
                         <input
@@ -495,18 +514,18 @@ export function IdentityWorkbench({
                           value={r.code}
                           type="checkbox"
                         />
-                        {r.name}
+                        {t(adminRoleLabels[r.code] ?? r.name)}
                       </label>
                     ))}
                   </fieldset>
                   <button disabled={busy} className={button}>
-                    Create staff account
+                    {t("Create staff account")}
                   </button>
                 </form>
                 {staff.map((u) => (
                   <details key={u.id} className="mt-4 border-t pt-4">
                     <summary className="cursor-pointer">
-                      {u.name} · {u.email} · {u.status}
+                      {u.name} · {u.email} · {t(String(u.status))}
                     </summary>
                     <form
                       onSubmit={(e) => {
@@ -523,7 +542,7 @@ export function IdentityWorkbench({
                       className="mt-3 grid gap-3 sm:grid-cols-2"
                     >
                       <label>
-                        Name
+                        {t("Name")}
                         <input
                           name="name"
                           defaultValue={u.name}
@@ -533,18 +552,18 @@ export function IdentityWorkbench({
                         />
                       </label>
                       <label>
-                        Status
+                        {t("Status")}
                         <select
                           name="status"
                           defaultValue={u.status}
                           className={input}
                         >
-                          <option>ACTIVE</option>
-                          <option>DISABLED</option>
+                          <option value="ACTIVE">{t("ACTIVE")}</option>
+                          <option value="DISABLED">{t("DISABLED")}</option>
                         </select>
                       </label>
                       <fieldset className="sm:col-span-2 flex flex-wrap gap-3">
-                        <legend>Roles</legend>
+                        <legend>{t("Roles")}</legend>
                         {roles.map((r) => (
                           <label key={r.id} className="flex gap-2">
                             <input
@@ -555,12 +574,12 @@ export function IdentityWorkbench({
                                 (x) => x.code === r.code,
                               )}
                             />
-                            {r.name}
+                            {t(adminRoleLabels[r.code] ?? r.name)}
                           </label>
                         ))}
                       </fieldset>
                       <button disabled={busy} className={button}>
-                        Save staff
+                        {t("Save staff")}
                       </button>
                     </form>
                     <form
@@ -581,7 +600,9 @@ export function IdentityWorkbench({
                       className="mt-4"
                     >
                       <h3 className="font-semibold">
-                        Individual permission overrides (super administrator)
+                        {t(
+                          "Individual permission overrides (super administrator)",
+                        )}
                       </h3>
                       <div className="my-3 max-h-64 overflow-auto border rounded p-3">
                         {permissions.map((p) => (
@@ -590,7 +611,8 @@ export function IdentityWorkbench({
                             className="grid grid-cols-[1fr_auto_auto] gap-3 py-1 text-sm"
                           >
                             <span>
-                              {p.name} ({p.code})
+                              {t(adminPermissionLabels[p.code] ?? p.name)} (
+                              {p.code})
                             </span>
                             <label>
                               <input
@@ -601,7 +623,7 @@ export function IdentityWorkbench({
                                   p.code,
                                 )}
                               />{" "}
-                              Grant
+                              {t("Grant")}
                             </label>
                             <label>
                               <input
@@ -612,13 +634,13 @@ export function IdentityWorkbench({
                                   p.code,
                                 )}
                               />{" "}
-                              Deny
+                              {t("Deny")}
                             </label>
                           </div>
                         ))}
                       </div>
                       <button disabled={busy} className={button}>
-                        Save overrides
+                        {t("Save overrides")}
                       </button>
                     </form>
                     <form
@@ -638,7 +660,9 @@ export function IdentityWorkbench({
                       className="mt-4 flex flex-wrap items-end gap-3"
                     >
                       <label>
-                        Authenticator recovery reason (super administrator)
+                        {t(
+                          "Authenticator recovery reason (super administrator)",
+                        )}
                         <input
                           name="reason"
                           required
@@ -648,7 +672,7 @@ export function IdentityWorkbench({
                         />
                       </label>
                       <button disabled={busy} className={button}>
-                        Reset MFA and revoke sessions
+                        {t("Reset MFA and revoke sessions")}
                       </button>
                     </form>
                     <form
@@ -667,7 +691,7 @@ export function IdentityWorkbench({
                       className="mt-4 flex flex-wrap items-end gap-3"
                     >
                       <label>
-                        Replacement password
+                        {t("Replacement password")}
                         <input
                           type="password"
                           name="password"
@@ -678,7 +702,7 @@ export function IdentityWorkbench({
                         />
                       </label>
                       <button disabled={busy} className={button}>
-                        Reset password and revoke sessions
+                        {t("Reset password and revoke sessions")}
                       </button>
                     </form>
                   </details>
@@ -691,7 +715,7 @@ export function IdentityWorkbench({
       {mode === "roles" && (
         <>
           <section className="rounded-xl border p-4">
-            <h2 className="text-xl font-semibold">Create role</h2>
+            <h2 className="text-xl font-semibold">{t("Create role")}</h2>
             <form
               onSubmit={(e) => {
                 const d = fields(e);
@@ -707,7 +731,7 @@ export function IdentityWorkbench({
               className="mt-4 grid gap-3 sm:grid-cols-3"
             >
               <label>
-                Code
+                {t("Code")}
                 <input
                   name="code"
                   pattern="[A-Z][A-Z0-9_]{1,31}"
@@ -716,15 +740,15 @@ export function IdentityWorkbench({
                 />
               </label>
               <label>
-                Name
+                {t("Name")}
                 <input name="name" required maxLength={60} className={input} />
               </label>
               <label>
-                Description
+                {t("Description")}
                 <input name="description" maxLength={200} className={input} />
               </label>
               <fieldset className="sm:col-span-3 grid gap-2 sm:grid-cols-2">
-                <legend className="mb-2">Permissions</legend>
+                <legend className="mb-2">{t("Permissions")}</legend>
                 {permissions.map((p) => (
                   <label key={p.code} className="flex gap-2 text-sm">
                     <input
@@ -732,19 +756,20 @@ export function IdentityWorkbench({
                       name="permissionCodes"
                       value={p.code}
                     />
-                    {p.name} ({p.code})
+                    {t(adminPermissionLabels[p.code] ?? p.name)} ({p.code})
                   </label>
                 ))}
               </fieldset>
               <button disabled={busy} className={button}>
-                Create role
+                {t("Create role")}
               </button>
             </form>
           </section>
           {roles.map((r) => (
             <details key={r.id} className="mt-4 rounded-xl border p-4">
               <summary className="cursor-pointer font-semibold">
-                {r.name} ({r.code}) · {r.staffCount} staff
+                {t(adminRoleLabels[r.code] ?? r.name)} ({r.code}) ·{" "}
+                {r.staffCount} {t("staff")}
               </summary>
               <form
                 onSubmit={(e) => {
@@ -758,7 +783,7 @@ export function IdentityWorkbench({
                 className="mt-4"
               >
                 <fieldset className="grid gap-2 sm:grid-cols-2">
-                  <legend>Assigned permissions</legend>
+                  <legend>{t("Assigned permissions")}</legend>
                   {permissions.map((p) => (
                     <label key={p.code} className="flex gap-2 text-sm">
                       <input
@@ -767,19 +792,20 @@ export function IdentityWorkbench({
                         value={p.code}
                         defaultChecked={r.permissionCodes.includes(p.code)}
                       />
-                      {p.name} ({p.code})
+                      {t(adminPermissionLabels[p.code] ?? p.name)} ({p.code})
                     </label>
                   ))}
                 </fieldset>
                 <p className="my-3 text-sm">
-                  Permission changes take effect on the next API request.
-                  SUPER_ADMIN always has full access.
+                  {t(
+                    "Permission changes take effect on the next API request. SUPER_ADMIN always has full access.",
+                  )}
                 </p>
                 <button
                   disabled={busy || r.code === "SUPER_ADMIN"}
                   className={button}
                 >
-                  Save permissions
+                  {t("Save permissions")}
                 </button>
               </form>
             </details>
@@ -788,25 +814,29 @@ export function IdentityWorkbench({
       )}
       {mode === "audit" && (
         <section className="rounded-xl border p-4">
-          <p>{total} matching events</p>
+          <p>
+            {total} {t("matching events")}
+          </p>
           {audit.map((a) => (
             <details key={a.id} className="border-b py-3">
               <summary className="cursor-pointer break-words">
-                {new Date(a.createdAt).toLocaleString()} ·{" "}
-                {a.actor?.email ?? a.actorKind} · {a.action}
+                {new Date(a.createdAt).toLocaleString(
+                  uiLocale === "zh" ? "zh-CN" : "en-US",
+                )}{" "}
+                · {t(String(a.actor?.email ?? a.actorKind))} · {a.action}
               </summary>
               <p className="mt-2 text-sm">
                 {a.entityType} / {a.entityId}
               </p>
               <div className="grid gap-3 sm:grid-cols-2">
                 <div>
-                  <h3>Before</h3>
+                  <h3>{t("Before")}</h3>
                   <pre className="whitespace-pre-wrap break-all rounded bg-neutral-50 p-3 text-xs">
                     {JSON.stringify(a.before, null, 2)}
                   </pre>
                 </div>
                 <div>
-                  <h3>After</h3>
+                  <h3>{t("After")}</h3>
                   <pre className="whitespace-pre-wrap break-all rounded bg-neutral-50 p-3 text-xs">
                     {JSON.stringify(a.after, null, 2)}
                   </pre>
@@ -820,15 +850,18 @@ export function IdentityWorkbench({
               className={button}
               onClick={() => setPage((p) => p - 1)}
             >
-              Previous
+              {t("Previous")}
             </button>
-            <span>Page {page}</span>
+            <span>
+              {t("Page")}
+              {page}
+            </span>
             <button
               disabled={page * 20 >= total}
               className={button}
               onClick={() => setPage((p) => p + 1)}
             >
-              Next
+              {t("Next")}
             </button>
           </div>
         </section>

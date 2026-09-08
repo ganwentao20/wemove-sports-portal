@@ -1,7 +1,10 @@
 "use client";
+import { useUiText } from "../../../components/ui-locale";
+
 import { saveConsent } from "../../../components/consent-analytics";
 import { useEffect, useState } from "react";
 export default function CookieSettings() {
+  const t = useUiText();
   const [choice, setChoice] = useState("essential"),
     [saved, setSaved] = useState(false);
   useEffect(
@@ -10,12 +13,11 @@ export default function CookieSettings() {
   );
   return (
     <div className="mx-auto max-w-3xl px-4 py-16">
-      <h1 className="text-4xl font-bold">Cookie settings</h1>
+      <h1 className="text-4xl font-bold">{t("Cookie settings")}</h1>
       <p className="my-6 leading-7">
-        Essential cookies support authentication, security and shopping.
-        Optional analytics are stored only after your consent; they exclude
-        names, contact details and payment credentials. Pseudonymous session,
-        product and order references help us measure completed journeys.
+        {t(
+          "Essential cookies support authentication, security and shopping. Optional analytics are stored only after your consent; they exclude names, contact details and payment credentials. Pseudonymous session, product and order references help us measure completed journeys.",
+        )}
       </p>
       <label className="flex gap-3">
         <input
@@ -26,7 +28,7 @@ export default function CookieSettings() {
             setChoice(e.target.checked ? "analytics" : "essential");
           }}
         />
-        Allow optional analytics
+        {t("Allow optional analytics")}
       </label>
       <button
         onClick={() => {
@@ -35,11 +37,11 @@ export default function CookieSettings() {
         }}
         className="mt-6 rounded-lg bg-[var(--wm-primary)] px-5 py-3 text-white"
       >
-        Save preferences
+        {t("Save preferences")}
       </button>
       {saved && (
         <p role="status" className="mt-4">
-          Your preferences have been saved.
+          {t("Your preferences have been saved.")}
         </p>
       )}
     </div>

@@ -43,6 +43,7 @@ export function validateSections(sections: unknown[]) {
         'categories',
         'values',
         'navigation',
+        'original-feature',
       ].includes(block.type)
     )
       throw new BadRequestException('Unsupported content block');

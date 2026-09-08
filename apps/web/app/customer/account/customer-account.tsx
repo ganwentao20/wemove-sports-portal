@@ -1,4 +1,7 @@
 "use client";
+import { uiError } from "../../../lib/ui-i18n";
+
+import { useUiText, useUiLocale } from "../../../components/ui-locale";
 
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -56,6 +59,10 @@ type OrderPage = {
 const money = (cents: number) => `$${(cents / 100).toFixed(2)}`;
 
 export function CustomerAccount() {
+  const uiLocale = useUiLocale();
+
+  const t = useUiText();
+
   const router = useRouter();
   const [account, setAccount] = useState<Account | null>(null);
   const [cart, setCart] = useState<Cart | null>(null);
@@ -72,7 +79,10 @@ export function CustomerAccount() {
     try {
       const [profile, currentCart, currentOrders] = await Promise.all([
         secureApiFetch<Account>("customer", "/auth/me"),
-        secureApiFetch<Cart>("customer", "/cart"),
+        secureApiFetch<Cart>(
+          "customer",
+          `/cart?locale=${encodeURIComponent(uiLocale)}`,
+        ),
         secureApiFetch<OrderPage>("customer", "/orders?page=1&pageSize=20"),
       ]);
       setAccount(profile);
@@ -92,7 +102,7 @@ export function CustomerAccount() {
     } finally {
       setLoading(false);
     }
-  }, [router]);
+  }, [router, uiLocale]);
 
   useEffect(() => {
     void load();
@@ -182,7 +192,7 @@ export function CustomerAccount() {
   if (loading) {
     return (
       <p className="mx-auto max-w-6xl px-4 py-10 text-neutral-500">
-        Loading your account…
+        {t("Loading your account…")}
       </p>
     );
   }
@@ -191,7 +201,7 @@ export function CustomerAccount() {
     <div className="mx-auto max-w-6xl px-4 py-10">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold">My Account</h1>
+          <h1 className="text-3xl font-bold">{t("My Account")}</h1>
           {account && (
             <p className="mt-2 text-sm text-neutral-500">
               {account.name} · {account.email}
@@ -202,7 +212,7 @@ export function CustomerAccount() {
           onClick={() => void signOut()}
           className="text-sm text-neutral-500 underline"
         >
-          Sign out
+          {t("Sign out")}
         </button>
       </div>
       {error && (
@@ -210,7 +220,7 @@ export function CustomerAccount() {
           role="alert"
           className="mt-5 rounded-lg bg-red-50 p-3 text-sm text-red-700"
         >
-          {error}
+          {error ? uiError(uiLocale, error) : ""}
         </p>
       )}
       {notice && (
@@ -218,16 +228,16 @@ export function CustomerAccount() {
           role="status"
           className="mt-5 rounded-lg bg-emerald-50 p-3 text-sm text-emerald-800"
         >
-          {notice}
+          {notice ? uiError(uiLocale, notice) : ""}
         </p>
       )}
 
       <section className="mt-8 rounded-2xl border border-neutral-200 p-6">
         <div className="flex items-center justify-between gap-4">
           <div>
-            <h2 className="text-xl font-semibold">Shopping cart</h2>
+            <h2 className="text-xl font-semibold">{t("Shopping cart")}</h2>
             <p className="mt-1 text-sm text-neutral-500">
-              {cart?.itemCount ?? 0} product lines
+              {cart?.itemCount ?? 0} {t("product lines")}
             </p>
           </div>
           {cart && cart.items.length > 0 && (
@@ -235,18 +245,18 @@ export function CustomerAccount() {
               onClick={() => void clearCart()}
               className="text-sm text-red-600 underline"
             >
-              Clear cart
+              {t("Clear cart")}
             </button>
           )}
         </div>
         {!cart || cart.items.length === 0 ? (
           <div className="mt-6 rounded-xl border border-dashed p-6 text-center text-sm text-neutral-500">
-            Your cart is empty.{" "}
+            {t("Your cart is empty.")}{" "}
             <a
               href="/products"
               className="font-semibold text-[var(--wm-primary)]"
             >
-              Browse products
+              {t("Browse products")}
             </a>
           </div>
         ) : (
@@ -258,10 +268,10 @@ export function CustomerAccount() {
               >
                 <div>
                   <p className="font-medium">
-                    {item.name || item.sku || "Product variant"}
+                    {item.name || item.sku || t("Product variant")}
                   </p>
                   <p className="text-xs text-neutral-500">
-                    {item.sku} · {money(item.unitPriceCents)} each
+                    {item.sku} · {money(item.unitPriceCents)} {t("each")}
                   </p>
                 </div>
                 <div className="flex items-center gap-3">
@@ -283,7 +293,9 @@ export function CustomerAccount() {
                         void updateQuantity(item.variantId, quantity);
                     }}
                     className="w-20 rounded-lg border px-2 py-1"
-                    aria-label={`Quantity for ${item.name || item.sku}`}
+                    aria-label={t("Quantity for {v0}", {
+                      v0: String(item.name || item.sku),
+                    })}
                   />
                   <span className="w-20 text-right font-semibold">
                     {money(item.lineCents)}
@@ -293,21 +305,21 @@ export function CustomerAccount() {
                     onClick={() => void removeItem(item.variantId)}
                     className="text-sm text-red-600 underline disabled:opacity-50"
                   >
-                    Remove
+                    {t("Remove")}
                   </button>
                 </div>
               </div>
             ))}
             <div className="flex flex-wrap items-center justify-end gap-4 pt-5">
               <p className="text-xl font-bold">
-                Total {money(cart.totalCents)}
+                {t("Total")} {money(cart.totalCents)}
               </p>
               <button
                 disabled={placingOrder}
                 onClick={() => void checkout()}
                 className="rounded-full bg-[var(--wm-primary)] px-6 py-3 text-sm font-semibold text-white disabled:opacity-50"
               >
-                {placingOrder ? "Placing order…" : "Checkout"}
+                {placingOrder ? t("Placing order…") : t("Checkout")}
               </button>
             </div>
           </div>
@@ -315,9 +327,9 @@ export function CustomerAccount() {
       </section>
 
       <section className="mt-6 rounded-2xl border border-neutral-200 p-6">
-        <h2 className="text-xl font-semibold">Orders</h2>
+        <h2 className="text-xl font-semibold">{t("Orders")}</h2>
         {orders.length === 0 ? (
-          <p className="mt-4 text-sm text-neutral-500">No orders yet.</p>
+          <p className="mt-4 text-sm text-neutral-500">{t("No orders yet.")}</p>
         ) : (
           <div className="mt-4 space-y-4">
             {orders.map((order) => (
@@ -330,8 +342,8 @@ export function CustomerAccount() {
                       </Link>
                     </h3>
                     <p className="mt-1 text-xs text-neutral-500">
-                      {new Date(order.createdAt).toLocaleString()} ·{" "}
-                      {order.status}
+                      {new Date(order.createdAt).toLocaleString(uiLocale)} ·{" "}
+                      {t(order.status)}
                     </p>
                   </div>
                   <div className="text-right">
@@ -341,7 +353,7 @@ export function CustomerAccount() {
                         onClick={() => void cancelOrder(order.id)}
                         className="mt-1 text-xs text-red-600 underline"
                       >
-                        Cancel order
+                        {t("Cancel order")}
                       </button>
                     )}
                   </div>

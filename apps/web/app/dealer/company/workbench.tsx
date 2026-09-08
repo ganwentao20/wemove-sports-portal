@@ -1,4 +1,8 @@
 "use client";
+import { uiError } from "../../../lib/ui-i18n";
+
+import { useUiText, useUiLocale } from "../../../components/ui-locale";
+
 import { useCallback, useEffect, useState, type FormEvent } from "react";
 import Link from "next/link";
 import { DirectoryProfileFields } from "../../../components/directory-profile-fields";
@@ -35,6 +39,10 @@ export function CompanyWorkbench({
   admin = false,
   companyId = "",
 }: { admin?: boolean; companyId?: string } = {}) {
+  const uiLocale = useUiLocale();
+
+  const t = useUiText();
+
   const kind = admin ? "staff" : "dealer";
   const base = admin
     ? `/admin/b2b/companies/${encodeURIComponent(companyId)}`
@@ -126,13 +134,13 @@ export function CompanyWorkbench({
         href={admin ? "/admin/b2b" : "/dealer/dashboard"}
         className="underline"
       >
-        {admin ? "B2B administration" : "Dealer dashboard"}
+        {admin ? t("B2B administration") : t("Dealer dashboard")}
       </Link>
-      <h1 className="text-3xl font-bold">Company, team & addresses</h1>
-      <p role="status">{notice}</p>
+      <h1 className="text-3xl font-bold">{t("Company, team & addresses")}</h1>
+      <p role="status">{notice ? uiError(uiLocale, notice) : ""}</p>
       {admin && (
         <label>
-          Current MFA code
+          {t("Current MFA code")}
           <input
             className={input}
             inputMode="numeric"
@@ -167,7 +175,7 @@ export function CompanyWorkbench({
           }}
         >
           <label>
-            Invitation token
+            {t("Invitation token")}
             <input
               className={input}
               value={invitation}
@@ -177,26 +185,26 @@ export function CompanyWorkbench({
             />
           </label>
           <p className="my-2 text-sm">
-            Use a verified customer account with the invited email.{" "}
+            {t("Use a verified customer account with the invited email.")}{" "}
             <Link href="/customer/login" className="underline">
-              Customer login
+              {t("Customer login")}
             </Link>
           </p>
           <button
             className={button}
             disabled={busy || invitation.length !== 64}
           >
-            Accept invitation
+            {t("Accept invitation")}
           </button>
         </form>
       )}
       {data && (
         <>
           <section className="rounded border p-5">
-            <h2 className="text-xl font-semibold">Company profile</h2>
+            <h2 className="text-xl font-semibold">{t("Company profile")}</h2>
             <form onSubmit={profile} className="mt-4 grid gap-3 sm:grid-cols-2">
               <label>
-                Company name
+                {t("Company name")}
                 <input
                   name="companyName"
                   className={input}
@@ -219,7 +227,7 @@ export function CompanyWorkbench({
                 "longitude",
               ].map((k) => (
                 <label key={k}>
-                  {k}
+                  {t(k)}
                   <input
                     name={k}
                     className={input}
@@ -233,7 +241,7 @@ export function CompanyWorkbench({
                   name="publicListing"
                   defaultChecked={data.company.profile.publicListing === true}
                 />{" "}
-                Publish store in dealer directory
+                {t("Publish store in dealer directory")}
               </label>
               <DirectoryProfileFields
                 profile={data.company.profile}
@@ -248,13 +256,13 @@ export function CompanyWorkbench({
               />
               {data.company.role === "OWNER" && (
                 <button disabled={busy} className={button}>
-                  Save profile
+                  {t("Save profile")}
                 </button>
               )}
             </form>
           </section>
           <section className="rounded border p-5">
-            <h2 className="text-xl font-semibold">Team</h2>
+            <h2 className="text-xl font-semibold">{t("Team")}</h2>
             {data.members.map((m) => (
               <form
                 className="my-4 flex flex-wrap items-end gap-3 rounded bg-neutral-50 p-3"
@@ -273,10 +281,12 @@ export function CompanyWorkbench({
                   {m.user.name} · {m.user.email}
                 </p>
                 <label>
-                  Role
+                  {t("Role")}
                   <select name="role" defaultValue={m.role} className={input}>
                     {["OWNER", "BUYER", "VIEWER"].map((r) => (
-                      <option key={r}>{r}</option>
+                      <option key={r} value={r}>
+                        {t(r)}
+                      </option>
                     ))}
                   </select>
                 </label>
@@ -286,11 +296,11 @@ export function CompanyWorkbench({
                     type="checkbox"
                     defaultChecked={m.active}
                   />{" "}
-                  Active
+                  {t("Active")}
                 </label>
                 {data.company.role === "OWNER" && (
                   <button className={button} disabled={busy}>
-                    Update member
+                    {t("Update member")}
                   </button>
                 )}
               </form>
@@ -307,42 +317,44 @@ export function CompanyWorkbench({
                 }}
               >
                 <label>
-                  Invite email
+                  {t("Invite email")}
                   <input name="email" type="email" required className={input} />
                 </label>
                 <label>
-                  Role
+                  {t("Role")}
                   <select name="role" className={input}>
-                    <option>BUYER</option>
-                    <option>VIEWER</option>
+                    <option value={"BUYER"}>{t("BUYER")}</option>
+                    <option value={"VIEWER"}>{t("VIEWER")}</option>
                   </select>
                 </label>
                 <button className={button} disabled={busy}>
-                  Send invitation
+                  {t("Send invitation")}
                 </button>
               </form>
             )}
             {data.invitations.map((i) => (
               <p key={i.id} className="mt-2 text-sm">
-                Pending: {i.email} ({i.role}) · expires{" "}
-                {new Date(i.expiresAt).toLocaleDateString()}
+                {t("Pending:")} {i.email} ({t(i.role)} {t(") · expires")}{" "}
+                {new Date(i.expiresAt).toLocaleDateString(uiLocale)}
               </p>
             ))}
           </section>
           <section className="rounded border p-5">
-            <h2 className="text-xl font-semibold">Company address book</h2>
+            <h2 className="text-xl font-semibold">
+              {t("Company address book")}
+            </h2>
             {data.addresses.map((a) => (
               <div key={a.id} className="my-4 rounded bg-neutral-50 p-3">
                 <strong>
-                  {a.label} ({a.kind})
+                  {a.label} ({t(a.kind)})
                 </strong>
                 <p>{Object.values(a.address).join(", ")}</p>
                 <p className="text-xs">
                   {data.company.profile.defaultShippingAddressId === a.id
-                    ? "Default shipping address · "
+                    ? t("Default shipping address · ")
                     : ""}
                   {data.company.profile.defaultBillingAddressId === a.id
-                    ? "Default billing address"
+                    ? t("Default billing address")
                     : ""}
                 </p>
                 {data.company.role === "OWNER" && (
@@ -352,7 +364,7 @@ export function CompanyWorkbench({
                       className="underline"
                       onClick={() => setEditingAddress(a)}
                     >
-                      Edit address
+                      {t("Edit address")}
                     </button>
                     {(["SHIPPING", "BILLING"] as const)
                       .filter((use) => a.kind === "BOTH" || a.kind === use)
@@ -377,7 +389,7 @@ export function CompanyWorkbench({
                             )
                           }
                         >
-                          Use as default {use.toLowerCase()}
+                          {t("Use as default")} {t(use)}
                         </button>
                       ))}
                   </div>
@@ -394,7 +406,7 @@ export function CompanyWorkbench({
                     }
                     className="mt-2 underline"
                   >
-                    Remove address
+                    {t("Remove address")}
                   </button>
                 )}
               </div>
@@ -419,7 +431,7 @@ export function CompanyWorkbench({
                 }}
               >
                 <label>
-                  Address label
+                  {t("Address label")}
                   <input
                     className={input}
                     name="label"
@@ -428,16 +440,16 @@ export function CompanyWorkbench({
                   />
                 </label>
                 <label>
-                  Use
+                  {t("Use")}
                   <select
                     className={input}
                     name="kind"
                     defaultValue={editingAddress?.kind ?? "BOTH"}
                   >
-                    <option>BOTH</option>
-                    <option>HEADQUARTERS</option>
-                    <option>SHIPPING</option>
-                    <option>BILLING</option>
+                    <option value={"BOTH"}>{t("BOTH")}</option>
+                    <option value={"HEADQUARTERS"}>{t("HEADQUARTERS")}</option>
+                    <option value={"SHIPPING"}>{t("SHIPPING")}</option>
+                    <option value={"BILLING"}>{t("BILLING")}</option>
                   </select>
                 </label>
                 {[
@@ -449,7 +461,7 @@ export function CompanyWorkbench({
                   "postalCode",
                 ].map((k) => (
                   <label key={k}>
-                    {k}
+                    {t(k)}
                     <input
                       className={input}
                       name={k}
@@ -461,8 +473,8 @@ export function CompanyWorkbench({
                 ))}
                 <button className={button} disabled={busy}>
                   {editingAddress
-                    ? "Save address changes"
-                    : "Add company address"}
+                    ? t("Save address changes")
+                    : t("Add company address")}
                 </button>
                 {editingAddress && (
                   <button
@@ -470,22 +482,24 @@ export function CompanyWorkbench({
                     className="underline"
                     onClick={() => setEditingAddress(null)}
                   >
-                    Add another address
+                    {t("Add another address")}
                   </button>
                 )}
               </form>
             )}
           </section>
           <section className="rounded border p-5">
-            <h2 className="text-xl font-semibold">Dealer support</h2>
+            <h2 className="text-xl font-semibold">{t("Dealer support")}</h2>
             <p>
               {String(
                 data.company.profile.salesContact ??
-                  "Contact the sales team for account and procurement assistance.",
+                  t(
+                    "Contact the sales team for account and procurement assistance.",
+                  ),
               )}
             </p>
             <Link className="underline" href="/contact?source=dealer">
-              Open a support request
+              {t("Open a support request")}
             </Link>
           </section>
         </>

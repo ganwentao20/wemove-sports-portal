@@ -1,0 +1,133 @@
+{
+  "project": "WEMOVE 原网站与业务门户重构",
+  "generatedAt": "2026-09-08T00:00:00+08:00",
+  "reviewBasis": "保留原 wemovetoy.com 前端、栏目、交错图文布局和原图；复用现有后端并补齐选题功能",
+  "verification": {
+    "lint": "通过",
+    "typecheck": "通过",
+    "tests": "29 个测试文件、154 项测试通过",
+    "seed": "通过；原站分类 1 个、商品 7 款，中英文主数据已核对",
+    "build": "通过；Web 53 页与 API 构建成功",
+    "browserSmoke": "中英文原站首页、分类/商品/内容/支持页及兼容重定向通过"
+  },
+  "remainingExternalWork": [
+    "真实支付、退款、银行到账、税务票据和物流接口联调",
+    "正式域名、SMTP、CDN、生产密钥及监控告警配置",
+    "业务方确认最终价格、库存、说明书、证书和授权商品素材",
+    "真机、人工无障碍、生产容量和长期可用率验收"
+  ],
+  "excludedFromPackage": "旧版核心文档、WEMOVE SPORTS 反面方向材料、临时渲染文件和测试输出",
+  "files": [
+    {
+      "name": "下午班-08组-WEMOVE-原网站重构-项目需求文档-v0.7.docx",
+      "type": "DOCX",
+      "bytes": 50617,
+      "sha256": "dc01badbefa270d05df9fe2c49389eb5ae6e06a71f3b56fae730c8b43e3231ee",
+      "reviewStatus": "内容审校完成；已渲染并逐页/逐张检查",
+      "pages": 9
+    },
+    {
+      "name": "下午班-08组-WEMOVE-原网站重构-测试报告-v0.9.docx",
+      "type": "DOCX",
+      "bytes": 46688,
+      "sha256": "c6b1de36cb28908930c8c2902a509e0ef061d1ef00f657dcf0ada69fb6fa2a7e",
+      "reviewStatus": "内容审校完成；已渲染并逐页/逐张检查",
+      "pages": 5
+    },
+    {
+      "name": "下午班-08组-WEMOVE-原网站重构-项目汇报-v1.5.pptx",
+      "type": "PPTX",
+      "bytes": 2568631,
+      "sha256": "1094d16f274808c1d1316de5e73631835f7424962446f2adca3b3dcc5a5c080c",
+      "reviewStatus": "内容审校完成；已渲染并逐页/逐张检查",
+      "slides": 15
+    },
+    {
+      "name": "下午班-08组-WEMOVE-原网站重构-项目进度计划-v1.0.docx",
+      "type": "DOCX",
+      "bytes": 42036,
+      "sha256": "8be17b0a614672ca8d76f01ec471bc8919f972beb7b0e00f15192707078de7e6",
+      "reviewStatus": "内容审校完成；已渲染并逐页/逐张检查",
+      "pages": 2
+    },
+    {
+      "name": "下午班-08组-WEMOVE-原网站重构-正式会议纪要-第1次-v1.0.docx",
+      "type": "DOCX",
+      "bytes": 41249,
+      "sha256": "95ab63971227826998d7b8879ab16d5b37792a911732a7e04f1e69f1bf92f80c",
+      "reviewStatus": "内容审校完成；已渲染并逐页/逐张检查",
+      "pages": 2
+    },
+    {
+      "name": "下午班-08组-WEMOVE-原网站重构-分工与工作量报告-v1.3.docx",
+      "type": "DOCX",
+      "bytes": 39849,
+      "sha256": "590b7d8b2c9a33a8a2e802faf185e313561e419b2814f27459aa31c1cada0cd7",
+      "reviewStatus": "内容审校完成；已渲染并逐页/逐张检查",
+      "pages": 2
+    },
+    {
+      "name": "下午班-08组-WEMOVE-原网站重构-大模型辅助实践说明-v1.1.docx",
+      "type": "DOCX",
+      "bytes": 41710,
+      "sha256": "7ad76a0b70005fb3a8813bc0510dcf4e3b54d8ddb76899eef2ceefd5af060a69",
+      "reviewStatus": "内容审校完成；已渲染并逐页/逐张检查",
+      "pages": 3
+    },
+    {
+      "name": "成员A-需求分析-审核稿-v1.0.docx",
+      "type": "DOCX",
+      "bytes": 47534,
+      "sha256": "d4a49b96dd54f00eb94fbd4debfec72b346ac0afada6f14771eea9bc037a02f6",
+      "reviewStatus": "内容审校完成；已渲染并逐页/逐张检查",
+      "pages": 6
+    },
+    {
+      "name": "Web开发技术现状报告_陈婧琳_原网站重构校订版.docx",
+      "type": "DOCX",
+      "bytes": 40698,
+      "sha256": "51954f19e4479a139b0154bd5b2acc3f7cd3003df1034aeecbca448b96864af9",
+      "reviewStatus": "内容审校完成；已渲染并逐页/逐张检查",
+      "pages": 2
+    },
+    {
+      "name": "Web开发技术现状报告_甘文韬_原网站重构校订版.docx",
+      "type": "DOCX",
+      "bytes": 40616,
+      "sha256": "c29378b8fa1edc00773f1e0e79e025f1012ee7c8dde16522fa8a7853352544d9",
+      "reviewStatus": "内容审校完成；已渲染并逐页/逐张检查",
+      "pages": 2
+    },
+    {
+      "name": "Web开发技术现状报告_龙祖怡_原网站重构校订版.docx",
+      "type": "DOCX",
+      "bytes": 40343,
+      "sha256": "57aa5b2c00a5ae7247e94cefa2c4f3e98126442c2ad38e8cca02ec4287c9bb7e",
+      "reviewStatus": "内容审校完成；已渲染并逐页/逐张检查",
+      "pages": 2
+    },
+    {
+      "name": "Web开发技术现状报告_倪依玲_原网站重构校订版.docx",
+      "type": "DOCX",
+      "bytes": 40565,
+      "sha256": "91b10032754a13e5127e0c7673300cce3733a43ce631d7c1f6981d78b582c9e2",
+      "reviewStatus": "内容审校完成；已渲染并逐页/逐张检查",
+      "pages": 2
+    },
+    {
+      "name": "Web开发技术现状报告_周慧莹_原网站重构校订版.docx",
+      "type": "DOCX",
+      "bytes": 42849,
+      "sha256": "4582c8ae1cc2f723d9783bd2aba47bb0403c6b359114de213187834588304f96",
+      "reviewStatus": "内容审校完成；已渲染并逐页/逐张检查",
+      "pages": 3
+    },
+    {
+      "name": "提交说明-20260908.md",
+      "type": "Markdown",
+      "bytes": 2174,
+      "sha256": "72dda1b77b3a4e07cb388c7fd92eaddd0f0c5f0858d8ad6bdc679f15c4ba3207",
+      "reviewStatus": "内容审校完成"
+    }
+  ]
+}

@@ -1,4 +1,6 @@
 "use client";
+import { useUiText } from "./ui-locale";
+
 import { useEffect, useState } from "react";
 type Policy = {
   languages: string[];
@@ -14,6 +16,8 @@ export function LocaleSettings({
   onSave: (value: Policy) => void;
   busy: boolean;
 }) {
+  const t = useUiText();
+
   const [extra, setExtra] = useState(""),
     [chinese, setChinese] = useState(false),
     [fallback, setFallback] = useState("DEFAULT");
@@ -44,10 +48,11 @@ export function LocaleSettings({
         });
       }}
     >
-      <h2 className="mb-3 text-xl font-bold">Languages</h2>
+      <h2 className="mb-3 text-xl font-bold">{t("Languages")}</h2>
       <p className="mb-3 text-sm text-neutral-700">
-        English is the default. Publish complete content translations before
-        enabling another language.
+        {t(
+          "The interface supports English and Chinese. These settings control published content languages; publish complete translations before enabling them.",
+        )}
       </p>
       <label className="flex gap-2">
         <input
@@ -55,34 +60,37 @@ export function LocaleSettings({
           checked={chinese}
           onChange={(e) => setChinese(e.target.checked)}
         />
-        Enable Chinese
+        {t("Enable Chinese content")}
       </label>
       <label className="mt-4 block">
-        Additional language codes (comma separated)
+        {t("Additional language codes (comma separated)")}
         <input
           value={extra}
           onChange={(e) => setExtra(e.target.value)}
-          placeholder="fr, de, pt-BR"
+          placeholder={t("fr, de, pt-BR")}
           className="mt-1 block w-full rounded border p-2"
         />
       </label>
       <p className="mt-2 text-sm text-neutral-700">
-        Use two or three lowercase letters, optionally followed by a region such
-        as pt-BR. Account and checkout templates currently use English.
+        {t(
+          "Use two or three lowercase letters, optionally followed by a region such as pt-BR. Account and checkout interfaces support English and Chinese.",
+        )}
       </p>
       <label className="mt-4 block">
-        Incomplete translations
+        {t("Incomplete translations")}
         <select
           value={fallback}
           onChange={(e) => setFallback(e.target.value)}
           className="mt-1 block w-full rounded border p-2"
         >
-          <option value="DEFAULT">Show the complete English page</option>
-          <option value="HIDE">Do not publish that language version</option>
+          <option value="DEFAULT">{t("Show published English content")}</option>
+          <option value="HIDE">
+            {t("Do not publish that language version")}
+          </option>
         </select>
       </label>
       <button disabled={busy} className="mt-3 rounded border px-4 py-2">
-        Save languages
+        {t("Save languages")}
       </button>
     </form>
   );

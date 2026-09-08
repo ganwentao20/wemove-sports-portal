@@ -1,4 +1,8 @@
 "use client";
+import { adminNotificationLabels } from "../../../lib/ui-admin";
+import { uiError } from "../../../lib/ui-i18n";
+import { useUiText, useUiLocale } from "../../../components/ui-locale";
+
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { secureApiFetch } from "../../../lib/secure-api";
@@ -12,6 +16,9 @@ type Configuration = {
 };
 const field = "mt-1 w-full rounded border border-neutral-300 p-2";
 export default function NotificationTemplatesPage() {
+  const t = useUiText();
+  const uiLocale = useUiLocale();
+
   const [config, setConfig] = useState<Configuration | null>(null);
   const [templates, setTemplates] = useState<Template[]>([]);
   const [kind, setKind] = useState("account.verify");
@@ -115,29 +122,31 @@ export default function NotificationTemplatesPage() {
       className="mx-auto max-w-6xl px-4 py-10"
     >
       <Link href="/admin/platform" className="text-sm underline">
-        Platform settings and delivery queue
+        {t("Platform settings and delivery queue")}
       </Link>
-      <h1 className="mt-4 text-3xl font-bold">Notification templates</h1>
+      <h1 className="mt-4 text-3xl font-bold">{t("Notification templates")}</h1>
       <p className="mt-3 text-sm text-neutral-600">
-        Choose the message and language, edit its content, and preview it with
-        sample values. Transactional messages remain active when a customer opts
-        out of marketing.
+        {t(
+          "Choose the message and language, edit its content, and preview it with sample values. Transactional messages remain active when a customer opts out of marketing.",
+        )}
       </p>
       {config && (
         <p className="mt-3 rounded bg-neutral-100 p-3 text-sm">
-          Sender: {config.sender.from} ·{" "}
+          {t("Sender:")}
+          {config.sender.from} ·{" "}
           {config.sender.configured
-            ? "SMTP configured"
-            : "SMTP pending configuration"}{" "}
+            ? t("SMTP configured")
+            : t("SMTP pending configuration")}{" "}
           ·{" "}
           {config.sender.workerEnabled
-            ? "Delivery worker enabled"
-            : "Delivery worker paused"}{" "}
-          · Default language: {config.defaultLocale}
+            ? t("Delivery worker enabled")
+            : t("Delivery worker paused")}{" "}
+          {t("· Default language:")}
+          {config.defaultLocale}
         </p>
       )}
       <label className="my-5 block max-w-xs text-sm">
-        MFA code
+        {t("MFA code")}
         <input
           value={mfa}
           onChange={(event) =>
@@ -149,15 +158,15 @@ export default function NotificationTemplatesPage() {
         />
       </label>
       <p role="alert" className="text-red-700">
-        {error}
+        {error ? uiError(uiLocale, error) : ""}
       </p>
       <p role="status" className="text-green-800">
-        {notice}
+        {notice ? uiError(uiLocale, notice) : ""}
       </p>
       <section className="mt-6 rounded-xl border p-5">
         <div className="grid gap-4 sm:grid-cols-2">
           <label>
-            Message
+            {t("Message")}
             <select
               className={field}
               value={kind}
@@ -167,12 +176,14 @@ export default function NotificationTemplatesPage() {
               }}
             >
               {templates.map((template) => (
-                <option key={template.kind}>{template.kind}</option>
+                <option key={template.kind} value={template.kind}>
+                  {t(adminNotificationLabels[template.kind] ?? template.kind)}
+                </option>
               ))}
             </select>
           </label>
           <label>
-            Language
+            {t("Language")}
             <select
               className={field}
               value={locale}
@@ -188,13 +199,15 @@ export default function NotificationTemplatesPage() {
                   ...Object.keys(current?.locales ?? {}),
                 ]),
               ].map((language) => (
-                <option key={language}>{language}</option>
+                <option key={language} value={language}>
+                  {language}
+                </option>
               ))}
             </select>
           </label>
         </div>
         <label className="mt-4 block">
-          Subject
+          {t("Subject")}
           <input
             value={body.subject}
             onChange={(event) => change("subject", event.target.value)}
@@ -203,7 +216,7 @@ export default function NotificationTemplatesPage() {
           />
         </label>
         <label className="mt-4 block">
-          Plain text message
+          {t("Plain text message")}
           <textarea
             value={body.text}
             onChange={(event) => change("text", event.target.value)}
@@ -212,9 +225,11 @@ export default function NotificationTemplatesPage() {
           />
         </label>
         <details className="mt-4">
-          <summary className="cursor-pointer">Optional HTML message</summary>
+          <summary className="cursor-pointer">
+            {t("Optional HTML message")}
+          </summary>
           <textarea
-            aria-label="HTML message"
+            aria-label={t("HTML message")}
             value={body.html ?? ""}
             onChange={(event) => change("html", event.target.value)}
             className={field}
@@ -222,18 +237,18 @@ export default function NotificationTemplatesPage() {
           />
         </details>
         <p className="mt-3 text-xs text-neutral-500">
-          Common variables:{" "}
-          {"{{name}}, {{email}}, {{subject}}, {{text}}, {{link}}, {{kind}}"}.
-          Business events may provide reference, status, paymentStatus or
-          eventKind. Missing values stop the message and record an error in the
-          delivery queue.
+          {t("Common variables:")}{" "}
+          {t("{{name}}, {{email}}, {{subject}}, {{text}}, {{link}}, {{kind}}")}
+          {t(
+            ". Business events may provide reference, status, paymentStatus or eventKind. Missing values stop the message and record an error in the delivery queue.",
+          )}
         </p>
         <button
           onClick={() => void save("templates")}
           disabled={busy || !config}
           className="mt-4 rounded bg-neutral-900 px-4 py-2 text-white disabled:opacity-50"
         >
-          Save templates
+          {t("Save templates")}
         </button>
         <form
           className="mt-6 border-t pt-5"
@@ -264,9 +279,11 @@ export default function NotificationTemplatesPage() {
             }
           }}
         >
-          <h2 className="text-lg font-semibold">Preview without sending</h2>
+          <h2 className="text-lg font-semibold">
+            {t("Preview without sending")}
+          </h2>
           <label className="mt-3 block">
-            Sample recipient
+            {t("Sample recipient")}
             <input
               type="email"
               required
@@ -276,7 +293,7 @@ export default function NotificationTemplatesPage() {
             />
           </label>
           <label className="mt-3 block">
-            Sample variables (JSON)
+            {t("Sample variables (JSON)")}
             <textarea
               name="variables"
               className={field}
@@ -299,7 +316,7 @@ export default function NotificationTemplatesPage() {
             disabled={busy || !config}
             className="mt-3 rounded border px-4 py-2 disabled:opacity-50"
           >
-            Preview current draft
+            {t("Preview current draft")}
           </button>
         </form>
         {preview && (
@@ -310,7 +327,7 @@ export default function NotificationTemplatesPage() {
             <p className="mt-3 whitespace-pre-wrap">{preview.text}</p>
             {preview.html && (
               <details className="mt-3">
-                <summary>Rendered HTML source</summary>
+                <summary>{t("Rendered HTML source")}</summary>
                 <pre className="overflow-auto whitespace-pre-wrap text-xs">
                   {preview.html}
                 </pre>
@@ -320,16 +337,18 @@ export default function NotificationTemplatesPage() {
         )}
       </section>
       <section className="mt-6 rounded-xl border p-5">
-        <h2 className="text-xl font-semibold">Internal recipient groups</h2>
+        <h2 className="text-xl font-semibold">
+          {t("Internal recipient groups")}
+        </h2>
         <p className="mt-2 text-sm text-neutral-600">
-          Enter one address per line. Groups receive separate operational
-          notifications with management links. Verification and invitation
-          credentials stay in the recipient’s own message.
+          {t(
+            "Enter one address per line. Groups receive separate operational notifications with management links. Verification and invitation credentials stay in the recipient’s own message.",
+          )}
         </p>
         <div className="mt-4 grid gap-4 md:grid-cols-3">
           {(["dealer", "support", "orders"] as const).map((name) => (
             <label key={name} className="capitalize">
-              {name}
+              {t(String(name))}
               <textarea
                 className={field}
                 rows={5}
@@ -349,7 +368,7 @@ export default function NotificationTemplatesPage() {
           disabled={busy || !config}
           className="mt-4 rounded bg-neutral-900 px-4 py-2 text-white disabled:opacity-50"
         >
-          Save recipient groups
+          {t("Save recipient groups")}
         </button>
       </section>
     </main>

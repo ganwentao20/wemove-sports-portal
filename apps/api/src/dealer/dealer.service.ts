@@ -1,4 +1,10 @@
 import { publicDirectoryRow } from './directory-policy.js';
+import {
+  localizedCategory,
+  localizedProductSummary,
+  localizedVariant,
+} from '../catalog/product-locales.js';
+import { readLocalePolicy } from '../platform/locale-policy.js';
 import { Injectable, Optional } from '@nestjs/common';
 import { createHash, randomBytes } from 'node:crypto';
 import { NotificationsService } from '../notifications/notifications.service.js';
@@ -64,7 +70,11 @@ export class DealerService {
     }
   }
 
-  async directory(id?: string) {
+  async directory(id?: string, requestedLocale = 'en') {
+    const policy = await readLocalePolicy(this.prisma);
+    const locale = policy.languages.includes(requestedLocale)
+      ? requestedLocale
+      : 'en';
     const companies = await this.prisma.dealerCompany.findMany({
       where: {
         status: 'APPROVED',
@@ -105,10 +115,13 @@ export class DealerService {
                 },
               },
             },
-            select: { id: true, name: true },
+            select: { id: true, name: true, seo: true },
             orderBy: { name: 'asc' },
           });
-          return publicDirectoryRow(company, categories);
+          return publicDirectoryRow(
+            company,
+            categories.map((category) => localizedCategory(category, locale)),
+          );
         }),
       )
     ).filter((row) => row !== null);
@@ -508,6 +521,7 @@ export class DealerService {
     quantity: number,
     currentUser: JwtPayload,
     productId?: string,
+    locale = 'en',
   ) {
     const company = await this.approvedCompany(currentUser);
     const authorizedBookIds = company.priceBooks.map((item) => item.bookId);
@@ -529,6 +543,11 @@ export class DealerService {
         name: true,
         summary: true,
         gallery: true,
+        specifications: true,
+        description: true,
+        ageGuidance: true,
+        playGuide: true,
+        productFaq: true,
         variants: {
           where: {
             status: true,
@@ -600,7 +619,10 @@ export class DealerService {
 
     return products
       .map((product) => ({
-        ...product,
+        id: product.id,
+        slug: product.slug,
+        gallery: product.gallery,
+        ...localizedProductSummary(product, locale),
         variants: product.variants
           .map((variant) => {
             const resolved = this.pricing.dealer(
@@ -694,7 +716,7 @@ export class DealerService {
                   index === 0 || tier.priceCents !== all[index - 1].priceCents,
               );
             return {
-              ...safeVariant,
+              ...localizedVariant(safeVariant, product, locale),
               available:
                 stale ||
                 ['HIDDEN', 'STATUS'].includes(String(rule.inventoryDisplay))
@@ -730,6 +752,7 @@ export class DealerService {
   async validateQuickOrder(
     lines: QuickOrderLineDto[],
     currentUser: JwtPayload,
+    locale = 'en',
   ) {
     const company = await this.approvedCompany(currentUser);
     const market = (await this.prisma.retailMarket.findUnique({
@@ -759,6 +782,7 @@ export class DealerService {
         id: true,
         sku: true,
         name: true,
+        attrs: true,
         b2bDefaultPriceCents: true,
         availabilityPolicy: true,
         backorderLimit: true,
@@ -768,7 +792,17 @@ export class DealerService {
           where: { market: company.country },
           select: { market: true, available: true, syncError: true },
         },
-        product: { select: { name: true } },
+        product: {
+          select: {
+            name: true,
+            summary: true,
+            specifications: true,
+            description: true,
+            ageGuidance: true,
+            playGuide: true,
+            productFaq: true,
+          },
+        },
       },
     });
     const bySku = new Map(
@@ -899,8 +933,8 @@ export class DealerService {
         ...line,
         ok: true as const,
         variantId: variant.id,
-        productName: variant.product.name,
-        variantName: variant.name,
+        productName: localizedProductSummary(variant.product, locale).name,
+        variantName: localizedVariant(variant, variant.product, locale).name,
         unitPriceCents: resolved.priceCents,
         priceSource: resolved.source,
         lineTotalCents: resolved.priceCents * line.quantity,

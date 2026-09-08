@@ -1,4 +1,7 @@
 "use client";
+import { uiError } from "../../../lib/ui-i18n";
+import { useUiText, useUiLocale } from "../../../components/ui-locale";
+
 import { ProductRatingEditor } from "./product-rating-editor";
 import { useEffect, useState, type FormEvent } from "react";
 import { ProductTranslations } from "./product-translations";
@@ -162,6 +165,9 @@ function parseCsv(text: string) {
   });
 }
 export function ProductMerchandising() {
+  const t = useUiText();
+  const uiLocale = useUiLocale();
+
   const [inventoryAlerts, setInventoryAlerts] = useState<
     Array<{
       variantId: string;
@@ -343,35 +349,42 @@ export function ProductMerchandising() {
   return (
     <section className="mx-auto max-w-7xl px-4 pb-12">
       <div className="border-t pt-8">
-        <h2 className="text-2xl font-bold">Product content & merchandising</h2>
+        <h2 className="text-2xl font-bold">
+          {t("Product content & merchandising")}
+        </h2>
         <p className="mt-2 text-sm text-neutral-600">
-          Edit structured fields, publish windows, media and market prices.
-          Copies start as drafts with zero inventory.
+          {t(
+            "Edit structured fields, publish windows, media and market prices. Copies start as drafts with zero inventory.",
+          )}
         </p>
       </div>
       {error && (
         <p role="alert" className="mt-4 bg-red-50 p-4 text-red-800">
-          {error}
+          {error ? uiError(uiLocale, error) : ""}
         </p>
       )}
       {notice && (
         <p role="status" className="mt-4 bg-green-50 p-4">
-          {notice}
+          {notice ? uiError(uiLocale, notice) : ""}
         </p>
       )}
       {inventoryAlerts.length > 0 && (
         <details className="my-5 rounded-xl border border-amber-300 bg-amber-50 p-4">
           <summary className="cursor-pointer font-semibold">
-            Inventory alerts ({inventoryAlerts.length})
+            {t("Inventory alerts (")}
+            {inventoryAlerts.length})
           </summary>
           <ul className="mt-3 space-y-2 text-sm">
             {inventoryAlerts.map((a) => (
               <li key={a.variantId}>
                 <strong>{a.variant.sku}</strong>:{" "}
                 {a.syncError
-                  ? "Source synchronization failed — checkout blocked"
-                  : `${a.available} available / threshold ${a.lowThreshold}`}{" "}
-                · {a.reserved} reserved
+                  ? t("Source synchronization failed — checkout blocked")
+                  : t("{value1} available / threshold {value2}", {
+                      value1: a.available,
+                      value2: a.lowThreshold,
+                    })}{" "}
+                · {a.reserved} {t("reserved")}
               </li>
             ))}
           </ul>
@@ -379,7 +392,7 @@ export function ProductMerchandising() {
       )}
       <div className="mt-5 grid gap-4 sm:grid-cols-2">
         <label>
-          Product
+          {t("Product")}
           <select
             className={input}
             value={selectedId}
@@ -392,13 +405,13 @@ export function ProductMerchandising() {
           >
             {products.map((p) => (
               <option key={p.id} value={p.id}>
-                {p.name} · {p.status}
+                {p.name} · {t(String(p.status))}
               </option>
             ))}
           </select>
         </label>
         <label>
-          Current MFA code
+          {t("Current MFA code")}
           <input
             className={input}
             inputMode="numeric"
@@ -469,7 +482,7 @@ export function ProductMerchandising() {
               ],
             ].map(([name, label, value]) => (
               <label key={String(name)}>
-                {label}
+                {t(String(label))}
                 <input
                   name={String(name)}
                   className={input}
@@ -478,7 +491,7 @@ export function ProductMerchandising() {
               </label>
             ))}
             <label>
-              Status
+              {t("Status")}
               <select
                 name="status"
                 className={input}
@@ -486,13 +499,15 @@ export function ProductMerchandising() {
               >
                 {["DRAFT", "SCHEDULED", "ACTIVE", "HIDDEN", "ARCHIVED"].map(
                   (s) => (
-                    <option key={s}>{s}</option>
+                    <option key={s} value={s}>
+                      {t(String(s))}
+                    </option>
                   ),
                 )}
               </select>
             </label>
             <label>
-              Publish at
+              {t("Publish at")}
               <input
                 name="publishAt"
                 type="datetime-local"
@@ -501,7 +516,7 @@ export function ProductMerchandising() {
               />
             </label>
             <label>
-              Unpublish at
+              {t("Unpublish at")}
               <input
                 name="unpublishAt"
                 type="datetime-local"
@@ -510,7 +525,7 @@ export function ProductMerchandising() {
               />
             </label>
             <label className="sm:col-span-2">
-              Description
+              {t("Description")}
               <textarea
                 name="description"
                 className={input}
@@ -519,7 +534,7 @@ export function ProductMerchandising() {
               />
             </label>
             <label>
-              Specification table (name = value, one per line)
+              {t("Specification table (name = value, one per line)")}
               <textarea
                 name="specs"
                 className={input}
@@ -535,7 +550,7 @@ export function ProductMerchandising() {
               />
             </label>
             <label className="sm:col-span-2">
-              Setup, how to play, care & safety
+              {t("Setup, how to play, care & safety")}
               <textarea
                 name="playGuide"
                 className={input}
@@ -544,7 +559,7 @@ export function ProductMerchandising() {
               />
             </label>
             <label>
-              FAQ (question | answer, one per line)
+              {t("FAQ (question | answer, one per line)")}
               <textarea
                 name="faq"
                 className={input}
@@ -560,7 +575,7 @@ export function ProductMerchandising() {
             <ProductSeoFields prefix="seo" value={product.seo ?? {}} />
             <section className="sm:col-span-2 lg:col-span-3">
               <h3 className="font-bold">
-                Gallery order & accessible descriptions
+                {t("Gallery order & accessible descriptions")}
               </h3>
               {gallery.map((item, index) => (
                 <div
@@ -594,7 +609,7 @@ export function ProductMerchandising() {
                   }}
                 >
                   <label>
-                    Image or video URL
+                    {t("Image or video URL")}
                     <input
                       className={input}
                       value={item.url}
@@ -608,7 +623,7 @@ export function ProductMerchandising() {
                     />
                   </label>
                   <label>
-                    Alt text
+                    {t("Alt text")}
                     <input
                       className={input}
                       value={item.alt}
@@ -622,7 +637,7 @@ export function ProductMerchandising() {
                     />
                   </label>
                   <label>
-                    Type
+                    {t("Type")}
                     <select
                       className={input}
                       value={item.type ?? "image"}
@@ -634,19 +649,21 @@ export function ProductMerchandising() {
                         )
                       }
                     >
-                      <option>image</option>
-                      <option>video</option>
+                      <option value="image">{t("image")}</option>
+                      <option value="video">{t("video")}</option>
                     </select>
                   </label>
                   <div className="flex gap-2 self-end">
                     <span className="self-center text-xs text-neutral-600">
-                      Drag row to reorder
+                      {t("Drag row to reorder")}
                     </span>
                     <button
                       type="button"
                       className={button}
                       disabled={!index}
-                      aria-label={`Move media ${index + 1} earlier`}
+                      aria-label={t("Move media {value1} earlier", {
+                        value1: index + 1,
+                      })}
                       onClick={() => {
                         const g = [...gallery];
                         [g[index - 1], g[index]] = [g[index], g[index - 1]];
@@ -662,14 +679,14 @@ export function ProductMerchandising() {
                         setGallery(gallery.filter((_, i) => i !== index))
                       }
                     >
-                      Remove
+                      {t("Remove")}
                     </button>
                   </div>
                   <label>
-                    Language (blank = all)
+                    {t("Language (blank = all)")}
                     <input
                       className={input}
-                      placeholder="en, zh, fr, de, zh-CN"
+                      placeholder={t("en, zh, fr, de, zh-CN")}
                       pattern="[a-z]{2,3}(-[A-Z]{2})?"
                       value={item.locale ?? ""}
                       onChange={(e) =>
@@ -682,7 +699,7 @@ export function ProductMerchandising() {
                     />
                   </label>
                   <label>
-                    Market (blank = all)
+                    {t("Market (blank = all)")}
                     <input
                       className={input}
                       value={item.market ?? ""}
@@ -707,11 +724,11 @@ export function ProductMerchandising() {
                   setGallery([...gallery, { url: "", alt: "", type: "image" }])
                 }
               >
-                Add media
+                {t("Add media")}
               </button>
             </section>
             <button className={button} disabled={busy}>
-              Save product content
+              {t("Save product content")}
             </button>
           </form>
           <form
@@ -727,19 +744,19 @@ export function ProductMerchandising() {
             }}
           >
             <label>
-              New copy slug
+              {t("New copy slug")}
               <input className={input} name="slug" required />
             </label>
             <label>
-              New SKU prefix
+              {t("New SKU prefix")}
               <input className={input} name="skuPrefix" required />
             </label>
             <button className={button} disabled={busy}>
-              Duplicate as draft
+              {t("Duplicate as draft")}
             </button>
           </form>
           <h3 className="mt-6 text-xl font-bold">
-            SKU market prices & barcodes
+            {t("SKU market prices & barcodes")}
           </h3>
           {product.variants.map((v) => (
             <form
@@ -810,7 +827,7 @@ export function ProductMerchandising() {
                 {v.sku} · {v.id}
               </strong>
               <label>
-                Barcode
+                {t("Barcode")}
                 <input
                   className={input}
                   name="barcode"
@@ -818,7 +835,7 @@ export function ProductMerchandising() {
                 />
               </label>
               <label>
-                Market
+                {t("Market")}
                 <input
                   className={input}
                   name="market"
@@ -828,7 +845,7 @@ export function ProductMerchandising() {
                 />
               </label>
               <label>
-                Currency
+                {t("Currency")}
                 <input
                   className={input}
                   name="currency"
@@ -838,7 +855,7 @@ export function ProductMerchandising() {
                 />
               </label>
               <label>
-                MSRP
+                {t("MSRP")}
                 <input
                   className={input}
                   name="msrp"
@@ -849,7 +866,7 @@ export function ProductMerchandising() {
                 />
               </label>
               <label>
-                Sale price (optional)
+                {t("Sale price (optional)")}
                 <input
                   className={input}
                   name="sale"
@@ -859,15 +876,15 @@ export function ProductMerchandising() {
                 />
               </label>
               <label>
-                Valid from
+                {t("Valid from")}
                 <input className={input} name="start" type="datetime-local" />
               </label>
               <label>
-                Valid until
+                {t("Valid until")}
                 <input className={input} name="end" type="datetime-local" />
               </label>
               <label>
-                Variant specifications (name = value)
+                {t("Variant specifications (name = value)")}
                 <textarea
                   className={input}
                   name="attrs"
@@ -883,7 +900,9 @@ export function ProductMerchandising() {
                 />
               </label>
               <label>
-                Variant media (URL | alt text | image/video | language | market)
+                {t(
+                  "Variant media (URL | alt text | image/video | language | market)",
+                )}
                 <textarea
                   className={input}
                   name="gallery"
@@ -909,7 +928,7 @@ export function ProductMerchandising() {
                 />
               </label>
               <button className={`${button} self-end`} disabled={busy}>
-                Save market price
+                {t("Save market price")}
               </button>
               <button
                 type="button"
@@ -926,9 +945,13 @@ export function ProductMerchandising() {
                     setNotice(
                       rows.length
                         ? rows
-                            .map(
-                              (r) =>
-                                `${new Date(r.createdAt).toLocaleString()} · staff ${r.actorId}`,
+                            .map((r) =>
+                              t("{date} · Staff {staff}", {
+                                date: new Date(r.createdAt).toLocaleString(
+                                  uiLocale === "zh" ? "zh-CN" : "en-US",
+                                ),
+                                staff: r.actorId,
+                              }),
                             )
                             .join(" | ")
                         : "No recorded price changes.",
@@ -938,12 +961,12 @@ export function ProductMerchandising() {
                   }
                 }}
               >
-                Price change history
+                {t("Price change history")}
               </button>
             </form>
           ))}
           <h3 className="mt-6 text-xl font-bold">
-            Inventory source & low stock policy
+            {t("Inventory source & low stock policy")}
           </h3>
           {product.variants.map((variant) => (
             <VariantInventory
@@ -971,10 +994,11 @@ export function ProductMerchandising() {
               }}
             >
               <strong className="sm:col-span-4">
-                {v.sku} · Reserved: {v.stock?.reserved ?? 0}
+                {v.sku} {t("· Reserved:")}
+                {v.stock?.reserved ?? 0}
               </strong>
               <label>
-                Available units
+                {t("Available units")}
                 <input
                   className={input}
                   name="available"
@@ -984,7 +1008,7 @@ export function ProductMerchandising() {
                 />
               </label>
               <label>
-                Low stock threshold
+                {t("Low stock threshold")}
                 <input
                   className={input}
                   name="threshold"
@@ -994,7 +1018,7 @@ export function ProductMerchandising() {
                 />
               </label>
               <label>
-                Inventory source
+                {t("Inventory source")}
                 <input
                   className={input}
                   name="source"
@@ -1002,7 +1026,7 @@ export function ProductMerchandising() {
                 />
               </label>
               <label>
-                Source sync failure (blank = healthy)
+                {t("Source sync failure (blank = healthy)")}
                 <input
                   className={input}
                   name="syncError"
@@ -1010,11 +1034,12 @@ export function ProductMerchandising() {
                 />
               </label>
               <p className="text-sm text-neutral-600 sm:col-span-4">
-                A reported source failure preserves quantities and blocks new
-                checkout until a healthy stock update is recorded.
+                {t(
+                  "A reported source failure preserves quantities and blocks new checkout until a healthy stock update is recorded.",
+                )}
               </p>
               <button className={button} disabled={busy}>
-                Save inventory policy
+                {t("Save inventory policy")}
               </button>
             </form>
           ))}
@@ -1030,7 +1055,9 @@ export function ProductMerchandising() {
       )}
       <CategoryEditor categories={categories} mfa={mfa} onSaved={load} />
       <section className="mt-8">
-        <h3 className="text-xl font-bold">Category attribute templates</h3>
+        <h3 className="text-xl font-bold">
+          {t("Category attribute templates")}
+        </h3>
         {categories.map((c) => (
           <form
             key={c.id}
@@ -1060,7 +1087,7 @@ export function ProductMerchandising() {
           >
             <h4 className="font-bold sm:col-span-2">{c.name}</h4>
             <label>
-              Attributes: key | label | text/number/boolean | required
+              {t("Attributes: key | label | text/number/boolean | required")}
               <textarea
                 name="fields"
                 className={input}
@@ -1076,7 +1103,7 @@ export function ProductMerchandising() {
               />
             </label>
             <label>
-              Filterable fields
+              {t("Filterable fields")}
               <input
                 name="filters"
                 className={input}
@@ -1087,25 +1114,26 @@ export function ProductMerchandising() {
               />
             </label>
             <button className={button} disabled={busy}>
-              Save category template
+              {t("Save category template")}
             </button>
           </form>
         ))}
       </section>
       <section className="mt-8 rounded-xl border p-5">
-        <h3 className="text-xl font-bold">Bulk catalog & stock import</h3>
+        <h3 className="text-xl font-bold">
+          {t("Bulk catalog & stock import")}
+        </h3>
         <p className="mt-2 text-sm">
-          CSV columns: slug, name, sku, msrpCents, available, status,
-          categorySlug, tags. Separate tags with |. Blank category/tags cells
-          clear those values; omit either column to preserve it. Export, edit
-          and upload to review changes before applying them.
+          {t(
+            "CSV columns: slug, name, sku, msrpCents, available, status, categorySlug, tags. Separate tags with |. Blank category/tags cells clear those values; omit either column to preserve it. Export, edit and upload to review changes before applying them.",
+          )}
         </p>
         <div className="mt-4 flex flex-wrap gap-4">
           <button className={button} onClick={() => void exportCsv()}>
-            Export CSV
+            {t("Export CSV")}
           </button>
           <label>
-            Upload CSV
+            {t("Upload CSV")}
             <input
               className={input}
               type="file"
@@ -1138,31 +1166,33 @@ export function ProductMerchandising() {
               ).then((r) => setPreview(r))
             }
           >
-            Preview {rows.length} rows
+            {t("Preview")}
+            {rows.length} {t("rows")}
           </button>
         </div>
         {preview && (
           <div className="mt-5">
             <p>
-              {preview.creates} new SKUs · {preview.updates} updates ·{" "}
-              {preview.errors.length} errors
+              {preview.creates} {t("new SKUs ·")}
+              {preview.updates} {t("updates ·")} {preview.errors.length}{" "}
+              {t("errors")}
             </p>
             {preview.errors.map((e) => (
               <p key={e} className="text-red-800">
-                {e}
+                {t(String(e))}
               </p>
             ))}
             <div className="mt-3 max-h-72 overflow-auto">
               <table className="w-full text-left text-sm">
                 <thead>
                   <tr>
-                    <th>SKU</th>
-                    <th>Product</th>
-                    <th>Price (minor units)</th>
-                    <th>Available</th>
-                    <th>Status</th>
-                    <th>Category</th>
-                    <th>Tags</th>
+                    <th>{t("SKU")}</th>
+                    <th>{t("Product")}</th>
+                    <th>{t("Price (minor units)")}</th>
+                    <th>{t("Available")}</th>
+                    <th>{t("Status")}</th>
+                    <th>{t("Category")}</th>
+                    <th>{t("Tags")}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -1172,16 +1202,16 @@ export function ProductMerchandising() {
                       <td>{r.name}</td>
                       <td>{r.msrpCents}</td>
                       <td>{r.available}</td>
-                      <td>{r.status}</td>
+                      <td>{t(r.status)}</td>
                       <td>
                         {r.categorySlug === undefined
-                          ? "Keep current"
-                          : r.categorySlug || "Clear category"}
+                          ? t("Keep current")
+                          : r.categorySlug || t("Clear category")}
                       </td>
                       <td>
                         {r.tags === undefined
-                          ? "Keep current"
-                          : r.tags.join(", ") || "Clear tags"}
+                          ? t("Keep current")
+                          : r.tags.join(", ") || t("Clear tags")}
                       </td>
                     </tr>
                   ))}
@@ -1199,7 +1229,7 @@ export function ProductMerchandising() {
                 ).then((r) => setPreview(r))
               }
             >
-              {preview.applied ? "Applied" : "Apply reviewed import"}
+              {preview.applied ? t("Applied") : t("Apply reviewed import")}
             </button>
           </div>
         )}

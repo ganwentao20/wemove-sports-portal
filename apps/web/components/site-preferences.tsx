@@ -1,6 +1,7 @@
 "use client";
-import { LANGUAGE_PREFIX, languageName } from "../lib/language-code";
-import { usePathname } from "next/navigation";
+import { languageName } from "../lib/language-code";
+import { selectLanguage } from "../lib/language-switch";
+import { useHydrated } from "../lib/use-hydrated";
 import { useId } from "react";
 export function SitePreferences({
   locale,
@@ -13,9 +14,9 @@ export function SitePreferences({
   market: string;
   markets: Array<{ code: string; label: string; currency: string }>;
 }) {
+  const hydrated = useHydrated();
   const id = useId(),
-    path = usePathname().replace(LANGUAGE_PREFIX, "") || "/",
-    zh = locale === "zh";
+    zh = locale.startsWith("zh");
   return (
     <div className="flex gap-2">
       <label className="sr-only" htmlFor={id + "-language"}>
@@ -23,18 +24,12 @@ export function SitePreferences({
       </label>
       <select
         id={id + "-language"}
+        disabled={!hydrated}
         value={locale}
-        onChange={(event) => {
-          location.assign(
-            "/" +
-              event.target.value +
-              (path === "/" ? "" : path) +
-              location.search,
-          );
-        }}
+        onChange={(event) => selectLanguage(event.target.value)}
         className="max-w-24 rounded-lg border px-2 py-1"
       >
-        {languages.map((code) => (
+        {Array.from(new Set(["en", "zh", ...languages])).map((code) => (
           <option key={code} value={code}>
             {languageName(code)}
           </option>
@@ -45,6 +40,7 @@ export function SitePreferences({
       </label>
       <select
         id={id + "-market"}
+        disabled={!hydrated}
         value={market}
         onChange={(event) => {
           document.cookie =
@@ -59,7 +55,19 @@ export function SitePreferences({
       >
         {markets.map((m) => (
           <option key={m.code} value={m.code}>
-            {zh ? m.code : m.label} · {m.currency}
+            {zh
+              ? ((
+                  {
+                    US: "美国",
+                    CN: "中国",
+                    GB: "英国",
+                    EU: "欧盟",
+                    CA: "加拿大",
+                    AU: "澳大利亚",
+                  } as Record<string, string>
+                )[m.code] ?? m.label)
+              : m.label}{" "}
+            · {m.currency}
           </option>
         ))}
       </select>

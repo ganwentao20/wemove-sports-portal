@@ -1,4 +1,8 @@
 "use client";
+import { uiError } from "../../../lib/ui-i18n";
+
+import { useUiText, useUiLocale } from "../../../components/ui-locale";
+
 import { useCallback, useEffect, useState, type FormEvent } from "react";
 import Link from "next/link";
 import { apiFetch } from "../../../lib/api";
@@ -62,6 +66,10 @@ const addressFields = [
   ["line2", "Apartment / suite"],
 ] as const;
 export function AccountDetails() {
+  const uiLocale = useUiLocale();
+
+  const t = useUiText();
+
   const [languages, setLanguages] = useState<string[]>(["en", "zh"]);
   useEffect(() => {
     void apiFetch<{ locale: { languages: string[] } }>("/site/config")
@@ -81,14 +89,17 @@ export function AccountDetails() {
     const [p, a, f, r] = await Promise.all([
       secureApiFetch<Profile>("customer", "/account/profile"),
       secureApiFetch<Address[]>("customer", "/account/addresses"),
-      secureApiFetch<Favorite[]>("customer", "/account/favorites"),
+      secureApiFetch<Favorite[]>(
+        "customer",
+        `/account/favorites?locale=${encodeURIComponent(uiLocale)}`,
+      ),
       secureApiFetch<Privacy[]>("customer", "/account/privacy-requests"),
     ]);
     setProfile(p);
     setAddresses(a);
     setFavorites(f);
     setRequests(r);
-  }, []);
+  }, [uiLocale]);
   useEffect(() => {
     void load().catch((e) => setError(e.message));
   }, [load]);
@@ -150,24 +161,26 @@ export function AccountDetails() {
     <div className="mt-6 space-y-6">
       {error && (
         <p role="alert" className="rounded-lg bg-red-50 p-3 text-red-700">
-          {error}
+          {error ? uiError(uiLocale, error) : ""}
         </p>
       )}
       {notice && (
         <p role="status" className="rounded-lg bg-green-50 p-3">
-          {notice}
+          {notice ? uiError(uiLocale, notice) : ""}
         </p>
       )}
       {profile && (
         <section className="rounded-2xl border p-5">
-          <h2 className="text-xl font-semibold">Profile and subscriptions</h2>
+          <h2 className="text-xl font-semibold">
+            {t("Profile and subscriptions")}
+          </h2>
           <form
             key={`${profile.name}-${profile.locale}`}
             onSubmit={saveProfile}
             className="mt-4 grid gap-4 sm:grid-cols-2"
           >
             <label>
-              Name
+              {t("Name")}
               <input
                 name="name"
                 defaultValue={profile.name}
@@ -178,7 +191,7 @@ export function AccountDetails() {
               />
             </label>
             <label>
-              Display name
+              {t("Display name")}
               <input
                 name="displayName"
                 defaultValue={profile.displayName ?? ""}
@@ -187,7 +200,7 @@ export function AccountDetails() {
               />
             </label>
             <label>
-              Country / region
+              {t("Country / region")}
               <input
                 name="country"
                 defaultValue={profile.country ?? ""}
@@ -197,7 +210,7 @@ export function AccountDetails() {
               />
             </label>
             <label>
-              Phone
+              {t("Phone")}
               <input
                 name="phone"
                 defaultValue={profile.phone ?? ""}
@@ -206,7 +219,7 @@ export function AccountDetails() {
               />
             </label>
             <label>
-              Language
+              {t("Email language")}
               <select
                 name="locale"
                 defaultValue={profile.locale}
@@ -219,14 +232,16 @@ export function AccountDetails() {
                 ))}
               </select>
             </label>
-            <p className="self-center text-sm">Email: {profile.email}</p>
+            <p className="self-center text-sm">
+              {t("Email:")} {profile.email}
+            </p>
             <label className="flex gap-2">
               <input
                 type="checkbox"
                 name="marketingEmail"
                 defaultChecked={profile.marketingEmail}
               />{" "}
-              Email offers and news
+              {t("Email offers and news")}
             </label>
             <label className="flex gap-2">
               <input
@@ -234,7 +249,7 @@ export function AccountDetails() {
                 name="marketingSms"
                 defaultChecked={profile.marketingSms}
               />{" "}
-              SMS offers and news
+              {t("SMS offers and news")}
             </label>
             <label className="flex gap-2">
               <input
@@ -242,16 +257,16 @@ export function AccountDetails() {
                 name="productUpdates"
                 defaultChecked={profile.productUpdates}
               />{" "}
-              Product updates
+              {t("Product updates")}
             </label>
             <button disabled={busy} className={button}>
-              Save profile
+              {t("Save profile")}
             </button>
           </form>
         </section>
       )}
       <section className="rounded-2xl border p-5">
-        <h2 className="text-xl font-semibold">Address book</h2>
+        <h2 className="text-xl font-semibold">{t("Address book")}</h2>
         <ul className="mt-3 grid gap-3 sm:grid-cols-2">
           {addresses.map((a) => (
             <li key={a.id} className="rounded-lg bg-neutral-50 p-4">
@@ -264,8 +279,8 @@ export function AccountDetails() {
                 {a.country}
               </p>
               <p className="text-sm">
-                {a.isDefaultShipping && "Default shipping "}
-                {a.isDefaultBilling && "Default billing"}
+                {a.isDefaultShipping && t("Default shipping ")}
+                {a.isDefaultBilling && t("Default billing")}
               </p>
               <div className="mt-3 flex gap-3">
                 <button
@@ -275,7 +290,7 @@ export function AccountDetails() {
                     setFormKey((v) => v + 1);
                   }}
                 >
-                  Edit
+                  {t("Edit")}
                 </button>
                 <button
                   disabled={busy}
@@ -290,7 +305,7 @@ export function AccountDetails() {
                     })
                   }
                 >
-                  Delete
+                  {t("Delete")}
                 </button>
               </div>
             </li>
@@ -302,11 +317,11 @@ export function AccountDetails() {
           className="mt-5 grid gap-3 sm:grid-cols-2"
         >
           <h3 className="font-semibold sm:col-span-2">
-            {editing ? "Edit address" : "Add an address"}
+            {editing ? t("Edit address") : t("Add an address")}
           </h3>
           {addressFields.map(([key, label]) => (
             <label key={key}>
-              {label}
+              {t(String(label))}
               <input
                 name={key}
                 defaultValue={editing?.[key] ?? ""}
@@ -322,7 +337,7 @@ export function AccountDetails() {
               type="checkbox"
               defaultChecked={editing?.isDefaultShipping}
             />{" "}
-            Default shipping
+            {t("Default shipping")}
           </label>
           <label className="flex gap-2 items-center">
             <input
@@ -330,11 +345,11 @@ export function AccountDetails() {
               type="checkbox"
               defaultChecked={editing?.isDefaultBilling}
             />{" "}
-            Default billing
+            {t("Default billing")}
           </label>
           <div className="flex gap-3">
             <button disabled={busy} className={button}>
-              Save address
+              {t("Save address")}
             </button>
             {editing && (
               <button
@@ -345,17 +360,17 @@ export function AccountDetails() {
                   setFormKey((v) => v + 1);
                 }}
               >
-                Cancel
+                {t("Cancel")}
               </button>
             )}
           </div>
         </form>
       </section>
       <section className="rounded-2xl border p-5">
-        <h2 className="text-xl font-semibold">Wishlist</h2>
+        <h2 className="text-xl font-semibold">{t("Wishlist")}</h2>
         {!favorites.length && (
           <p className="mt-3">
-            Save products using the wishlist button on a product page.
+            {t("Save products using the wishlist button on a product page.")}
           </p>
         )}
         <ul className="divide-y">
@@ -372,7 +387,7 @@ export function AccountDetails() {
                   {f.product.name}
                 </Link>
               ) : (
-                <span>Product unavailable</span>
+                <span>{t("Product unavailable")}</span>
               )}
               <button
                 disabled={busy}
@@ -387,7 +402,7 @@ export function AccountDetails() {
                   })
                 }
               >
-                Remove
+                {t("Remove")}
               </button>
               {f.product && f.product.variants.length > 0 && (
                 <form
@@ -407,7 +422,7 @@ export function AccountDetails() {
                   className="flex flex-wrap items-end gap-2"
                 >
                   <label className="text-sm">
-                    Variant
+                    {t("Variant")}
                     <select name="variantId" className={input}>
                       {f.product.variants.map((v) => (
                         <option value={v.id} key={v.id}>
@@ -417,10 +432,10 @@ export function AccountDetails() {
                     </select>
                   </label>
                   <button disabled={busy} className={button}>
-                    Add to cart
+                    {t("Add to cart")}
                   </button>
                   <Link href="/checkout" className="underline text-sm">
-                    Checkout
+                    {t("Checkout")}
                   </Link>
                 </form>
               )}
@@ -430,12 +445,11 @@ export function AccountDetails() {
       </section>
       {profile && <AccountSecurity mfaEnabled={profile.mfaEnabled} />}
       <section className="rounded-2xl border p-5">
-        <h2 className="text-xl font-semibold">Your data</h2>
+        <h2 className="text-xl font-semibold">{t("Your data")}</h2>
         <p className="my-3 text-sm">
-          Download your profile, addresses, orders, preferences and requests.
-          Deletion requests are reviewed by support; open orders and company
-          memberships must be closed or transferred. Commercial records required
-          for fulfillment and accounting may be retained.
+          {t(
+            "Download your profile, addresses, orders, preferences and requests. Deletion requests are reviewed by support; open orders and company memberships must be closed or transferred. Commercial records required for fulfillment and accounting may be retained.",
+          )}
         </p>
         <button
           disabled={busy}
@@ -456,7 +470,7 @@ export function AccountDetails() {
             }, "Data export downloaded.")
           }
         >
-          Download my data
+          {t("Download my data")}
         </button>
         <form
           onSubmit={(e) => {
@@ -472,7 +486,7 @@ export function AccountDetails() {
           className="mt-5 grid gap-3 sm:grid-cols-2"
         >
           <label>
-            Reason for deleting your account
+            {t("Reason for deleting your account")}
             <textarea
               name="reason"
               minLength={5}
@@ -482,7 +496,7 @@ export function AccountDetails() {
             />
           </label>
           <label>
-            Confirm current password
+            {t("Confirm current password")}
             <input
               name="password"
               autoComplete="current-password"
@@ -492,17 +506,22 @@ export function AccountDetails() {
             />
           </label>
           <button disabled={busy} className={button}>
-            Request account deletion
+            {t("Request account deletion")}
           </button>
         </form>
         <ul className="mt-4 divide-y">
           {requests.map((r) => (
             <li key={r.id} className="py-3">
               <p>
-                {r.status} · {new Date(r.createdAt).toLocaleDateString()}
+                {t(r.status)} ·{" "}
+                {new Date(r.createdAt).toLocaleDateString(uiLocale)}
               </p>
               <p>{r.reason}</p>
-              {r.resolution && <p>Support: {r.resolution}</p>}
+              {r.resolution && (
+                <p>
+                  {t("Support:")} {r.resolution}
+                </p>
+              )}
             </li>
           ))}
         </ul>

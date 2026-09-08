@@ -1,8 +1,12 @@
+import { getUiText } from "../../../lib/ui-i18n-server";
 import Link from "next/link";
 import { serverApiGet } from "../../../lib/server-api";
 import { getLocale, getMarket, SITE_URL } from "../../../lib/locale";
 import { ShareLink } from "../../../components/share-link";
-export const metadata = { title: "Compare products" };
+export async function generateMetadata() {
+  const t = await getUiText();
+  return { title: t("Compare products") };
+}
 export const dynamic = "force-dynamic";
 type Product = {
   id: string;
@@ -30,6 +34,7 @@ export default async function Page({
 }: {
   searchParams: Promise<{ ids?: string | string[] }>;
 }) {
+  const t = await getUiText();
   const params = await searchParams;
   const locale = await getLocale(),
     market = await getMarket();
@@ -63,12 +68,16 @@ export default async function Page({
       Category: p.category?.name ?? "—",
       "Age guidance": p.ageGuidance ?? "—",
       Ages: p.ageMin !== null ? `${p.ageMin}–${p.ageMax ?? "+"}` : "—",
-      Scenes: p.scenes.join(", ") || "—",
-      Skills: p.skills.join(", ") || "—",
+      Scenes: p.scenes.map((value) => t(value)).join(", ") || "—",
+      Skills: p.skills.map((value) => t(value)).join(", ") || "—",
       "How to play": p.playGuide || "—",
       Availability:
         [
-          ...new Set(p.variants.map((v) => v.availability).filter(Boolean)),
+          ...new Set(
+            p.variants
+              .map((v) => (v.availability ? t(v.availability) : null))
+              .filter(Boolean),
+          ),
         ].join(", ") || "—",
       "Weight (g)":
         p.variants
@@ -98,27 +107,27 @@ export default async function Page({
   return (
     <div className="mx-auto max-w-7xl px-4 py-12">
       <h1 className="text-4xl font-bold">
-        {locale === "zh" ? "产品比较" : "Compare products"}
+        {locale === "zh" ? "产品比较" : t("Compare products")}
       </h1>
       <p className="mt-3 text-neutral-600">
-        Choose up to four products. Highlighted rows show differences.
+        {t("Choose up to four products. Highlighted rows show differences.")}
       </p>
       <div className="mt-4">
         <ShareLink
-          title="WEMOVE product comparison"
+          title={t("WEMOVE product comparison")}
           url={`${SITE_URL}/${locale}/compare?ids=${encodeURIComponent(slugs.join(","))}&market=${market}`}
         />
       </div>
       <form className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
         {[0, 1, 2, 3].map((index) => (
           <label key={index} className="text-sm">
-            Product {index + 1}
+            {t("Product {number}", { number: index + 1 })}
             <select
               name="ids"
               defaultValue={slugs[index] ?? ""}
               className="mt-2 w-full rounded-lg border p-3"
             >
-              <option value="">Select product</option>
+              <option value="">{t("Select product")}</option>
               {options.map((p) => (
                 <option key={p.slug} value={p.slug}>
                   {p.name}
@@ -128,18 +137,18 @@ export default async function Page({
           </label>
         ))}
         <button className="self-end rounded-lg bg-neutral-900 px-5 py-3 text-white">
-          Compare
+          {t("Compare")}
         </button>
       </form>
       {products.length ? (
         <div className="mt-8 overflow-x-auto">
           <table className="w-full min-w-[640px] text-left text-sm">
             <caption className="sr-only">
-              Product comparison with differences highlighted
+              {t("Product comparison with differences highlighted")}
             </caption>
             <thead>
               <tr>
-                <th className="p-4">Feature</th>
+                <th className="p-4">{t("Feature")}</th>
                 {products.map((p) => (
                   <th key={p.id} className="p-4">
                     <Link
@@ -152,7 +161,7 @@ export default async function Page({
                       className="mt-2 block text-xs font-normal underline"
                       href={`/compare?ids=${slugs.filter((s) => s !== p.slug).join(",")}`}
                     >
-                      Remove
+                      {t("Remove")}
                     </Link>
                   </th>
                 ))}
@@ -168,16 +177,16 @@ export default async function Page({
                     className={`border-t ${different ? "bg-amber-50" : ""}`}
                   >
                     <th className="sticky left-0 z-10 bg-white p-4 font-medium">
-                      {k}
+                      {t(k)}
                       {different && (
                         <span className="ml-2 text-xs text-amber-800">
-                          Different
+                          {t("Different")}
                         </span>
                       )}
                     </th>
                     {facts.map((f, index) => (
                       <td key={products[index].id} className="p-4">
-                        {f[k] ?? "—"}
+                        {t(f[k] ?? "—")}
                       </td>
                     ))}
                   </tr>
@@ -188,12 +197,12 @@ export default async function Page({
         </div>
       ) : (
         <p className="mt-8 rounded-xl border p-8">
-          Select products above to compare.
+          {t("Select products above to compare.")}
         </p>
       )}
       {products.length !== slugs.length && (
         <p role="status" className="mt-4 text-amber-800">
-          Some selected products are no longer published in this market.
+          {t("Some selected products are no longer published in this market.")}
         </p>
       )}
     </div>

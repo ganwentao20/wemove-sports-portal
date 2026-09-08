@@ -1,4 +1,6 @@
 "use client";
+import { useUiText } from "../../../components/ui-locale";
+
 import { useState } from "react";
 export type ShippingRule = {
   method: string;
@@ -24,6 +26,8 @@ export function MarketRulesFields({
 }: {
   market: Partial<MarketRules> | null;
 }) {
+  const t = useUiText();
+
   const [rules, setRules] = useState<ShippingRule[]>(
       market?.shippingRules ?? [],
     ),
@@ -41,7 +45,7 @@ export function MarketRulesFields({
   return (
     <>
       <label>
-        Inventory visibility
+        {t("Inventory visibility")}
         <select
           className={input}
           name="inventoryDisplay"
@@ -52,15 +56,15 @@ export function MarketRulesFields({
             ["EXACT", "Exact available quantity"],
             ["LEVEL", "Stock levels"],
             ["HIDDEN", "Hide stock display"],
-          ].map(([v, t]) => (
+          ].map(([v, label]) => (
             <option value={v} key={v}>
-              {t}
+              {t(String(label))}
             </option>
           ))}
         </select>
       </label>
       <label>
-        Default product sort
+        {t("Default product sort")}
         <select
           className={input}
           name="defaultSort"
@@ -68,7 +72,9 @@ export function MarketRulesFields({
         >
           {["featured", "newest", "price-asc", "price-desc", "name"].map(
             (v) => (
-              <option key={v}>{v}</option>
+              <option key={v} value={v}>
+                {t(String(v))}
+              </option>
             ),
           )}
         </select>
@@ -80,7 +86,7 @@ export function MarketRulesFields({
             type="checkbox"
             defaultChecked={market?.allowPreorder}
           />{" "}
-          Allow configured preorders
+          {t("Allow configured preorders")}
         </label>
         <label className="block">
           <input
@@ -88,42 +94,44 @@ export function MarketRulesFields({
             type="checkbox"
             defaultChecked={market?.allowBackorder}
           />{" "}
-          Allow configured backorders
+          {t("Allow configured backorders")}
         </label>
         <p className="text-xs text-neutral-600">
-          Each SKU also needs an explicit quantity limit and dispatch estimate.
+          {t(
+            "Each SKU also needs an explicit quantity limit and dispatch estimate.",
+          )}
         </p>
       </div>
       <label>
-        Tax calculation
+        {t("Tax calculation")}
         <select
           name="taxMode"
           className={input}
           defaultValue={market?.taxMode ?? "CONFIGURED"}
         >
-          <option value="CONFIGURED">Configured region rates</option>
-          <option value="HTTP">Connected tax provider</option>
+          <option value="CONFIGURED">{t("Configured region rates")}</option>
+          <option value="HTTP">{t("Connected tax provider")}</option>
         </select>
       </label>
       <label>
-        Shipping calculation
+        {t("Shipping calculation")}
         <select
           name="shippingMode"
           className={input}
           defaultValue={market?.shippingMode ?? "CONFIGURED"}
         >
-          <option value="CONFIGURED">Configured rates</option>
-          <option value="HTTP">Connected live carrier rates</option>
+          <option value="CONFIGURED">{t("Configured rates")}</option>
+          <option value="HTTP">{t("Connected live carrier rates")}</option>
         </select>
       </label>
       <div className="sm:col-span-3">
         <h3 className="font-semibold">
-          Weight and order amount delivery rates
+          {t("Weight and order amount delivery rates")}
         </h3>
         <p className="my-2 text-sm text-neutral-600">
-          A blank maximum has no upper limit. Lower bounds are inclusive; upper
-          bounds are exclusive. Fixed delivery fees apply when no rule matches.
-          Free shipping still takes precedence.
+          {t(
+            "A blank maximum has no upper limit. Lower bounds are inclusive; upper bounds are exclusive. Fixed delivery fees apply when no rule matches. Free shipping still takes precedence.",
+          )}
         </p>
         <input
           type="hidden"
@@ -135,16 +143,19 @@ export function MarketRulesFields({
             key={i}
             className="my-3 grid gap-3 rounded-lg border p-3 sm:grid-cols-3"
           >
-            <legend>Rate {i + 1}</legend>
+            <legend>
+              {t("Rate")}
+              {i + 1}
+            </legend>
             <label>
-              Delivery
+              {t("Delivery")}
               <select
                 className={input}
                 value={r.method}
                 onChange={(e) => update(i, "method", e.target.value)}
               >
-                <option>STANDARD</option>
-                <option>EXPRESS</option>
+                <option value="STANDARD">{t("STANDARD")}</option>
+                <option value="EXPRESS">{t("EXPRESS")}</option>
               </select>
             </label>
             {[
@@ -155,7 +166,7 @@ export function MarketRulesFields({
               ["amountCents", "Delivery fee", 100],
             ].map(([key, label, divisor]) => (
               <label key={key}>
-                {label}
+                {t(String(label))}
                 <input
                   className={input}
                   type="number"
@@ -184,7 +195,7 @@ export function MarketRulesFields({
               className="justify-self-start underline"
               onClick={() => setRules(rules.filter((_, n) => n !== i))}
             >
-              Remove rate
+              {t("Remove rate")}
             </button>
           </fieldset>
         ))}
@@ -195,11 +206,11 @@ export function MarketRulesFields({
             setRules([...rules, { method: "STANDARD", amountCents: 0 }])
           }
         >
-          Add delivery rate
+          {t("Add delivery rate")}
         </button>
       </div>
       <div className="sm:col-span-3">
-        <h3 className="font-semibold">Regional tax overrides</h3>
+        <h3 className="font-semibold">{t("Regional tax overrides")}</h3>
         <input
           type="hidden"
           name="taxRegionRates"
@@ -214,7 +225,7 @@ export function MarketRulesFields({
         {regions.map((r, i) => (
           <div key={i} className="my-3 flex flex-wrap gap-3">
             <label>
-              State / region
+              {t("State / region")}
               <input
                 className={input}
                 required
@@ -229,7 +240,7 @@ export function MarketRulesFields({
               />
             </label>
             <label>
-              Tax rate %
+              {t("Tax rate %")}
               <input
                 className={input}
                 required
@@ -257,7 +268,7 @@ export function MarketRulesFields({
               className="underline"
               onClick={() => setRegions(regions.filter((_, n) => n !== i))}
             >
-              Remove override
+              {t("Remove override")}
             </button>
           </div>
         ))}
@@ -266,7 +277,7 @@ export function MarketRulesFields({
           className="mt-3 rounded-lg border px-4 py-2"
           onClick={() => setRegions([...regions, { region: "", rate: 0 }])}
         >
-          Add regional tax rate
+          {t("Add regional tax rate")}
         </button>
       </div>
     </>

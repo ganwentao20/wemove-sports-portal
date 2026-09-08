@@ -131,11 +131,11 @@ DEFAULT_NOTIFICATION_TEMPLATES.push(
     kind: 'account.verify',
     locales: {
       en: {
-        subject: 'Verify your WEMOVE SPORTS email',
+        subject: 'Verify your WEMOVE email',
         text: 'Please verify your email within 24 hours: {{link}}\nIf you did not register, ignore this message.',
       },
       zh: {
-        subject: '验证您的 WEMOVE SPORTS 邮箱',
+        subject: '验证您的 WEMOVE 邮箱',
         text: '请在 24 小时内打开以下链接验证您的邮箱：\n{{link}}\n如果您没有注册账号，请忽略本邮件。',
       },
     },
@@ -144,11 +144,11 @@ DEFAULT_NOTIFICATION_TEMPLATES.push(
     kind: 'account.password-reset',
     locales: {
       en: {
-        subject: 'Reset your WEMOVE SPORTS password',
+        subject: 'Reset your WEMOVE password',
         text: 'Set a new password within one hour: {{link}}\nIf you did not request a reset, ignore this message.',
       },
       zh: {
-        subject: '重置您的 WEMOVE SPORTS 密码',
+        subject: '重置您的 WEMOVE 密码',
         text: '请在一小时内打开以下链接设置新密码：\n{{link}}\n如果您没有申请重置密码，请忽略本邮件。',
       },
     },

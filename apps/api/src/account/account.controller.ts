@@ -62,8 +62,8 @@ export class AccountController {
   ) {
     return this.service.deleteAddress(u, id);
   }
-  @Get('favorites') favorites(@CurrentUser() u: JwtPayload) {
-    return this.service.favorites(u);
+  @Get('favorites') favorites(@CurrentUser() u: JwtPayload, @Query('locale') locale = 'en') {
+    return this.service.favorites(u, locale);
   }
   @Post('favorites/:id') favorite(
     @CurrentUser() u: JwtPayload,
