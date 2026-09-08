@@ -47,6 +47,8 @@ test("mobile Lighthouse templates and public API latency meet the local acceptan
         const result = await lighthouse("http://127.0.0.1:3000" + path, {
           port,
           logLevel: "error",
+          throttlingMethod: "devtools",
+          extraHeaders: { Cookie: "wm_consent=essential" },
           output: ["json", "html"],
           onlyCategories: [
             "performance",
@@ -117,7 +119,7 @@ test("mobile Lighthouse templates and public API latency meet the local acceptan
     JSON.stringify(
       {
         environment:
-          "Production build; three cold-browser Lighthouse mobile runs per template; median LCP/TBT, worst CLS; not field Core Web Vitals",
+          "Production build; three cold-browser Lighthouse mobile runs with DevTools throttling per template; essential-cookie consent; median LCP/TBT, worst CLS; not field Core Web Vitals",
         browser:
           process.platform === "win32"
             ? "Chromium headless shell"
