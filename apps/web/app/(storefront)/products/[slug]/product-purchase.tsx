@@ -215,7 +215,7 @@ export function ProductPurchase({
         >
           {message}{" "}
           <a
-            href={publicUrl("/checkout", locale, market)}
+            href={publicUrl("/cart", locale, market)}
             className="font-semibold underline"
           >
             {copy.viewCart}

@@ -289,8 +289,8 @@ export const accountMessages: Record<string, string> = {
     "内部备注（取消勾选则发送邮件给客户）",
   "Inventory display": "库存显示方式",
   "Inventory:": "库存：",
-  "Invitation accepted. Sign in at Dealer login to activate the company session.":
-    "邀请已接受。请通过经销商入口登录以启用企业会话。",
+  "Invitation accepted. Sign in at the unified login to activate the company session.":
+    "邀请已接受。请通过统一账号登录入口登录以启用企业会话。",
   "Invitation token": "邀请令牌",
   "Invite email": "受邀人邮箱",
   "Issue a revised quote": "发布修订报价",
@@ -600,6 +600,7 @@ export const accountMessages: Record<string, string> = {
   "Unable to validate this order.": "无法验证此订单。",
   Unassigned: "未分配",
   Unavailable: "不可用",
+  "Unified sign in": "统一账号登录",
   "Unit price": "单价",
   "Update member": "更新成员",
   "Update your dealer application": "更新经销商申请",

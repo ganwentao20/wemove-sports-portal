@@ -164,7 +164,7 @@ export function CompanyWorkbench({
                 body: JSON.stringify({ token: invitation }),
               });
               setNotice(
-                "Invitation accepted. Sign in at Dealer login to activate the company session.",
+                "Invitation accepted. Sign in at the unified login to activate the company session.",
               );
               setInvitation("");
             } catch (err) {
@@ -186,8 +186,8 @@ export function CompanyWorkbench({
           </label>
           <p className="my-2 text-sm">
             {t("Use a verified customer account with the invited email.")}{" "}
-            <Link href="/customer/login" className="underline">
-              {t("Customer login")}
+            <Link href="/login" className="underline">
+              {t("Unified sign in")}
             </Link>
           </p>
           <button

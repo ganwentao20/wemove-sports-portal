@@ -95,13 +95,14 @@ test("guest cart merges once, checkout snapshots totals, demo payment issues an 
         "Saved to your guest cart. Sign in at checkout to merge it.",
       ),
     ).toBeVisible();
-    await page.goto("/checkout");
+    await page.getByRole("link", { name: "View cart", exact: true }).click();
+    await expect(page).toHaveURL((url) => url.pathname.endsWith("/cart"));
     await page
       .getByRole("link", { name: "Sign in to merge it and check out" })
       .click();
     await expect(page).toHaveURL(
       (url) =>
-        url.pathname === "/login" &&
+        /\/login$/.test(url.pathname) &&
         url.searchParams.get("next") === "/checkout",
     );
     await expect(page.getByLabel("Email", { exact: true })).toBeEnabled();

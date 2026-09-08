@@ -9,6 +9,7 @@ import { apiFetch, ApiError } from "../../../lib/api";
 import { secureApiFetch } from "../../../lib/secure-api";
 import { localizeGuestCart } from "../../../lib/guest-cart-locale";
 import { recordEvent } from "../../../components/consent-analytics";
+import { publicUrl } from "../../../lib/public-url";
 
 type Address = {
   id?: string;
@@ -80,6 +81,7 @@ export function Checkout() {
   const [quote, setQuote] = useState<Quote | null>(null);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+  const [loadingCart, setLoadingCart] = useState(true);
   const [guest, setGuest] = useState(false);
   const [unmerged, setUnmerged] = useState<Cart["items"]>([]);
   const current = markets.find((m) => m.code === market);
@@ -91,6 +93,7 @@ export function Checkout() {
       n / 100,
     );
   async function load() {
+    setLoadingCart(true);
     try {
       const [c, a] = await Promise.all([
         secureApiFetch<Cart>("customer", `/cart?locale=${uiLocale}`),
@@ -153,6 +156,8 @@ export function Checkout() {
         setCart({ items: localized });
         localStorage.setItem("wm-guest-cart", JSON.stringify(localized));
       } else setError(e instanceof Error ? e.message : "Cart unavailable");
+    } finally {
+      setLoadingCart(false);
     }
   }
   useEffect(() => {
@@ -373,7 +378,9 @@ export function Checkout() {
       <div className="mt-7 grid gap-8 lg:grid-cols-[1fr_320px]">
         <div>
           <section className="space-y-4">
-            {cart.items.length ? (
+            {loadingCart ? (
+              <p>{t("Loading…")}</p>
+            ) : cart.items.length ? (
               cart.items.map((line) => (
                 <div
                   key={line.variantId}
@@ -412,7 +419,7 @@ export function Checkout() {
               {t("Your cart is saved on this device.")}{" "}
               <Link
                 className="font-bold underline"
-                href="/customer/login?next=%2Fcheckout"
+                href={publicUrl("/login?next=%2Fcheckout", uiLocale, market)}
               >
                 {t("Sign in to merge it and check out")}
               </Link>

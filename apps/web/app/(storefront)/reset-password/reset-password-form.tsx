@@ -49,7 +49,7 @@ export function ResetPasswordForm({ token }: { token: string }) {
         className="mt-8 rounded-xl bg-emerald-50 p-4 text-sm text-emerald-800"
       >
         {t("Password updated.")}
-        <Link href="/customer/login" className="font-semibold underline">
+        <Link href={`/${uiLocale}/login`} className="font-semibold underline">
           {t("Sign in")}
         </Link>
       </div>

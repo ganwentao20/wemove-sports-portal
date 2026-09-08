@@ -507,7 +507,11 @@ export default async function ProductsPage({
                     {copy.dealerCatalog}
                   </Link>
                 )}
-                <WishlistButton productId={product.id} locale={locale} />
+                <WishlistButton
+                  productId={product.id}
+                  locale={locale}
+                  market={market}
+                />
                 <Link
                   className="rounded-full border px-5 py-2 text-sm"
                   href={url(`/compare?ids=${encodeURIComponent(product.slug)}`)}

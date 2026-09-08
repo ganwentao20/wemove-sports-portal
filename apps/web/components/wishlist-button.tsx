@@ -2,12 +2,15 @@
 import { useState } from "react";
 import { secureApiFetch } from "../lib/secure-api";
 import { ApiError } from "../lib/api";
+import { publicUrl } from "../lib/public-url";
 export function WishlistButton({
   productId,
   locale = "en",
+  market = "US",
 }: {
   productId: string;
   locale?: string;
+  market?: string;
 }) {
   const strings = {
     en: [
@@ -73,7 +76,7 @@ export function WishlistButton({
       {error && (
         <p role="alert" className="mt-2 text-sm text-red-700">
           {error}{" "}
-          <a href="/customer/login" className="underline">
+          <a href={publicUrl("/login", locale, market)} className="underline">
             {text[3]}
           </a>
         </p>

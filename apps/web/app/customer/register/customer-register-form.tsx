@@ -64,7 +64,7 @@ export function CustomerRegisterForm() {
             : t("Your account is active and ready to use.")}
         </p>
         <Link
-          href="/customer/login"
+          href={`/${uiLocale}/login`}
           className="mt-4 inline-block font-semibold underline"
         >
           {t("Continue to sign in")}

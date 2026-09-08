@@ -361,7 +361,11 @@ export default async function ProductDetailPage({ params }: PageProps) {
           </div>
           <p className="mt-3 text-sm text-neutral-600">
             {product.ageMin !== null
-              ? `${copy.ages} ${product.ageMin}–${product.ageMax ?? "+"} · `
+              ? `${copy.ages} ${
+                  product.ageMax === null
+                    ? `${product.ageMin}+`
+                    : `${product.ageMin}–${product.ageMax}`
+                } · `
               : ""}
             {product.scenes
               ?.map((scene) => product.sceneLabels?.[scene] ?? scene)
@@ -418,12 +422,17 @@ export default async function ProductDetailPage({ params }: PageProps) {
               url={canonical}
               title={product.name}
             />
-            <WishlistButton locale={product.locale} productId={product.id} />
+            <WishlistButton
+              locale={product.locale}
+              market={market}
+              productId={product.id}
+            />
           </div>
           <ProductDownloads
             productId={product.id}
             slug={product.slug}
             locale={product.locale}
+            market={market}
             initial={mediaResources.ok ? mediaResources.data : []}
             kind={downloadKind}
           />

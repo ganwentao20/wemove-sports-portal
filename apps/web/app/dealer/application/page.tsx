@@ -67,8 +67,8 @@ export default function ApplicationPage() {
       </h1>
       <p className="my-3">
         {t("Sign in with the verified customer email used on the application.")}{" "}
-        <Link href="/customer/login" className="underline">
-          {t("Customer login")}
+        <Link href="/login" className="underline">
+          {t("Unified sign in")}
         </Link>
       </p>
       <p role="alert">{error ? uiError(uiLocale, error) : ""}</p>

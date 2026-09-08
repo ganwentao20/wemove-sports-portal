@@ -67,7 +67,12 @@ export default async function Page({
     const attrs: Record<string, string> = {
       Category: p.category?.name ?? "—",
       "Age guidance": p.ageGuidance ?? "—",
-      Ages: p.ageMin !== null ? `${p.ageMin}–${p.ageMax ?? "+"}` : "—",
+      Ages:
+        p.ageMin === null
+          ? "—"
+          : p.ageMax === null
+            ? `${p.ageMin}+`
+            : `${p.ageMin}–${p.ageMax}`,
       Scenes: p.scenes.map((value) => t(value)).join(", ") || "—",
       Skills: p.skills.map((value) => t(value)).join(", ") || "—",
       "How to play": p.playGuide || "—",

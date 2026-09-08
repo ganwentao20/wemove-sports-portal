@@ -196,7 +196,7 @@ export function IdentityWorkbench({
       {error && (
         <p role="alert" className="my-4 rounded bg-red-50 p-3 text-red-700">
           {error ? uiError(uiLocale, error) : ""}{" "}
-          <Link href="/admin/login" className="underline">
+          <Link href="/login" className="underline">
             {t("Sign in")}
           </Link>
         </p>

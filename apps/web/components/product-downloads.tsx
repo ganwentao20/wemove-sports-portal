@@ -5,6 +5,7 @@ import { secureApiFetch } from "../lib/secure-api";
 import { recordEvent } from "./consent-analytics";
 import { translateUi, uiError } from "../lib/ui-i18n";
 import { languageName } from "../lib/language-code";
+import { publicUrl } from "../lib/public-url";
 export type ProductFile = {
   id: string;
   title: string;
@@ -20,12 +21,14 @@ export function ProductDownloads({
   productId,
   slug,
   locale,
+  market,
   initial,
   kind,
 }: {
   productId: string;
   slug: string;
   locale: string;
+  market: string;
   initial: ProductFile[];
   kind: "dealer" | "customer" | null;
 }) {
@@ -149,8 +152,12 @@ export function ProductDownloads({
         <Link
           className="mt-4 inline-block text-sm underline"
           href={
-            "/customer/login?next=" +
-            encodeURIComponent("/" + locale + "/products/" + slug)
+            publicUrl(
+              "/login?next=" +
+                encodeURIComponent("/" + locale + "/products/" + slug),
+              locale,
+              market,
+            )
           }
         >
           {text.signIn}

@@ -12,6 +12,7 @@ const API_PROXY_TARGET =
 const nextConfig: NextConfig = {
   output: "standalone",
   outputFileTracingRoot: path.resolve(process.cwd(), "../.."),
+  allowedDevOrigins: ["127.0.0.1"],
   reactStrictMode: true,
   images: { formats: ["image/avif", "image/webp"], qualities: [60, 75] },
   async redirects() {

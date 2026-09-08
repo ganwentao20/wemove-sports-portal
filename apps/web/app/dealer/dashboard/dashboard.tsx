@@ -117,8 +117,8 @@ export function DealerDashboard({
           {login && (
             <>
               {" "}
-              <Link href="/dealer/login" className="underline">
-                {t("Dealer login")}
+              <Link href="/login" className="underline">
+                {t("Unified sign in")}
               </Link>
             </>
           )}

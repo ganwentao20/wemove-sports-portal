@@ -47,6 +47,7 @@ test("category editor publishes metadata, typed product links and useful empty/d
       slug: "category-product-" + key,
       status: "ACTIVE",
       markets: ["US"],
+      ageMin: 3,
       associations: [
         { type: "ACCESSORY", slug: accessory.slug },
         { type: "REPLACEMENT", slug: replacement.slug },
@@ -148,6 +149,8 @@ test("category editor publishes metadata, typed product links and useful empty/d
       new RegExp("category=" + categorySlug + "&market=US"),
     );
     await page.goto("/en/products/" + product.slug + "?market=US");
+    await expect(page.getByText(/Ages 3\+/)).toBeVisible();
+    await expect(page.getByText("Ages 3–+", { exact: false })).toHaveCount(0);
     await expect(
       page
         .locator('[data-association-type="accessories"]')
