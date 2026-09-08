@@ -18,13 +18,17 @@
 
 | 角色 | 登录页面 | 用户名 | 密码 |
 | --- | --- | --- | --- |
-| 消费者 | `/customer/login` | `customer@wemove.local` | `Demo@123456` |
-| 经销商（BUYER） | `/dealer/login` | `dealer@wemove.local` | `Demo@123456` |
-| 超级管理员 | `/admin/login` | `admin@wemove.local` | `Admin@12345` |
+| 消费者 | `/login` | `customer@wemove.local` | `Demo@123456` |
+| 经销商（BUYER） | `/login` | `dealer@wemove.local` | `Demo@123456` |
+| 超级管理员 | `/login` | `admin@wemove.local` | `Admin@12345` |
+
+三个账号共用 `http://localhost:3000/login`。系统验证账号后自动进入对应界面：消费者进入 `/customer/account`，经销商进入 `/dealer/catalog`（需要时先完成企业条款或 MFA），管理员完成 MFA 后进入 `/admin/dashboard`。无需手动选择身份。
+
+原 `/customer/login`、`/dealer/login`、`/admin/login` 均兼容跳转至 `/login`；未登录时，移动导航仍保留“账号”和“经销商登录”两个标签。统一入口不合并用户与员工数据表或权限，切换身份时清理当前浏览器旧身份登录凭据；返回地址 `next` 只接受当前身份允许的站内路径。
 
 管理员密码验证后仍需 MFA。首次登录按页面提供的设置密钥在验证器中绑定，输入当前六位动态码；后续登录和敏感写操作使用同一验证器的当前动态码。动态码不能写成固定密码，演示前先完成绑定并核对电脑时间。经销商首次登录需接受当前企业条款。测试客户与经销商已验证邮箱；新注册流程可通过 Mailpit 演示邮件验证。
 
-完整会话演示优先使用测试 HTTPS 入口 `https://127.0.0.1:3443`：构建后启动 API、Web，再运行 `node scripts/browser-https.mjs`。此代理使用短期自签证书，浏览器仅对本机演示地址确认访问；`Secure` Cookie 和 MFA 保持启用。Mailpit 为 `http://localhost:8025`。不要把本机测试证书当作公网正式 TLS。
+完整会话演示优先使用测试 HTTPS 登录入口 `https://127.0.0.1:3443/login`：构建后启动 API、Web，再运行 `node scripts/browser-https.mjs`。此代理使用短期自签证书，浏览器仅对本机演示地址确认访问；`Secure` Cookie 和 MFA 保持启用。Mailpit 为 `http://localhost:8025`。不要把本机测试证书当作公网正式 TLS。
 
 ## 2. 访客与客户
 
@@ -43,7 +47,7 @@
 
 - `/customer/register`：填写姓名、邮箱、密码，并确认本人满 18 岁。
 - 若启用邮箱验证，从 Mailpit 邮件打开 `/verify-email?token=...`，点击 Verify email。
-- `/customer/login`：登录成功后进入账户中心。
+- `/login`：消费者账号登录成功后进入账户中心；从结算页进入时返回结算。
 - 忘记密码：登录页进入 `/forgot-password`；打开邮件中的 `/reset-password?token=...` 设置新密码。
 
 **图 2：成年人注册与协议确认界面。** 角色：访客；日期：2026-09-08；环境：本机演示库、生产 Web 构建；页面 `/customer/register`。
@@ -64,7 +68,7 @@
 ## 3. 经销商
 
 - `/dealer/apply` 分步提交企业资料。资质附件可选，仅支持 PDF/JPG/PNG 且不超过 5 MB，以私有媒体存储；登录客户提交会绑定本人账号。
-- 后台批准后，重新登录 `/dealer/login`，进入 `/dealer/catalog` 查看所属企业授权价。
+- 后台批准后，从 `/login` 重新登录经销商账号，按要求完成企业条款或 MFA 后，进入 `/dealer/catalog` 查看所属企业授权价。
 - `/dealer/quick-order` 每行输入 `SKU, 数量`，最多 100 行；系统逐行返回重复、未授权、无价格或库存不足错误。
 - 校验全部通过后填写 Request title，点击 Create RFQ draft；进入 `/dealer/procurement` 后点击 Submit for quotation。
 - 销售报价后可查看最新和历史版本、有效期、税费与运费。OWNER/BUYER 可接受或拒绝；VIEWER 只读。

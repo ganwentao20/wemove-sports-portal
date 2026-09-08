@@ -1,8 +1,44 @@
 import { expect, test } from "@playwright/test";
-import { PrismaClient } from "@prisma/client";
+import { Prisma, PrismaClient } from "@prisma/client";
 import { hash } from "bcryptjs";
 import { randomUUID } from "node:crypto";
 import { readFile } from "node:fs/promises";
+
+async function createTestMarket(prisma: PrismaClient) {
+  for (const letter of "ABCDEFGHIJKLMNOPQRSTUVWXYZ") {
+    const code = `Q${letter}`;
+    try {
+      await prisma.retailMarket.create({
+        data: {
+          code,
+          label: "Browser verification",
+          countries: ["US"],
+          currency: "USD",
+          retailEnabled: true,
+          paymentMode: "DEMO",
+          taxBps: 1000,
+          shippingCents: 500,
+        },
+      });
+      return code;
+    } catch (error) {
+      const target =
+        error instanceof Prisma.PrismaClientKnownRequestError
+          ? error.meta?.target
+          : undefined;
+      if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === "P2002" &&
+        Array.isArray(target) &&
+        target.length === 1 &&
+        target[0] === "code"
+      )
+        continue;
+      throw error;
+    }
+  }
+  throw new Error("No unused two-letter Q market is available for the retail test");
+}
 
 test("guest cart merges once, checkout snapshots totals, demo payment issues an authorized PDF", async ({
   page,
@@ -13,7 +49,7 @@ test("guest cart merges once, checkout snapshots totals, demo payment issues an 
     key = randomUUID().slice(0, 8),
     email = `browser-shop-${key}@example.test`,
     password = `Browser-${key}-123!`,
-    market = "QB";
+    market = await createTestMarket(prisma);
   const user = await prisma.user.create({
     data: {
       email,
@@ -43,18 +79,6 @@ test("guest cart merges once, checkout snapshots totals, demo payment issues an 
     include: { variants: true },
   });
   const variant = product.variants[0];
-  await prisma.retailMarket.create({
-    data: {
-      code: market,
-      label: "Browser verification",
-      countries: ["US"],
-      currency: "USD",
-      retailEnabled: true,
-      paymentMode: "DEMO",
-      taxBps: 1000,
-      shippingCents: 500,
-    },
-  });
   try {
     await page
       .context()
@@ -73,7 +97,11 @@ test("guest cart merges once, checkout snapshots totals, demo payment issues an 
     await page
       .getByRole("link", { name: "Sign in to merge it and check out" })
       .click();
-    await expect(page).toHaveURL((url) => url.pathname === "/customer/login");
+    await expect(page).toHaveURL(
+      (url) =>
+        url.pathname === "/login" &&
+        url.searchParams.get("next") === "/checkout",
+    );
     await expect(page.getByLabel("Email", { exact: true })).toBeEnabled();
     await page.getByLabel("Email", { exact: true }).fill(email);
     await page.getByLabel("Password", { exact: true }).fill(password);

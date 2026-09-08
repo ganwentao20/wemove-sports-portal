@@ -57,10 +57,21 @@ export async function SiteHeader() {
   >(`/cms/pages?kind=BANNER&locale=${locale}&market=${market}`);
   const banner = announcements.ok ? announcements.data[0] : undefined;
   const dealer = jar.has("wm_dealer_session");
+  const staff = jar.has("wm_staff_session");
+  const customer = jar.has("wm_customer_session");
   const portals: NavigationItem[] = [
     {
-      href: dealer ? "/dealer/dashboard" : "/customer/account",
-      label: ui(locale, dealer ? "Dealer Portal" : "Account"),
+      href: staff
+        ? "/admin/dashboard"
+        : dealer
+          ? "/dealer/dashboard"
+          : customer
+            ? "/customer/account"
+            : `/${locale}/login`,
+      label: ui(
+        locale,
+        staff ? "Administration" : dealer ? "Dealer Portal" : "Account",
+      ),
     },
     ...(!dealer
       ? [{ href: "/dealer/login", label: ui(locale, "Dealer Sign in") }]

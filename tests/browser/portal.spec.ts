@@ -14,6 +14,7 @@ const publicRoutes = [
   "/support/faq",
   "/dealers",
   "/customer/register",
+  "/login",
 ];
 for (const width of widths)
   test(`public templates fit ${width}px and retain usable navigation`, async ({
@@ -45,6 +46,7 @@ for (const route of [
   "/products",
   "/search?q=bowling",
   "/customer/register",
+  "/login",
   "/support/faq",
   "/forgot-password",
   "/reset-password?token=accessibility-check-token",
@@ -74,7 +76,7 @@ test("language navigation, live search and consent controls work", async ({
   await page.goto("/zh");
   await expect(page.locator("h1")).toContainText("从运动开始玩乐");
   await expect(page.locator("html")).toHaveAttribute("lang", "zh");
-  await page.goto("/search");
+  await page.goto("/en/search");
   await page
     .getByRole("textbox", {
       name: "Search products, articles, FAQs and downloads",
@@ -85,7 +87,7 @@ test("language navigation, live search and consent controls work", async ({
   ).toBeVisible();
   await page.getByRole("button", { name: "Search", exact: true }).click();
   await expect(page.locator("main")).toContainText("results");
-  await page.goto("/cookies");
+  await page.goto("/en/cookies");
   await page.getByLabel("Allow optional analytics").check();
   await page.getByRole("button", { name: "Save preferences" }).click();
   expect(await page.evaluate(() => localStorage.getItem("wm_consent"))).toBe(

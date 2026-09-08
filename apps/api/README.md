@@ -58,6 +58,7 @@ Schema 单一事实源：`prisma/schema.prisma`（归属注释 M1/MA/MB/MC/MD/ME
 | POST      | `/auth/verify-email`                                | 邮箱验证（一次性令牌，24h 有效）                                                        |
 | POST      | `/auth/resend-verification`                         | 重发验证邮件（防枚举：统一返回 ok）                                                     |
 | POST      | `/auth/login`                                       | C 端/经销商成员登录（Redis 失败限流：单邮箱 5 次/15min、单 IP 30 次/min）               |
+| POST      | `/auth/unified/login`                               | 统一验证邮箱与密码，返回 customer/dealer 身份会话或 staff MFA challenge；与旧入口共享失败计数及 IP 限流 |
 | POST      | `/dealer/applications`                              | 提交经销商资质申请（公开，单 IP 5 次/min；Redis 不可用时降级）                          |
 | POST      | `/dealer/application-attachments`                   | 资质私有上传（PDF/JPG/PNG、5 MB，单 IP 10 次/hour）                                   |
 | GET       | `/dealer/applications/:id`                          | 查询本人或所属企业申请（Bearer JWT，跨账号返回 403）                                    |
@@ -66,6 +67,7 @@ Schema 单一事实源：`prisma/schema.prisma`（归属注释 M1/MA/MB/MC/MD/ME
 | GET       | `/admin/dealer/applications`                        | 审核工作台列表，可按 status 筛选（仅 SUPER_ADMIN）                                      |
 | PATCH     | `/admin/dealer/applications/:id/review`             | 审核流转；批准时事务创建/批准企业并绑定申请人为 OWNER，终态不可回退并留审计              |
 | POST      | `/auth/staff/login`                                 | 后台员工登录（角色入 token；独立限流）                                                  |
+| POST      | `/auth/staff/mfa`                                   | 使用 challengeToken 与当前六位 code 完成员工 MFA，成功后才签发员工会话                  |
 | POST      | `/auth/forgot-password`                             | 忘记密码（发重置邮件，1h 有效；防枚举）                                                 |
 | POST      | `/auth/reset-password`                              | 重置密码（一次性令牌；同邮箱旧重置令牌一并作废）                                        |
 | GET       | `/auth/me`                                          | 当前登录者（Bearer）                                                                    |

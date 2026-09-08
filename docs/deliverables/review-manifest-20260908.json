@@ -1,6 +1,6 @@
 {
   "date": "2026-09-08",
-  "scope": "十份当前 Word 均有逐页检查记录。本轮将分工与工作量统一表述为项目实际分工及实际工作量占比，重新检查分工 v1.1、分工 v1.2、测试、需求和 AI 汇总五份 Word 共十八页；其余文件保留此前检查记录。本次修改未新增软件测试结果。",
+  "scope": "本轮统一登录同步需求与测试两份 Word，并完成需求七页、测试四页共十一页逐页检查；更新本机回归结果与 Firefox 启动限制。历史 CI #54、CI #51 的证据来源及统计不变，其他文档保留原检查记录。",
   "outputs": [
     {
       "path": "docs/deliverables/下午班-08组-WEMOVE-SPORTS-大模型辅助实践说明-v1.0.docx",
@@ -46,8 +46,8 @@
     },
     {
       "path": "docs/deliverables/下午班-08组-WEMOVE-SPORTS-项目需求文档-v0.5.docx",
-      "sha256": "cc4abc2aad494ed80bfb34646704c502ec37a51e6046c35ba88851db163df213",
-      "bytes": 48907,
+      "sha256": "48c43e35c85264e63bb2eb86969fab994156adc81152179ec30d4862bd50a903",
+      "bytes": 49194,
       "pages": 7,
       "allPagesVisuallyReviewed": true
     },
@@ -60,8 +60,8 @@
     },
     {
       "path": "docs/deliverables/下午班-08组-WEMOVE-SPORTS-测试报告-v0.7.docx",
-      "sha256": "66a50403f2fe67e11192a6df56aa0d6bc70612fd6de5e3713820b6a232d52170",
-      "bytes": 45156,
+      "sha256": "81c7cacf0d1a179bd065dc03193f99d1171cfcc98ff3081366c0975aa3062625",
+      "bytes": 45392,
       "pages": 4,
       "allPagesVisuallyReviewed": true
     },

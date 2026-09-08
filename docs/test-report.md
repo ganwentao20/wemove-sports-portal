@@ -36,11 +36,15 @@ CI 使用 Ubuntu runner、Node 22、锁文件依赖、PostgreSQL 16、Redis 7、
 
 | 测试角色 | 用户名 | 密码 | 登录入口 |
 | --- | --- | --- | --- |
-| 消费者 | customer@wemove.local | Demo@123456 | /customer/login |
-| 经销商（BUYER） | dealer@wemove.local | Demo@123456 | /dealer/login |
-| 超级管理员 | admin@wemove.local | Admin@12345 | /admin/login |
+| 消费者 | customer@wemove.local | Demo@123456 | /login |
+| 经销商（BUYER） | dealer@wemove.local | Demo@123456 | /login |
+| 超级管理员 | admin@wemove.local | Admin@12345 | /login |
 
-以上为新库 seed 默认测试凭据，已按用户要求明确列出。消费者和经销商登录、管理员密码进入 MFA challenge 已在本机实际核对。管理员仍需首次绑定验证器，并在登录和敏感操作输入当前六位动态码；不能用固定验证码代替 MFA。旧库重新 seed 不重置已有密码。上述凭据不用于生产。
+三类测试账号统一使用 `http://localhost:3000/login`（HTTPS：`https://127.0.0.1:3443/login`）；原三入口兼容跳转，按身份进入账户中心、企业目录或后台。经销商按要求完成条款或 MFA；员工须绑定验证器并验证当前六位动态码。凭据仅用于测试，旧库 seed 不重置密码。
+
+统一登录回归检查：干净暂存快照的 API lint、类型检查、构建及 Web 类型检查、`--webpack` 生产构建通过；API 25 文件、129 项测试通过，含新增 19 项统一登录单测。浏览器使用原工作区生产构建与本机开发库 `wemove`：Chromium 统一登录 4 项、采购与购物各 1 项通过，WebKit 统一登录 4 项通过。
+
+Firefox 本机启动报 `spawn UNKNOWN`，3 项浏览器用例未执行，待 Linux CI 核验。本轮仅记录上述本机结果，历史 CI #54 与 CI #51 的证据来源及统计不变。
 
 ## 3. 主要用例与实际预期
 

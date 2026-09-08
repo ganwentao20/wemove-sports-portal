@@ -43,6 +43,20 @@ export async function sessionLogin<T>(
   return readEnvelope<T>(response);
 }
 
+/** One public entry; the API determines the identity from verified credentials. */
+export async function unifiedSessionLogin<T>(
+  credentials:
+    | { email: string; password: string; code?: string }
+    | { challengeToken: string; code: string },
+): Promise<T> {
+  const response = await fetch("/api/session/login", {
+    method: "POST",
+    headers: secureHeaders(),
+    body: JSON.stringify(credentials),
+  });
+  return readEnvelope<T>(response);
+}
+
 /** 调用受保护 API；服务端从 HttpOnly Cookie 读取 JWT 并注入 Bearer 头。 */
 export async function secureApiFetch<T>(
   kind: SessionKind,

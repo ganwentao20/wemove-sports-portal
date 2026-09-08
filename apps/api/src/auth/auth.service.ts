@@ -3,7 +3,7 @@ import { Injectable, Optional, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import type { JwtSignOptions } from '@nestjs/jwt';
 import { randomUUID } from 'node:crypto';
-import type { Prisma } from '@prisma/client';
+import type { Prisma, Staff, User } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { AuditService } from '../audit/audit.service.js';
 import { RedisService } from '../redis/redis.service.js';
@@ -213,6 +213,86 @@ export class AuthService {
     return { ok: true };
   }
 
+  // ---------------------------------------------------------------- 统一登录入口
+  async unifiedLogin(dto: LoginDto, ip?: string, userAgent?: string) {
+    const email = normalizeEmail(dto.email);
+    const customerFailureKey = `wm:rl:login:fail:${email}`;
+    const staffFailureKey = `wm:rl:staff:fail:${email}`;
+
+    // Share the existing counters: switching entry points cannot bypass a lock.
+    const customerIpLimited = await this.exceeded(
+      `wm:rl:login:ip:${ip ?? 'anon'}`,
+      RL.loginIp,
+    );
+    const staffIpLimited = await this.exceeded(
+      `wm:rl:staff:ip:${ip ?? 'anon'}`,
+      RL.staffLoginIp,
+    );
+    if (customerIpLimited || staffIpLimited)
+      throw new BizException(
+        ERROR_CODES.RATE_LIMIT,
+        'too many attempts, slow down',
+        429,
+      );
+    await this.assertNotLocked(customerFailureKey, RL.loginFailEmail);
+    await this.assertNotLocked(staffFailureKey, RL.staffLoginFailEmail);
+
+    const [user, staff] = await Promise.all([
+      this.prisma.user.findUnique({ where: { email } }),
+      this.prisma.staff.findUnique({ where: { email } }),
+    ]);
+    const [customerMatches, staffMatches] = await Promise.all([
+      user ? verifyPassword(dto.password, user.passwordHash) : false,
+      staff ? verifyPassword(dto.password, staff.passwordHash) : false,
+    ]);
+    if (customerMatches && staffMatches)
+      throw new BizException(
+        ERROR_CODES.CONFLICT,
+        'These credentials match both a customer and a staff account. Contact an administrator to assign different email addresses or passwords.',
+        409,
+      );
+    if (staff && staffMatches) {
+      return {
+        ...(await this.beginStaffLogin(staff, staffFailureKey)),
+        sessionKind: 'staff' as const,
+      };
+    }
+    if (user && customerMatches) {
+      const result = await this.completeCustomerLogin(
+        user,
+        dto,
+        customerFailureKey,
+        ip,
+        userAgent,
+      );
+      return {
+        ...result,
+        sessionKind: 'companyId' in result.user && result.user.companyId
+          ? ('dealer' as const)
+          : ('customer' as const),
+      };
+    }
+
+    await this.audit.record({
+      actorKind: 'ANON',
+      action: 'auth.unified.login.failed',
+      after: { email },
+      ip,
+    });
+    // Increment both scopes before throwing so the fifth failure locks both.
+    const failures = await Promise.allSettled([
+      this.countFailure(customerFailureKey, RL.loginFailEmail),
+      this.countFailure(staffFailureKey, RL.staffLoginFailEmail),
+    ]);
+    for (const failure of failures)
+      if (failure.status === 'rejected') throw failure.reason;
+    throw new BizException(
+      ERROR_CODES.UNAUTHORIZED,
+      'invalid email or password',
+      401,
+    );
+  }
+
   // ---------------------------------------------------------------- 登录（C 端/经销商）
   async login(dto: LoginDto, ip?: string, userAgent?: string) {
     const email = normalizeEmail(dto.email);
@@ -243,6 +323,16 @@ export class AuthService {
         401,
       );
     }
+    return this.completeCustomerLogin(user, dto, failureKey, ip, userAgent);
+  }
+
+  private async completeCustomerLogin(
+    user: User,
+    dto: LoginDto,
+    failureKey: string,
+    ip?: string,
+    userAgent?: string,
+  ) {
     if (user.status === 'PENDING') {
       throw new BizException(
         ERROR_CODES.FORBIDDEN,
@@ -342,6 +432,10 @@ export class AuthService {
         401,
       );
     }
+    return this.beginStaffLogin(staff, failureKey);
+  }
+
+  private async beginStaffLogin(staff: Staff, failureKey: string) {
     if (staff.status !== 'ACTIVE') {
       throw new BizException(ERROR_CODES.FORBIDDEN, 'account disabled', 403);
     }

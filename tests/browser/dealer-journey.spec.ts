@@ -143,10 +143,8 @@ test("first dealer sign-in accepts terms, CSV becomes an RFQ and quoted PO, then
       localStorage.setItem("wm_consent", "essential"),
     );
     await page.goto("/dealer/login");
-    await expect(
-      page.getByLabel("Business email", { exact: true }),
-    ).toBeEnabled();
-    await page.getByLabel("Business email", { exact: true }).fill(email);
+    await expect(page.getByLabel("Email", { exact: true })).toBeEnabled();
+    await page.getByLabel("Email", { exact: true }).fill(email);
     await page.getByLabel("Password", { exact: true }).fill(password);
     await page.getByRole("button", { name: "Sign in", exact: true }).click();
     await expect(page).toHaveURL((url) => url.pathname === "/dealer/terms");
@@ -325,7 +323,7 @@ test("first dealer sign-in accepts terms, CSV becomes an RFQ and quoted PO, then
         exact: true,
       }),
     });
-    await refundForm.getByLabel("Amount (USD)", { exact: true }).fill("42.00");
+    await refundForm.getByLabel(/^Amount \(\s*USD\)$/).fill("42.00");
     await refundForm.getByLabel(/Cancel the unshipped order/).check();
     await refundForm
       .getByLabel("Reason", { exact: true })

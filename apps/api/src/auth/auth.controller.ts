@@ -60,6 +60,16 @@ export class AuthController {
   }
 
   @HttpCode(200)
+  @Post('unified/login')
+  unifiedLogin(
+    @Body() dto: LoginDto,
+    @Ip() ip?: string,
+    @Headers('user-agent') userAgent?: string,
+  ) {
+    return this.auth.unifiedLogin(dto, ip, userAgent);
+  }
+
+  @HttpCode(200)
   @Post('staff/login')
   staffLogin(@Body() dto: StaffLoginDto, @Ip() ip?: string) {
     return this.auth.staffLogin(dto, ip);
