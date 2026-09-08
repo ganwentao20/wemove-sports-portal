@@ -1,40 +1,68 @@
 {
   "date": "2026-09-08",
-  "scope": "本次七份审核导出文档；并非成员签字或软件运行验收。",
+  "scope": "九份当前 Word 已重新校订和逐页检查；另保留两份未修改历史文档的前次验证记录。本记录不代表成员确认或新增软件测试。",
   "outputs": [
     {
       "path": "docs/deliverables/下午班-08组-WEMOVE-SPORTS-大模型辅助实践说明-v1.0.docx",
-      "sha256": "c40f23f8d20e769e4d8d71a722ca52d5613f8506894d6834ca3f9b3f9fec16fa",
-      "bytes": 41844,
+      "sha256": "8ec4df113c8a8f88a13b719ea0ddff3ac5b60bfc83360f56397061fc59ee0b32",
+      "bytes": 41864,
       "pages": 3,
       "allPagesVisuallyReviewed": true
     },
     {
+      "path": "docs/deliverables/Web开发技术现状报告_甘文韬.docx",
+      "sha256": "51b1487c1c218c43ad67e984bb0e8b6e4dc77cb8e994025eb731a69bf2a98c69",
+      "bytes": 40435,
+      "pages": 2,
+      "allPagesVisuallyReviewed": true
+    },
+    {
       "path": "docs/deliverables/Web开发技术现状报告_陈婧琳.docx",
-      "sha256": "6f84fdde7e04fd96bc1c7c520277047bd9d6aebb180c58a68573a66c6839b1f3",
-      "bytes": 40556,
+      "sha256": "0636bf13ebd35131c45feb21f6ede79bde377935b3107807946ed6c94a7c56d3",
+      "bytes": 40504,
       "pages": 2,
       "allPagesVisuallyReviewed": true
     },
     {
       "path": "docs/deliverables/Web开发技术现状报告_龙祖怡.docx",
-      "sha256": "6e8d9aeedf46edf150ff4882a58d31f9b3ba1638ef2c0f752f0ec045313971e5",
-      "bytes": 40452,
+      "sha256": "c5d104cf35058a7d6eef5b2b2569e8d468aefbf3c6cdf0302203eea13d098c0d",
+      "bytes": 40164,
       "pages": 2,
       "allPagesVisuallyReviewed": true
     },
     {
       "path": "docs/deliverables/Web开发技术现状报告_倪依玲.docx",
-      "sha256": "513b5d08996e4ec9e38d3649f7a5e66827e74ebcb6a7966f1a51338ab8101b7d",
-      "bytes": 40515,
+      "sha256": "528c481ada45c9c45ad3dda7d87d71540d7c8d0f66abcd6600d27835d496eeb1",
+      "bytes": 40411,
       "pages": 2,
       "allPagesVisuallyReviewed": true
     },
     {
       "path": "docs/deliverables/成员A-需求分析-审核稿-v1.0.docx",
-      "sha256": "351384c733acfeed6f2b2856bcd7f9eef52f6d920379055a7545bd12e48d52c3",
-      "bytes": 48185,
+      "sha256": "d4a49b96dd54f00eb94fbd4debfec72b346ac0afada6f14771eea9bc037a02f6",
+      "bytes": 47534,
+      "pages": 6,
+      "allPagesVisuallyReviewed": true
+    },
+    {
+      "path": "docs/deliverables/下午班-08组-WEMOVE-SPORTS-项目需求文档-v0.5.docx",
+      "sha256": "48c12f2c460c15f7538a60a102d03eb947ea138829fef048889d7c7673563ad1",
+      "bytes": 48908,
       "pages": 7,
+      "allPagesVisuallyReviewed": true
+    },
+    {
+      "path": "docs/deliverables/下午班-08组-WEMOVE-SPORTS-分工与工作量报告-v1.2.docx",
+      "sha256": "90b5e4fefba39c87f588cd34e2e3093259b41ad61488305fe53fc44241d9aca5",
+      "bytes": 40723,
+      "pages": 2,
+      "allPagesVisuallyReviewed": true
+    },
+    {
+      "path": "docs/deliverables/下午班-08组-WEMOVE-SPORTS-测试报告-v0.7.docx",
+      "sha256": "b2951aea950083454848393c72311ed20615fb21f0df60df63736dc0e64dd3f4",
+      "bytes": 45052,
+      "pages": 4,
       "allPagesVisuallyReviewed": true
     },
     {

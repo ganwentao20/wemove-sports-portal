@@ -1,8 +1,8 @@
 # 文档中心（docs/）
 
-> 本目录存放**过程性/规范类**材料。课程最终提交件（④需求文档、⑤测试报告、⑥答辩PPT 等）见下方「交付物清单与红线」。
+> 本目录存放**过程性/规范类**材料。课程最终提交件（④需求文档、⑤测试报告、⑥项目汇报 PPT 等）见下方「课程交付清单」。
 
-2026-09-08 更新：[当前 Word 交付件索引](deliverables/README.md)、[材料审核与项目完成度](plans/document-review-20260908.md)、[交付就绪清单](delivery-readiness.md)。五人 AI 汇总和五份个人 AI 说明已齐；独立技术现状/思政报告已归档 4/5，首次实际会议纪要已归档，测试报告已升至 v0.7 并保存 CI #51、100 用户负载与实际截图证据；九页汇报 PPT 已完成。
+2026-09-08 更新：[当前 Word 交付件索引](deliverables/README.md)、[材料审核与项目完成度](plans/document-review-20260908.md)、[交付就绪清单](delivery-readiness.md)。五人 AI 汇总和五份个人 AI 说明已齐；独立技术现状/思政报告已归档 4/5，首次实际会议纪要已归档，测试报告 v0.7 已核对 CI #54 的完整整合结论，保留 CI #51 性能原始样本、100 用户负载与实际截图；九页图文汇报 PPT v1.2 已完成。
 
 ## 成员花名册（命名与分工引用，2026-09 确认）
 
@@ -27,14 +27,14 @@
 | `onboarding.md` | 新成员 30 分钟上手指南（环境/跑通/首 PR/FAQ/红线） | 组长维护 |
 | `plans/initial-tasks.md` | 全员首个任务拆解卡 + 组长任务队列 + 例会#1 议程 | 组长维护 |
 | `plans/requirements-outline.md` | 需求文档（④整合版）目录大纲与章节分工 | 组长牵头 |
-| `requirements.md` | 项目需求文档 v0.4（课程基线、验收标准、需求追踪） | 组长牵头 |
-| [`test-report.md`](test-report.md) | v0.7 最终整合测试与历史勘误；[原始证据](evidence/ci49/README.md) | E 原稿/团队整合复核 |
+| `requirements.md` | 项目需求文档 v0.5（课程基线、验收标准、需求追踪） | 组长牵头 |
+| [`test-report.md`](test-report.md) | v0.7 最终整合测试与历史勘误；[CI #54 整合验证](https://github.com/ganwentao20/wemove-sports-portal/actions/runs/34159152642) | E 原稿/团队整合复核 |
 | [`ai-assistance-summary.md`](ai-assistance-summary.md)、[`ai-usage/`](ai-usage/README.md) | 五人大模型辅助说明和五份个人说明 | 各成员陈述/团队整理 |
 | [`individual-reports/`](individual-reports/README.md) | 各自独立技术现状/思政报告，已收 4/5 | 各成员本人 |
 | [`meetings/2026-09-04-meeting-01.md`](meetings/2026-09-04-meeting-01.md) | 首次真实会议，保留历史六名参会者及后续分工注记 | 陈婧琳记录 |
 | `operation-manual.md` | 当前四门户操作步骤与安全注意事项 | D 牵头 |
-| `delivery-readiness.md` | 最终交付物现状、责任人与停止线 | 组长统筹 |
-| `deliverables/下午班-08组-WEMOVE-SPORTS-项目需求文档-v0.4.docx` | 已排版的 Word 需求文档（提交候选件） | 组长统筹 |
+| `delivery-readiness.md` | 最终交付物状态、责任人与剩余事项 | 组长统筹 |
+| `deliverables/下午班-08组-WEMOVE-SPORTS-项目需求文档-v0.5.docx` | 已排版的 Word 需求文档（提交候选件） | 组长统筹 |
 | `plans/project-status.md` | 仓库、分支、质量与风险审计快照 | 组长维护 |
 | [`plans/final-requirements-verification-20260907.md`](plans/final-requirements-verification-20260907.md) | 原始完整规格逐项实现、整合验收证据与真实外部前提 | 组长统筹 |
 | [`production-operations.md`](production-operations.md) | 生产镜像、配置、加密备份、PITR、扫描与监控演练 | 组长/E |
@@ -45,21 +45,21 @@
 | `plans/schedule-current.md` | 第 8 组当前进度计划（动态更新） | 组长统筹 |
 | `drafts/` | 需求文档 v0.1 初稿等过程稿（评审升版，终稿线下归档） | 组长统筹 |
 | `development-conventions.md` | 开发/安全/合规注意事项与 Git 协作规范（根 README 只放项目信息，注意事项统一收于此） | 组长维护 |
-| [`apps/api/README.md`](../apps/api/README.md) | 已有 API 一览；[C 历史数据字典 v1.0 已审核归档](api/data-dictionary-review-20260908.md)，当前完整字典仍需同步新增模型 | 组员 C 负责核对 |
+| [`apps/api/README.md`](../apps/api/README.md) | API 一览及[当前完整数据字典与历史复核](api/data-dictionary-review-20260908.md)，涵盖 61 个模型 | 组员 C 负责核对 |
 | 根目录 `README.md` | 全仓总览（仅项目信息）：简介/架构/分工/快速开始 | 组长 |
 
-## 交付物清单与红线（《软件开发实践2》考核要求）
+## 课程交付清单（《软件开发实践2》考核要求）
 
-成绩权重：实践代码 40% · 答辩 20% · 文档 20% · 团队表现 15% · 课程思政 5%。
+原考核表权重：实践代码 40%、项目答辩 20%、文档 20%、团队表现 15%、课程思政 5%。本次现场按项目汇报组织。
 
-| # | 交付物 | 认领 | 红线要求 |
+| # | 交付物 | 认领 | 提交要求 |
 |---|---|---|---|
 | ① | Web 开发技术现状报告（课程思政） | **每人 1 份独立文件，共 5 份** | 严禁整组共用一份；内容相互独立 |
 | ② | 进度计划表 | 组长统筹 | 动态维护，与例会纪要互相印证 |
 | ③ | 沟通讨论记录 | 组员 A（陈婧琳）组织例会 | **严禁微信/QQ 聊天截图**；统一使用 `templates/meeting-minutes.md` 模板（时间/参会人/议题/决议） |
 | ④ | 项目需求文档（最终整合版） | 组长（甘文韬）牵头 | 版本管理与评审记录 |
 | ⑤ | 测试报告（环境/功能/安全/性能） | 组员 E（龙祖怡）牵头 | 与 CI 结果一致可复核 |
-| ⑥ | 答辩 PPT + 现场主讲 | 组长（甘文韬）主讲 | 组员 C（周慧莹）协助技术架构/数据库章节 |
+| ⑥ | 项目汇报 PPT | 组长（甘文韬）主讲 | 组员 C（周慧莹）协助技术架构/数据库章节 |
 | ⑦ | 源代码 | 组长整合、全员提供本人代码，E 验证 | 冻结版本、迁移、依赖锁与干净环境复现 |
 | ⑧ | 分组成员工作量占比统计表 | 组长 | 与 ② 进度/例会纪要对得上 |
 

@@ -1,10 +1,12 @@
-# WEMOVE SPORTS 系统测试报告（v0.7）
+# WEMOVE SPORTS 系统测试报告
 
-日期：2026-09-08。龙祖怡原测试材料由团队保留；本版为甘文韬组织的全项目整合复核。本次实际执行了本机页面、账号与负载检查，并核对最终整合 CI 原始日志及 artifact。
+版本：v0.7。日期：2026-09-08。甘文韬组织全项目整合复核，龙祖怡的阶段测试材料另行保留。本报告记录整合测试、本机账号检查和负载实测，结论与被测提交、运行环境及原始证据对应。
 
-## 1. 最终整合验证
+## 1 最终整合验证
 
-[CI #51](https://github.com/ganwentao20/wemove-sports-portal/actions/runs/34156780782) 全部通过。它验证包含最新 main 的源码和本轮商品卡片改进，不沿用开发分支 CI #44。
+[CI #54](https://github.com/ganwentao20/wemove-sports-portal/actions/runs/34159152642) 已对提交 `f3c074f0d4e7ad75761fd31f5a9de62d9a5db941` 的整合代码树验证通过，包含 main `5642da2`。其单元、集成及浏览器与性能检查分别为 110、169、70 项通过，生产启动、扫描和恢复检查也通过。CI 整合检出为 `d79a2ebe69d68effbe38f9676a752f5daee325af`，代码树为 `ab1038af39980031ac8d6649a7dc02e27940a60e`，mainIncluded 与 sourceAndCheckoutTreesMatch 均为 true。
+
+下表保留 [CI #51](https://github.com/ganwentao20/wemove-sports-portal/actions/runs/34156780782) 的归档基线，第 4 节页面性能数据也来自该次运行。后续 CI 通过不会改变旧样本的来源，开发分支 CI #44 不作为最终整合结论。
 
 | 追溯项 | 记录 |
 | --- | --- |
@@ -13,7 +15,7 @@
 | CI 整合检出 | `e4fb9cfb03834710c37f2ecda9595daddfae19eb` |
 | 同一代码树 | `a7be7641c3ffebde2fd748363c17a28e52fee85a` |
 | 一致性检查 | mainIncluded 和 sourceAndCheckoutTreesMatch 均为 true |
-| 后续材料归档 | 应检查 PR #10 对应最终提交的 Checks；本报告不预写尚未运行的结果 |
+| 后续复核 | CI #54 已验证上述 f3c074f 提交；本表和第 4 节保留 CI #51 原始记录 |
 
 | 检查层 | 结果 |
 | --- | --- |
@@ -35,7 +37,7 @@ CI 使用 Ubuntu runner、Node 22、锁文件依赖、PostgreSQL 16、Redis 7、
 | 测试角色 | 用户名 | 密码 | 登录入口 |
 | --- | --- | --- | --- |
 | 消费者 | customer@wemove.local | Demo@123456 | /customer/login |
-| 经销商 | dealer@wemove.local | Demo@123456 | /dealer/login |
+| 经销商（BUYER） | dealer@wemove.local | Demo@123456 | /dealer/login |
 | 超级管理员 | admin@wemove.local | Admin@12345 | /admin/login |
 
 以上为新库 seed 默认测试凭据，已按用户要求明确列出。消费者和经销商登录、管理员密码进入 MFA challenge 已在本机实际核对。管理员仍需首次绑定验证器，并在登录和敏感操作输入当前六位动态码；不能用固定验证码代替 MFA。旧库重新 seed 不重置已有密码。上述凭据不用于生产。
@@ -76,7 +78,7 @@ CI 使用 Ubuntu runner、Node 22、锁文件依赖、PostgreSQL 16、Redis 7、
 
 四模板均满足本轮 LCP < 2500 ms、CLS ≤ 0.1 的实验室门槛。API 五条路径各 30 样本、5 并发的 P95 回归也通过；这与下面的 100 用户负载分开记录，不能换算成真实用户 INP 或公网 SLA。
 
-## 5. 本机 100 用户负载（本次新增实测）
+## 5 本机 100 用户负载实测
 
 脚本：`scripts/load-acceptance.mjs`。只允许本机地址，运行 `node scripts/load-acceptance.mjs public` 或 `node scripts/load-acceptance.mjs mixed`。100 个虚拟用户，每用户每秒一请求，共 60 轮；首批从 0 秒开始，最后一批在第 59 秒，因此实际响应完成时长如下。每轮同步发起，等待完整响应体计时；升序第 ceil(n×0.95) 项为 P95。未关闭或提高默认限流。
 
@@ -89,11 +91,11 @@ CI 使用 Ubuntu runner、Node 22、锁文件依赖、PostgreSQL 16、Redis 7、
 
 该结果支持给定数据与约 100 请求/秒节奏下的本机 100 用户访问。它不是无等待的满速连接压测、长时间浸泡测试、真实百个不同账户或生产容量承诺。默认登录单 IP 每分钟 30 次限制仍保留；高频重复登录出现 429 应单列为防护结果。原始逐请求时延、状态码、环境及时间已归档。
 
-## 6. 提交与汇报使用说明
+## 6 账号与课程材料
 
 测试用户名、密码见第 2 节。组内既定工作量分配为：甘文韬 25%，陈婧琳、周慧莹、倪依玲、龙祖怡各 18.75%，合计 100%；这是已给定的任务分配比例，不冒充全员确认的实际工时统计。
 
-操作手册已经包含七张实际页面截图、MFA 准备以及约 20 分钟的“材料检查—官网—消费者—经销商—后台—测试结果”演示顺序。项目汇报 PPT 用具体主题标题，详细点击步骤在演讲者备注。个人技术现状/思政报告已有 4/5，仍缺周慧莹；五份个人 AI 说明和汇总齐备。
+操作手册包含七张实际页面截图、登录与 MFA 说明。个人技术现状与课程思政报告已有 4/5，仍缺周慧莹；五份个人 AI 说明和团队汇总齐备。
 
 ## 7. 尚不能宣称完成的验收
 

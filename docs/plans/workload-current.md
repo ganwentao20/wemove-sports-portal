@@ -21,15 +21,15 @@
 
 | 工作包 | 本轮状态 | 可复核依据 |
 |---|---|---|
-| M1 架构/认证/RBAC/MFA/审计/统一 API | 基座已在主线；本轮复用安全会话与后台 MFA，新增 B2B 写操作事务审计 | 整合 CI #51；auth/rbac/mfa/common；b2b-flow.e2e-spec.ts |
+| M1 架构/认证/RBAC/MFA/审计/统一 API | 基座已在主线；本轮复用安全会话与后台 MFA，新增 B2B 写操作事务审计 | 整合 CI #54；auth/rbac/mfa/common；b2b-flow.e2e-spec.ts |
 | M1 文档统筹 | 分工、花名册、任务卡、进度、需求、提交命名、文档模板及 B2B 规范同步五人方案 | 本报告；requirements.md v0.5；docs/README.md；schedule-current.md |
 | MB 经销商申请/审核/门户/资质 | 既有链路保留；目录与 Quick Order 增加实时成员和企业状态验证 | dealer.service.ts；现有单测；新增企业失效/跨企业测试 |
 | MB PriceBook 授权 | 完成企业授权关系、后台授权/撤权、目录与 Quick Order 授权价读取 | DealerPriceBook 迁移；/admin/b2b；授权隔离 e2e |
 | MB RFQ 询报价 | 完成草稿、提交、版本报价、接受/拒绝/过期判定及前后端 | /dealer/procurement；/admin/b2b；版本与过期 e2e |
-| MB PO 采购订单 | 完成幂等转单、企业/收货/商品/金额快照、库存预留/返库/发货与履约 | PurchaseOrder/Item 迁移；b2b-flow 与 b2b-after-sales；CI #51 |
-| M1 汇报准备 | 九页项目汇报 PPT、材料检查与网站演示流程已完成；测试账号/MFA 说明写入手册 | deliverables 项目汇报 v1.1；operation-manual.md §1 |
+| MB PO 采购订单 | 完成幂等转单、企业/收货/商品/金额快照、库存预留/返库/发货与履约 | PurchaseOrder/Item 迁移；b2b-flow 与 b2b-after-sales；CI #54 |
+| M1 课程材料 | 项目汇报 PPT、测试报告及个人报告已整理；测试账号和 MFA 说明写入手册 | deliverables 项目汇报 v1.2；operation-manual.md §1 |
 
-历史提交、作者与已发生的 PR 评审保留真实记录；本报告只列继续参与开发的五名成员。独立个人报告不通过改名替代，正式会议纪要也不根据本次聊天虚构。
+验证基线为提交 `f3c074f` 与 [CI #54](https://github.com/ganwentao20/wemove-sports-portal/actions/runs/34159152642)。历史提交、作者与已发生的 PR 评审保留原记录；本表仅列后续五人分工，不追改早期参会和开发事实。个人报告与会议纪要分别按实际来源归档。
 
 ## 结项统计方式
 

@@ -1,8 +1,8 @@
 # 成员 A 需求分析审核稿
 
-审核日期：2026-09-08。来源：《成员A_需求分析 (1).docx》。原稿未提供明确的成稿日期或版本号，本稿不补造；“成员 A”按当前分工对应陈婧琳，审核归档不改变原作者署名或认定个人代码贡献。
+审核日期：2026-09-08。原稿作者：陈婧琳（成员 A）。来源：《成员A_需求分析 (1).docx》。本稿对应前台与用户中心需求，保留原稿作为阶段材料，整合后的全项目范围以团队项目需求文档为准。
 
-原附件保留为阶段性分析稿。本稿给出范围修正、当前实现映射及可用于整合文档的需求文本，不能用原稿的“一周版本”“本期优先”“占位”删减最终完整规格，也不替代 [最终需求追踪矩阵](../plans/final-requirements-verification-20260907.md)。本次仅审核文档和已有代码，没有运行测试；测试结果及外部验收边界以该矩阵和 [真实资源清单](../plans/external-acceptance-prerequisites.md) 为准。
+原稿中的“一周版本”“本期优先”和占位安排属于历史排期，不能删减最终需求。本稿修正范围与编号，并列出实际页面入口和验收标准，便于与 [最终需求追踪矩阵](../plans/final-requirements-verification-20260907.md) 对照。当前功能验证见 [系统测试报告](../test-report.md)；正式商户、真机和生产资源等条件见 [真实资源清单](../plans/external-acceptance-prerequisites.md)。文档审核本身不产生新的软件测试结果。
 
 ## 1. 审核结论与必须修正的表述
 
@@ -114,12 +114,4 @@
 - 商品：`apps/web/app/(storefront)/products`、`compare`，`apps/api/src/catalog`，`apps/web/components/dealer-product-purchase.tsx`、`product-downloads.tsx`。
 - 搜索/语言：`apps/api/src/platform/platform.service.ts`、`search-query.ts`、`apps/web/proxy.ts`、`apps/api/src/catalog/product-locales.ts`。
 - 客户与交易：`apps/web/app/customer/account`、`apps/web/app/(storefront)/cart`、`checkout`、`orders`，`apps/api/src/account`、`apps/api/src/order`。
-- 现有证据：[最终矩阵](../plans/final-requirements-verification-20260907.md)、[零售实施记录](../commerce/retail-completion-20260907.md)、[私有售后照片记录](../commerce/return-evidence-20260908.md)。本审核不新增通过数、签字或正式上线结论。
-
-## 7. Word 审核副本的结构与版式建议
-
-已逐页查看主任务提供的原稿 10 页渲染图，没有重新渲染或改动原附件。正文和表格可读，未见明显截字、重叠或缺字；第 6、8 页末尾各有一处孤立表头，必须与首条数据行保持在同页。第 3～9 页的需求编号列偏窄，编号普遍被拆成两行，造成不必要的行高；应调整列宽并使用常规、统一的英文/数字字体，保留长表跨页重复表头。
-
-原稿直接从第 3 节开始，后续从第 5 节跳到第 13、21 节，不适合作为独立完整报告的最终结构。审核副本可依据本稿重建为“文档说明、项目范围、协作边界、信息架构、前台需求、用户中心、UI 与无障碍、验收要求、编号映射”连续章节；旧章节和需求编号保留在映射中。首页和页眉应明确“成员 A 需求分析审核稿”，不能继续让读者误认为该文件就是全项目最终规格。
-
-第 10 页留白本身不构成错误。补齐范围和验收内容后自然分页，不必维持原稿 10 页，也不要为凑页数扩大间距。原附件保留，Word 审核副本另存；重建后的实际页数和版式由主任务再次逐页检查。
+- 现有证据：[最终矩阵](../plans/final-requirements-verification-20260907.md)、[零售实施记录](../commerce/retail-completion-20260907.md)、[私有售后照片记录](../commerce/return-evidence-20260908.md)。这些证据分别对应其记录的提交和测试范围，不用于推算个人工作量。
