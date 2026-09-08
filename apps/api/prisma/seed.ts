@@ -168,8 +168,18 @@ async function seedCatalog() {
       create: { ...market, retailEnabled: true },
     });
   }
-  const cats: Array<{ code: string; slug: string; name: string; nameZh: string }> = [
-    { code: 'WEMOVE', slug: 'marble-run-blocks', name: 'Marble Run Blocks', nameZh: '积木玩具' },
+  const cats: Array<{
+    code: string;
+    slug: string;
+    name: string;
+    nameZh: string;
+  }> = [
+    {
+      code: 'WEMOVE',
+      slug: 'marble-run-blocks',
+      name: 'Marble Run Blocks',
+      nameZh: '积木玩具',
+    },
   ];
   const catIds = new Map<string, string>();
   for (const c of cats) {
@@ -212,6 +222,8 @@ async function seedCatalog() {
     ageMin: number;
     ageGuidance: string;
     ageGuidanceEn: string;
+    playGuide: string;
+    playGuideEn: string;
     specifications: Record<string, string>;
     specificationsZh: Record<string, string>;
     variants: Array<{
@@ -228,17 +240,36 @@ async function seedCatalog() {
       slug: 'standard-50',
       name: '50块标准款套装',
       nameEn: 'WEMOVE Standard 50',
-      summary: '德国进口AA级榉木材料，通过先进的曲线烘干技术，使积木产品材质刚硬、木纹美观、环保。',
-      summaryEn: 'A 50-piece beechwood marble run set for open-ended building and hands-on exploration.',
-      description: '这款50块标准款实木滚珠轨道积木，以天然榉木打造，温润无漆，边角圆润安全。积木自带凹槽、弯道、圆孔等轨道结构，可自由拼接成立体迷宫或城堡式滚珠路径，让彩色玻璃珠在重力驱动下穿梭滑行，在搭建与试玩中锻炼空间思维与逻辑能力，同时可与同品牌机关套兼容拓展，是兼具质感与教育价值的开放式益智玩具。',
-      descriptionEn: 'Natural beechwood blocks combine grooves, curves and openings into freely configurable marble paths. The set works with WEMOVE mechanism modules for further expansion.',
+      summary:
+        '德国进口AA级榉木材料，通过先进的曲线烘干技术，使积木产品材质刚硬、木纹美观、环保。',
+      summaryEn:
+        'A 50-piece beechwood marble run set for open-ended building and hands-on exploration.',
+      description:
+        '这款50块标准款实木滚珠轨道积木，以天然榉木打造，温润无漆，边角圆润安全。积木自带凹槽、弯道、圆孔等轨道结构，可自由拼接成立体迷宫或城堡式滚珠路径，让彩色玻璃珠在重力驱动下穿梭滑行，在搭建与试玩中锻炼空间思维与逻辑能力，同时可与同品牌机关套兼容拓展，是兼具质感与教育价值的开放式益智玩具。',
+      descriptionEn:
+        'Natural beechwood blocks combine grooves, curves and openings into freely configurable marble paths. The set works with WEMOVE mechanism modules for further expansion.',
       image: '/original-site/product-standard-50.jpg',
       category: 'WEMOVE',
       ageMin: 3,
       ageGuidance: '建议3岁以上儿童在成人监护下使用；内含小球，请避免吞咽。',
-      ageGuidanceEn: 'For ages 3 and above with adult supervision. Contains small balls.',
-      specifications: { Material: 'Beechwood', Finish: 'Natural unpainted wood', Contents: '50 building blocks', Compatibility: 'WEMOVE mechanism modules' },
-      specificationsZh: { Material: '材质|榉木', Finish: '表面处理|原木无漆', Contents: '套装内容|50块积木', Compatibility: '兼容性|WEMOVE机关模块' },
+      ageGuidanceEn:
+        'For ages 3 and above with adult supervision. Contains small balls.',
+      playGuide:
+        '在平整表面从低到高搭建稳固支撑，再连接直轨、弯轨和孔洞积木。每次只放入一颗小球测试路线，调整坡度直至顺畅。使用后清点小球，以干布擦拭并存放在干燥处；请勿水洗或靠近火源。',
+      playGuideEn:
+        'Build stable supports on a level surface, then connect straight, curved and opening blocks. Test with one marble at a time and adjust the slope until the route runs smoothly. Count all marbles after play, wipe the wood with a dry cloth and store it away from water and heat.',
+      specifications: {
+        Material: 'Beechwood',
+        Finish: 'Natural unpainted wood',
+        Contents: '50 building blocks',
+        Compatibility: 'WEMOVE mechanism modules',
+      },
+      specificationsZh: {
+        Material: '材质|榉木',
+        Finish: '表面处理|原木无漆',
+        Contents: '套装内容|50块积木',
+        Compatibility: '兼容性|WEMOVE机关模块',
+      },
       variants: [
         {
           sku: 'WM-STANDARD-50',
@@ -256,16 +287,31 @@ async function seedCatalog() {
       name: 'Cugolino Basic',
       nameEn: 'Cugolino Basic',
       summary: '易拼接融入建筑，美学启蒙空间思维。',
-      summaryEn: 'A foundation set focused on clear track building and spatial exploration.',
-      description: '作为基础套，它摒弃了复杂的机械机关，聚焦滚珠轨道的核心拼接逻辑，组件以基础轨道、支撑结构和趣味节点为核心，包含直轨、弯轨、分叉轨等基础轨道块，以及带圆孔的穿透式积木、弧形过渡件，可自由拼接成平面或立体的滚珠路径。',
-      descriptionEn: 'Straight, curved and branching tracks combine with supports and transition blocks to create flat or three-dimensional marble paths.',
+      summaryEn:
+        'A foundation set focused on clear track building and spatial exploration.',
+      description:
+        '作为基础套，它摒弃了复杂的机械机关，聚焦滚珠轨道的核心拼接逻辑，组件以基础轨道、支撑结构和趣味节点为核心，包含直轨、弯轨、分叉轨等基础轨道块，以及带圆孔的穿透式积木、弧形过渡件，可自由拼接成平面或立体的滚珠路径。',
+      descriptionEn:
+        'Straight, curved and branching tracks combine with supports and transition blocks to create flat or three-dimensional marble paths.',
       image: '/original-site/product-cugolino-basic.jpg',
       category: 'WEMOVE',
       ageMin: 3,
       ageGuidance: '建议3岁以上儿童在成人监护下使用。',
       ageGuidanceEn: 'For ages 3 and above with adult supervision.',
-      specifications: { Material: 'Wood', ProductType: 'Foundation marble run set', TrackElements: 'Straight, curved and branching tracks' },
-      specificationsZh: { Material: '材质|木材', ProductType: '产品类型|基础滚珠轨道套装', TrackElements: '轨道组件|直轨、弯轨和分叉轨' },
+      playGuide:
+        '先用支撑块搭出稳固底座，再逐段连接直轨、弯轨和分叉轨。用一颗小球测试并调整连接处。成人应全程看护；使用后清点小球，以干布清洁并保持木件干燥。',
+      playGuideEn:
+        'Start with a stable base, then add straight, curved and branching tracks one section at a time. Test each connection with one marble. Adult supervision is required; count the marbles after play, clean with a dry cloth and keep the wood dry.',
+      specifications: {
+        Material: 'Wood',
+        ProductType: 'Foundation marble run set',
+        TrackElements: 'Straight, curved and branching tracks',
+      },
+      specificationsZh: {
+        Material: '材质|木材',
+        ProductType: '产品类型|基础滚珠轨道套装',
+        TrackElements: '轨道组件|直轨、弯轨和分叉轨',
+      },
       variants: [
         {
           sku: 'WM-CUGOLINO-BASIC',
@@ -283,59 +329,223 @@ async function seedCatalog() {
       name: '大摆锤套',
       nameEn: 'Large Pendulum Set',
       summary: '原木无漆，立体轨道构建。',
-      summaryEn: 'An unpainted wooden mechanism module for three-dimensional marble runs.',
-      description: '长斜坡是轨道主体，小球可从高处滑下并经过不同机关。大摆锤结构是可摆动的木质装置，当小球经过时被触发，实现小球的传递或转向。',
-      descriptionEn: 'A long slope carries the marble into a moving wooden pendulum that can transfer or redirect it into the next track section.',
+      summaryEn:
+        'An unpainted wooden mechanism module for three-dimensional marble runs.',
+      description:
+        '长斜坡是轨道主体，小球可从高处滑下并经过不同机关。大摆锤结构是可摆动的木质装置，当小球经过时被触发，实现小球的传递或转向。',
+      descriptionEn:
+        'A long slope carries the marble into a moving wooden pendulum that can transfer or redirect it into the next track section.',
       image: '/original-site/product-large-pendulum.jpg',
       category: 'WEMOVE',
       ageMin: 3,
       ageGuidance: '建议3岁以上儿童在成人监护下使用。',
       ageGuidanceEn: 'For ages 3 and above with adult supervision.',
-      specifications: { Material: 'Natural wood', Mechanism: 'Moving pendulum', Compatibility: 'WEMOVE marble run sets' },
-      specificationsZh: { Material: '材质|天然木材', Mechanism: '机关|摆锤传递与转向', Compatibility: '兼容性|WEMOVE滚珠轨道套装' },
+      playGuide:
+        '将摆锤模块固定在轨道转接位置，先手动确认摆动范围没有阻挡，再用一颗小球低速测试。不要拉扯或强行扭转摆锤；使用后用干布清洁并收好小球。',
+      playGuideEn:
+        'Secure the pendulum at a track transfer point and check its swing path by hand before testing with one marble at low speed. Do not pull or force the pendulum. Wipe it with a dry cloth after play and store every marble safely.',
+      specifications: {
+        Material: 'Natural wood',
+        Mechanism: 'Moving pendulum',
+        Compatibility: 'WEMOVE marble run sets',
+      },
+      specificationsZh: {
+        Material: '材质|天然木材',
+        Mechanism: '机关|摆锤传递与转向',
+        Compatibility: '兼容性|WEMOVE滚珠轨道套装',
+      },
       variants: [
         {
-          sku: 'WM-LARGE-PENDULUM', name: '大摆锤模块', nameEn: 'Large pendulum module', msrp: 18900, sale: 18900, b2b: 13200, stock: 35,
+          sku: 'WM-LARGE-PENDULUM',
+          name: '大摆锤模块',
+          nameEn: 'Large pendulum module',
+          msrp: 18900,
+          sale: 18900,
+          b2b: 13200,
+          stock: 35,
         },
       ],
     },
     {
-      slug: 'small-turntable-set', name: '小转盘套', nameEn: 'Small Turntable Set', summary: '可与其他套装积木组合搭建。', summaryEn: 'A compact turntable mechanism that combines with other WEMOVE sets.',
-      description: '顶部的弧形凹槽转盘是这套机关的特色。彩色小球滚入后会在转盘内滚动、停留，并通过搭建实现转向或触发下一段轨道。',
-      descriptionEn: 'A curved turntable receives the marble, changes its direction and releases it into the next section of a custom track.',
-      image: '/original-site/product-small-turntable.jpg', category: 'WEMOVE', ageMin: 3, ageGuidance: '建议3岁以上儿童在成人监护下使用。', ageGuidanceEn: 'For ages 3 and above with adult supervision.',
-      specifications: { Material: 'Wood', Mechanism: 'Turntable', Compatibility: 'WEMOVE marble run sets' }, specificationsZh: { Material: '材质|木材', Mechanism: '机关|转盘转向', Compatibility: '兼容性|WEMOVE滚珠轨道套装' },
-      variants: [{ sku: 'WM-SMALL-TURNTABLE', name: '小转盘模块', nameEn: 'Small turntable module', msrp: 16900, sale: 16900, b2b: 11800, stock: 35 }],
+      slug: 'small-turntable-set',
+      name: '小转盘套',
+      nameEn: 'Small Turntable Set',
+      summary: '可与其他套装积木组合搭建。',
+      summaryEn:
+        'A compact turntable mechanism that combines with other WEMOVE sets.',
+      description:
+        '顶部的弧形凹槽转盘是这套机关的特色。彩色小球滚入后会在转盘内滚动、停留，并通过搭建实现转向或触发下一段轨道。',
+      descriptionEn:
+        'A curved turntable receives the marble, changes its direction and releases it into the next section of a custom track.',
+      image: '/original-site/product-small-turntable.jpg',
+      category: 'WEMOVE',
+      ageMin: 3,
+      ageGuidance: '建议3岁以上儿童在成人监护下使用。',
+      ageGuidanceEn: 'For ages 3 and above with adult supervision.',
+      playGuide:
+        '把转盘放在稳固轨道节点，确认入口和出口对齐后再放入一颗小球测试。请勿强压转盘或一次放入多颗小球；使用后清点小球并用干布擦拭。',
+      playGuideEn:
+        'Place the turntable on a stable track junction and align its entrance and exit before testing with one marble. Do not force the turntable or load several marbles at once. Count the marbles and wipe the module with a dry cloth after play.',
+      specifications: {
+        Material: 'Wood',
+        Mechanism: 'Turntable',
+        Compatibility: 'WEMOVE marble run sets',
+      },
+      specificationsZh: {
+        Material: '材质|木材',
+        Mechanism: '机关|转盘转向',
+        Compatibility: '兼容性|WEMOVE滚珠轨道套装',
+      },
+      variants: [
+        {
+          sku: 'WM-SMALL-TURNTABLE',
+          name: '小转盘模块',
+          nameEn: 'Small turntable module',
+          msrp: 16900,
+          sale: 16900,
+          b2b: 11800,
+          stock: 35,
+        },
+      ],
     },
     {
-      slug: 'elevator', name: '电梯', nameEn: 'Elevator', summary: '拼装简单，齿轮联动，机械感十足；多轨道循环，运行流畅。', summaryEn: 'A hand-operated geared elevator for lifting marbles between track levels.',
-      description: '电梯积木允许孩子通过构建和操作模拟电梯系统来理解机械原理和物理法则。套装包含多个部件，可自行组装并体验手动控制电梯上下移动的过程。',
-      descriptionEn: 'Children assemble and operate a manual lift to explore gears, movement and multi-level track design.',
-      image: '/original-site/product-elevator.jpg', category: 'WEMOVE', ageMin: 6, ageGuidance: '建议6岁以上儿童在成人指导下搭建与使用。', ageGuidanceEn: 'For ages 6 and above with adult guidance.',
-      specifications: { Material: 'Wood', Mechanism: 'Hand-operated geared lift', Compatibility: 'Multi-level WEMOVE tracks' }, specificationsZh: { Material: '材质|木材', Mechanism: '机关|手动齿轮升降', Compatibility: '兼容性|WEMOVE多层轨道' },
-      variants: [{ sku: 'WM-ELEVATOR', name: '齿轮电梯模块', nameEn: 'Geared elevator module', msrp: 29900, sale: 29900, b2b: 20900, stock: 24 }],
+      slug: 'elevator',
+      name: '电梯',
+      nameEn: 'Elevator',
+      summary: '拼装简单，齿轮联动，机械感十足；多轨道循环，运行流畅。',
+      summaryEn:
+        'A hand-operated geared elevator for lifting marbles between track levels.',
+      description:
+        '电梯积木允许孩子通过构建和操作模拟电梯系统来理解机械原理和物理法则。套装包含多个部件，可自行组装并体验手动控制电梯上下移动的过程。',
+      descriptionEn:
+        'Children assemble and operate a manual lift to explore gears, movement and multi-level track design.',
+      image: '/original-site/product-elevator.jpg',
+      category: 'WEMOVE',
+      ageMin: 6,
+      ageGuidance: '建议6岁以上儿童在成人指导下搭建与使用。',
+      ageGuidanceEn: 'For ages 6 and above with adult guidance.',
+      playGuide:
+        '按结构顺序组装支架、齿轮和升降轨道，空载缓慢转动手柄确认啮合顺畅，再放入一颗小球。操作时手指远离齿轮夹点；请勿强行转动，使用后用干布清洁。',
+      playGuideEn:
+        'Assemble the frame, gears and lift track in order. Turn the handle slowly without a marble to check the gear movement, then test with one marble. Keep fingers away from pinch points, never force the handle and clean with a dry cloth.',
+      specifications: {
+        Material: 'Wood',
+        Mechanism: 'Hand-operated geared lift',
+        Compatibility: 'Multi-level WEMOVE tracks',
+      },
+      specificationsZh: {
+        Material: '材质|木材',
+        Mechanism: '机关|手动齿轮升降',
+        Compatibility: '兼容性|WEMOVE多层轨道',
+      },
+      variants: [
+        {
+          sku: 'WM-ELEVATOR',
+          name: '齿轮电梯模块',
+          nameEn: 'Geared elevator module',
+          msrp: 29900,
+          sale: 29900,
+          b2b: 20900,
+          stock: 24,
+        },
+      ],
     },
     {
-      slug: 'magnetic-cannon', name: '电磁炮', nameEn: 'Magnetic Cannon', summary: '木制安全无异味，咔哒磁吸声，拼搭中玩出小智慧。', summaryEn: 'A magnetic mechanism module for experimenting with marble launch and transfer.',
-      description: '磁力炮积木利用磁力原理，让孩子们通过构建能够发射小球的机械装置探索物理学的魅力，并锻炼工程思维与解决问题的能力。',
-      descriptionEn: 'The module uses magnetic force to release a marble and demonstrate cause, motion and simple mechanical design.',
-      image: '/original-site/product-magnetic-cannon.jpg', category: 'WEMOVE', ageMin: 6, ageGuidance: '含磁性部件和小球，建议6岁以上儿童在成人监护下使用。', ageGuidanceEn: 'Contains magnetic parts and small balls. For ages 6 and above with adult supervision.',
-      specifications: { Material: 'Wood with magnetic components', Mechanism: 'Magnetic marble release', Compatibility: 'WEMOVE marble run sets' }, specificationsZh: { Material: '材质|木材与磁性部件', Mechanism: '机关|磁力弹珠释放', Compatibility: '兼容性|WEMOVE滚珠轨道套装' },
-      variants: [{ sku: 'WM-MAGNETIC-CANNON', name: '磁力机关模块', nameEn: 'Magnetic mechanism module', msrp: 21900, sale: 21900, b2b: 15300, stock: 28 }],
+      slug: 'magnetic-cannon',
+      name: '电磁炮',
+      nameEn: 'Magnetic Cannon',
+      summary: '木制安全无异味，咔哒磁吸声，拼搭中玩出小智慧。',
+      summaryEn:
+        'A magnetic mechanism module for experimenting with marble launch and transfer.',
+      description:
+        '磁力炮积木利用磁力原理，让孩子们通过构建能够发射小球的机械装置探索物理学的魅力，并锻炼工程思维与解决问题的能力。',
+      descriptionEn:
+        'The module uses magnetic force to release a marble and demonstrate cause, motion and simple mechanical design.',
+      image: '/original-site/product-magnetic-cannon.jpg',
+      category: 'WEMOVE',
+      ageMin: 6,
+      ageGuidance: '含磁性部件和小球，建议6岁以上儿童在成人监护下使用。',
+      ageGuidanceEn:
+        'Contains magnetic parts and small balls. For ages 6 and above with adult supervision.',
+      playGuide:
+        '将磁力机关固定在稳定轨道上，先用单颗小球测试释放方向。磁性部件应远离电子医疗设备和易受磁场影响的物品；请勿拆卸磁件，使用后清点小球并干燥存放。',
+      playGuideEn:
+        'Secure the magnetic mechanism on a stable track and test the release direction with one marble. Keep magnetic parts away from electronic medical devices and magnet-sensitive items. Do not dismantle the magnet; count the marbles and store the set dry.',
+      specifications: {
+        Material: 'Wood with magnetic components',
+        Mechanism: 'Magnetic marble release',
+        Compatibility: 'WEMOVE marble run sets',
+      },
+      specificationsZh: {
+        Material: '材质|木材与磁性部件',
+        Mechanism: '机关|磁力弹珠释放',
+        Compatibility: '兼容性|WEMOVE滚珠轨道套装',
+      },
+      variants: [
+        {
+          sku: 'WM-MAGNETIC-CANNON',
+          name: '磁力机关模块',
+          nameEn: 'Magnetic mechanism module',
+          msrp: 21900,
+          sale: 21900,
+          b2b: 15300,
+          stock: 28,
+        },
+      ],
     },
     {
-      slug: 'snake-track-set', name: '蛇形套装', nameEn: 'Snake Track Set', summary: '蛇形轨道蜿蜒丰富玩法，直观展示弹珠滚动轨迹。', summaryEn: 'A winding track module that makes a marble path easy to observe.',
-      description: '蛇形套装依托蜿蜒曲折的轨道设计，让孩子们在拼搭与玩赏中，直观探索物体运动的轨迹规律与空间路径逻辑。',
-      descriptionEn: 'The winding path helps children observe movement and experiment with how a track shape changes the marble route.',
-      image: '/original-site/product-snake-track.jpg', category: 'WEMOVE', ageMin: 3, ageGuidance: '建议3岁以上儿童在成人监护下使用。', ageGuidanceEn: 'For ages 3 and above with adult supervision.',
-      specifications: { Material: 'Wood', TrackType: 'Winding snake track', Compatibility: 'WEMOVE marble run sets' }, specificationsZh: { Material: '材质|木材', TrackType: '轨道类型|蛇形轨道', Compatibility: '兼容性|WEMOVE滚珠轨道套装' },
-      variants: [{ sku: 'WM-SNAKE-TRACK', name: '蛇形轨道模块', nameEn: 'Snake track module', msrp: 19900, sale: 19900, b2b: 13900, stock: 30 }],
+      slug: 'snake-track-set',
+      name: '蛇形套装',
+      nameEn: 'Snake Track Set',
+      summary: '蛇形轨道蜿蜒丰富玩法，直观展示弹珠滚动轨迹。',
+      summaryEn:
+        'A winding track module that makes a marble path easy to observe.',
+      description:
+        '蛇形套装依托蜿蜒曲折的轨道设计，让孩子们在拼搭与玩赏中，直观探索物体运动的轨迹规律与空间路径逻辑。',
+      descriptionEn:
+        'The winding path helps children observe movement and experiment with how a track shape changes the marble route.',
+      image: '/original-site/product-snake-track.jpg',
+      category: 'WEMOVE',
+      ageMin: 3,
+      ageGuidance: '建议3岁以上儿童在成人监护下使用。',
+      ageGuidanceEn: 'For ages 3 and above with adult supervision.',
+      playGuide:
+        '将蛇形轨道放在连续且稳固的支撑上，入口略高于出口，用一颗小球检查全程是否顺畅。调整时先取出小球；使用后清点小球，以干布擦拭并保持轨道干燥。',
+      playGuideEn:
+        'Support the winding track continuously and keep its entrance slightly higher than its exit. Test the full route with one marble and remove it before making adjustments. Count the marbles, wipe the track with a dry cloth and keep it dry.',
+      specifications: {
+        Material: 'Wood',
+        TrackType: 'Winding snake track',
+        Compatibility: 'WEMOVE marble run sets',
+      },
+      specificationsZh: {
+        Material: '材质|木材',
+        TrackType: '轨道类型|蛇形轨道',
+        Compatibility: '兼容性|WEMOVE滚珠轨道套装',
+      },
+      variants: [
+        {
+          sku: 'WM-SNAKE-TRACK',
+          name: '蛇形轨道模块',
+          nameEn: 'Snake track module',
+          msrp: 19900,
+          sale: 19900,
+          b2b: 13900,
+          stock: 30,
+        },
+      ],
     },
   ];
 
   await prisma.product.updateMany({
     where: {
-      slug: { in: ['strike-kids-bowling-set-6-pin', 'balance-board-wooden-arc', 'ring-toss-outdoor-game-set'] },
+      slug: {
+        in: [
+          'strike-kids-bowling-set-6-pin',
+          'balance-board-wooden-arc',
+          'ring-toss-outdoor-game-set',
+        ],
+      },
     },
     data: { status: 'ARCHIVED' },
   });
@@ -359,6 +569,7 @@ async function seedCatalog() {
           summary: p.summary,
           description: p.description,
           ageGuidance: p.ageGuidance,
+          playGuide: p.playGuide,
           tagLabels: { wooden: '原木', 'marble-run': '滚珠轨道' },
           skillLabels: {
             Engineering: '工程思维',
@@ -366,10 +577,7 @@ async function seedCatalog() {
           },
           sceneLabels: { Family: '家庭', School: '学校' },
           variants: Object.fromEntries(
-            p.variants.map((variant) => [
-              variant.sku,
-              { name: variant.name },
-            ]),
+            p.variants.map((variant) => [variant.sku, { name: variant.name }]),
           ),
           specifications: Object.fromEntries(
             Object.entries(p.specificationsZh).map(([key, entry]) => {
@@ -387,6 +595,7 @@ async function seedCatalog() {
         summary: p.summaryEn,
         description: p.descriptionEn,
         ageGuidance: p.ageGuidanceEn,
+        playGuide: p.playGuideEn,
         categoryId: catIds.get(p.category),
         gallery: [{ url: p.image, alt: p.nameEn, sort: 0 }],
         ageMin: p.ageMin,
@@ -402,6 +611,7 @@ async function seedCatalog() {
         summary: p.summaryEn,
         description: p.descriptionEn,
         ageGuidance: p.ageGuidanceEn,
+        playGuide: p.playGuideEn,
         categoryId: catIds.get(p.category),
         gallery: [{ url: p.image, alt: p.nameEn, sort: 0 }],
         ageMin: p.ageMin,

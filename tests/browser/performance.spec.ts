@@ -89,7 +89,7 @@ test("mobile Lighthouse templates and public API latency meet the local acceptan
   for (const path of [
     "/products?pageSize=20&market=US",
     "/products/" + slug + "?market=US",
-    "/search?q=bowling&market=US",
+    "/search?q=standard&market=US",
     "/cms/pages?kind=ARTICLE&market=US",
     "/site/config",
   ]) {

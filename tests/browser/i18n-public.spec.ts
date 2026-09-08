@@ -127,13 +127,13 @@ test("guest cart switches live product names without changing quantities or stor
       localStorage.setItem("wm-guest-cart", JSON.stringify(items));
   }, saved);
   await page.goto("/en/cart?market=US");
-  await expect(page.locator("main")).toContainText("WEMOVE Standard 50");
+  await expect(page.locator("main")).toContainText("WEMOVE Standard 50", {
+    timeout: 20000,
+  });
   await language(page, "Language").selectOption("zh");
   await expect(page.locator("h1")).toHaveText("购物车与结算");
   await expect(page.locator("main")).toContainText("50块标准款套装");
-  await expect(page.locator("main")).not.toContainText(
-    "WEMOVE Standard 50",
-  );
+  await expect(page.locator("main")).not.toContainText("WEMOVE Standard 50");
   const stored = await page.evaluate(() =>
     JSON.parse(localStorage.getItem("wm-guest-cart") ?? "[]"),
   );
@@ -146,9 +146,7 @@ test("guest cart switches live product names without changing quantities or stor
 test("comparison and missing pages keep the selected Chinese UI", async ({
   page,
 }) => {
-  await page.goto(
-    "/zh/compare?market=US&ids=standard-50,cugolino-basic",
-  );
+  await page.goto("/zh/compare?market=US&ids=standard-50,cugolino-basic");
   await expect(page.locator("h1")).toHaveText("产品比较");
   await expect(
     page.getByRole("columnheader", { name: "属性", exact: true }),

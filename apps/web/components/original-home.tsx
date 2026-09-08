@@ -18,6 +18,7 @@ function Feature({
   locale: string;
   market: string;
 }) {
+  const Heading = priority ? "h1" : "h2";
   const mobileImageSpacing =
     feature.imageSide === "left" ? "mx-6 mb-0 mt-10" : "mx-6 mb-10 mt-0";
   const image = (
@@ -37,10 +38,10 @@ function Feature({
   const copy = (
     <div className="flex min-h-[280px] items-center justify-center px-6 py-8 text-center sm:px-12 md:min-h-[520px] md:py-14 lg:px-20">
       <div className="max-w-xl">
-        <h2 className="text-3xl font-normal tracking-[-0.03em] text-[#333] sm:text-4xl">
+        <Heading className="text-3xl font-normal tracking-[-0.03em] text-[#333] sm:text-4xl">
           {feature.title}
-        </h2>
-        <p className="mx-auto mt-6 max-w-lg text-base leading-8 text-[#6c706c] sm:text-lg">
+        </Heading>
+        <p className="mx-auto mt-6 max-w-lg text-base leading-8 text-[#555b55] sm:text-lg">
           {feature.text}
         </p>
         {feature.href && feature.label ? (
@@ -93,16 +94,22 @@ export function OriginalHome({
   const local = (path: string) => publicUrl(path, locale, market);
   return (
     <div className="wm-original-home">
-      {features.length ? <div className="relative aspect-[3/2] overflow-hidden md:hidden">
-        <Image
-          src="/original-site/home-wemove-set.png"
-          alt={isZh ? "WEMOVE 原木积木搭建场景" : "Building with WEMOVE wooden blocks"}
-          fill
-          priority
-          sizes="100vw"
-          className="object-cover"
-        />
-      </div> : null}
+      {features.length ? (
+        <div className="relative aspect-[3/2] overflow-hidden md:hidden">
+          <Image
+            src="/original-site/home-wemove-set.png"
+            alt={
+              isZh
+                ? "WEMOVE 原木积木搭建场景"
+                : "Building with WEMOVE wooden blocks"
+            }
+            fill
+            priority
+            sizes="100vw"
+            className="object-cover"
+          />
+        </div>
+      ) : null}
       {features.map((feature, index) => (
         <Feature
           key={feature.id}
@@ -121,9 +128,13 @@ export function OriginalHome({
         <div className="mx-auto max-w-6xl">
           <div className="grid gap-8 lg:grid-cols-[1fr_1.7fr] lg:items-end">
             <div>
-              <p className="text-sm tracking-[0.18em] text-[#7a7a73]">{isZh ? "选购与服务" : "SHOP AND SERVICE"}</p>
+              <p className="text-sm tracking-[0.18em] text-[#62675f]">
+                {isZh ? "选购与服务" : "SHOP AND SERVICE"}
+              </p>
               <h2 className="mt-3 text-3xl font-normal tracking-[-0.03em] text-[#333] sm:text-4xl">
-                {isZh ? "原站体验，连接完整业务能力" : "The original experience, connected to complete services"}
+                {isZh
+                  ? "原站体验，连接完整业务能力"
+                  : "The original experience, connected to complete services"}
               </h2>
             </div>
             <p className="max-w-2xl text-base leading-8 text-[#6c706c]">
@@ -138,8 +149,14 @@ export function OriginalHome({
           >
             {[
               [isZh ? "完整产品中心" : "Product centre", local("/products")],
-              [isZh ? "产品搜索与对比" : "Search and compare", local("/search")],
-              [isZh ? "说明书与支持" : "Manuals and support", local("/support")],
+              [
+                isZh ? "产品搜索与对比" : "Search and compare",
+                local("/search"),
+              ],
+              [
+                isZh ? "说明书与支持" : "Manuals and support",
+                local("/support"),
+              ],
               [isZh ? "经销商合作" : "Dealer programme", "/dealer/apply"],
             ].map(([label, href], index) => (
               <Link
@@ -147,7 +164,8 @@ export function OriginalHome({
                 href={href}
                 className={`flex items-center justify-between px-5 py-5 text-sm font-medium text-[#333] transition-colors hover:bg-[#eef4e3] ${index > 0 ? "sm:border-l sm:border-[#deded8]" : ""}`}
               >
-                {label}<span aria-hidden="true">→</span>
+                {label}
+                <span aria-hidden="true">→</span>
               </Link>
             ))}
           </nav>

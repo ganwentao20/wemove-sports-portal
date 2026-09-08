@@ -47,18 +47,14 @@ export async function SiteHeader() {
     : ORIGINAL_NAV.map(([href, zh, en]) => ({ href, label: en, zh }));
   const localizeNavigation = (items: NavigationItem[]): NavigationItem[] =>
     items
-      .filter(
-        (item) => !item.markets?.length || item.markets.includes(market),
-      )
+      .filter((item) => !item.markets?.length || item.markets.includes(market))
       .map((item) => ({
         ...item,
         href: item.href.startsWith("/") ? local(item.href) : item.href,
         label:
           item.labels?.[locale] ??
-          (isZh ? item.labels?.zh ?? item.zh ?? item.label : item.label),
-        children: item.children
-          ? localizeNavigation(item.children)
-          : undefined,
+          (isZh ? (item.labels?.zh ?? item.zh ?? item.label) : item.label),
+        children: item.children ? localizeNavigation(item.children) : undefined,
       }));
   const nav = localizeNavigation(sourceNav);
   const dealer = jar.has("wm_dealer_session");
@@ -145,7 +141,7 @@ export async function SiteHeader() {
           <span>WeMove</span>
         </Link>
         <DesktopNavigation items={nav} locale={locale} />
-        <div className="hidden 2xl:block">{preferences}</div>
+        <div className="hidden xl:block">{preferences}</div>
         <MobileNavigation items={nav} portals={portals} locale={locale}>
           {preferences}
         </MobileNavigation>

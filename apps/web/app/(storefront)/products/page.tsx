@@ -208,7 +208,7 @@ export default async function ProductsPage({
         ].filter((k) => Boolean(params[k]))}
       />
       <div className="wm-reveal max-w-2xl">
-        <p className="mb-4 text-xs font-medium uppercase tracking-[0.2em] text-[#7a7a73]">
+        <p className="mb-4 text-xs font-medium uppercase tracking-[0.2em] text-[#62675f]">
           {copy.eyebrow}
         </p>
         <h1 className="text-4xl font-normal tracking-[-0.035em] text-[#333] sm:text-5xl">
@@ -457,7 +457,7 @@ export default async function ProductsPage({
                       ? `/api/v1${product.coverImage.url}`
                       : product.coverImage?.url
                   }
-                className="aspect-[4/5] rounded-[6px]"
+                  className="aspect-[4/5] rounded-[6px]"
                 />
                 <p className="mt-3 text-xs font-semibold">
                   {product.ageMin !== null

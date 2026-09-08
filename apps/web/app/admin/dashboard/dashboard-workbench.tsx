@@ -198,6 +198,7 @@ export function DashboardWorkbench() {
               <Link
                 key={href}
                 href={href}
+                prefetch={false}
                 className="rounded-2xl border border-neutral-200 bg-white p-5 font-semibold transition hover:border-[#2B5F8A] hover:shadow-sm"
               >
                 {t(String(label))} <span aria-hidden="true">→</span>

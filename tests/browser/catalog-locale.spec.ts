@@ -27,9 +27,7 @@ test("language switch keeps catalog filters and Chinese product details", async 
     .first();
   await expect(product).toBeVisible();
   await product.click();
-  await expect(page).toHaveURL(
-    /\/zh\/products\/standard-50\?market=US/,
-  );
+  await expect(page).toHaveURL(/\/zh\/products\/standard-50\?market=US/);
   await expect(page.locator("h1")).toContainText("50块标准款套装");
   await expect(
     page.getByRole("heading", { name: "产品规格", exact: true }),
@@ -40,7 +38,9 @@ test("language switch keeps catalog filters and Chinese product details", async 
   await expect(
     page.getByRole("heading", { name: "常见问题", exact: true }),
   ).toBeVisible();
-  await expect(page.getByRole("combobox", { name: "款式", exact: true })).toContainText("标准50块套装");
+  await expect(
+    page.getByRole("combobox", { name: "款式", exact: true }),
+  ).toContainText("标准50块套装");
   await expect(page.locator('link[rel="canonical"]')).toHaveAttribute(
     "href",
     /\/zh\/products\//,
@@ -64,8 +64,8 @@ test("Chinese homepage catalog links retain the selected language and market", a
 }) => {
   await page.goto("/zh?market=US");
   const heroCatalogLink = page
-    .locator('[data-module-id] a[href^="/zh/products?"]')
-    .first();
+    .getByRole("navigation", { name: "选购与服务" })
+    .getByRole("link", { name: "完整产品中心", exact: true });
   await expect(heroCatalogLink).toBeVisible();
   await heroCatalogLink.click();
   await expect(page).toHaveURL(/\/zh\/products\?market=US/);

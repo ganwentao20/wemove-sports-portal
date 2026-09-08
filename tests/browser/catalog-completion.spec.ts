@@ -190,7 +190,10 @@ test("category editor publishes metadata, typed product links and useful empty/d
         name: "Authorized dealer catalog",
         exact: true,
       }),
-    ).toHaveAttribute("href", "/dealer/catalog?productId=" + product.id);
+    ).toHaveAttribute(
+      "href",
+      "/en/dealer/catalog?productId=" + product.id + "&market=US",
+    );
   } finally {
     await prisma.product.deleteMany({
       where: { id: { in: [product.id, accessory.id, replacement.id] } },

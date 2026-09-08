@@ -2,25 +2,31 @@ import { test, expect } from "@playwright/test";
 import { PrismaClient } from "@prisma/client";
 import { randomUUID } from "node:crypto";
 
-test("home product collection has usable visual cards and respects reduced motion", async ({
+test("original home modules have usable calls to action and respect reduced motion", async ({
   page,
 }) => {
   await page.emulateMedia({ reducedMotion: "reduce" });
-  await page.goto("/en");
-  const cards = page.locator(".wm-collection-card[href*='/products/']");
-  await expect(cards).toHaveCount(3);
-  const first = cards.first();
+  await page.goto("/en?market=US");
+  const modules = page.locator("[data-module-id]");
+  await expect(modules).toHaveCount(7);
+  const first = modules.first();
   await expect(first.getByRole("img")).toBeVisible();
-  await expect(first).toContainText("From");
-  await first.focus();
-  await expect(first).toBeFocused();
-  await first.hover();
+  const callToAction = first.getByRole("link", {
+    name: "Explore now",
+    exact: true,
+  });
+  await expect(callToAction).toBeVisible();
+  await callToAction.focus();
+  await expect(callToAction).toBeFocused();
+  await callToAction.hover();
   expect(
-    await first.evaluate((element) => getComputedStyle(element).transform),
+    await callToAction.evaluate(
+      (element) => getComputedStyle(element).transform,
+    ),
   ).toBe("none");
-  await first.press("Enter");
-  await expect(page).toHaveURL(/\/products\//);
-  await expect(page.locator("h1")).toBeVisible();
+  await callToAction.press("Enter");
+  await expect(page).toHaveURL(/\/en\/workshop\?market=US/);
+  await expect(page.locator("main")).toBeVisible();
 });
 
 test("scheduled hero, manual articles, two-level drawer and independent product SEO render from live content", async ({
@@ -225,10 +231,10 @@ test("scheduled hero, manual articles, two-level drawer and independent product 
     ).toBeVisible();
     await expect(
       drawer.getByRole("link", { name: "Account", exact: true }),
-    ).toBeVisible();
+    ).toHaveAttribute("href", "/en/login");
     await expect(
       drawer.getByRole("link", { name: "Dealer Sign in", exact: true }),
-    ).toBeVisible();
+    ).toHaveCount(0);
     await page.keyboard.press("Escape");
     await expect(drawer).not.toBeVisible();
     await expect(menu).toBeFocused();

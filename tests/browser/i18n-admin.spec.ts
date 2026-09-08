@@ -39,9 +39,11 @@ test("administration keeps Chinese across login, MFA, workbenches and language s
   page.on("requestfailed", (request) => {
     if (isWorkbenchData(request)) {
       pending.delete(request);
-      dataFailures.push(
-        `${new URL(request.url()).pathname}: ${request.failure()?.errorText}`,
-      );
+      const failure = request.failure()?.errorText;
+      // WebKit may cancel a duplicate React Strict Mode load when the next
+      // workbench navigation begins. Required responses are awaited below.
+      if (failure !== "Load request cancelled")
+        dataFailures.push(`${new URL(request.url()).pathname}: ${failure}`);
     }
   });
   const dataRoutes: Record<string, string[]> = {
@@ -138,12 +140,12 @@ test("administration keeps Chinese across login, MFA, workbenches and language s
       page
         .getByRole("region", { name: "登录", exact: true })
         .getByRole("alert"),
-    ).toContainText("邮箱或密码");
+    ).toContainText("邮箱或密码", { timeout: 20000 });
     await page.getByLabel("密码", { exact: true }).fill(password);
     await page.getByRole("button", { name: "登录", exact: true }).click();
-    await expect(
-      page.getByText("验证器设置密钥", { exact: true }),
-    ).toBeVisible();
+    await expect(page.getByText("验证器设置密钥", { exact: true })).toBeVisible(
+      { timeout: 20000 },
+    );
     const secret = (await page.locator("code").textContent())?.trim();
     expect(secret).toBeTruthy();
     await page

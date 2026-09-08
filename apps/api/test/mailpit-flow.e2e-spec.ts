@@ -169,7 +169,7 @@ describe.skipIf(process.env.E2E_DB !== '1' || process.env.E2E_MAIL !== '1')(
     it('registers PENDING, receives a real verification link, activates and logs in', async () => {
       const user = await register();
       await post('login', { email: user.email, password }).expect(403);
-      const mail = await message(user.email, 'Verify your WEMOVE SPORTS email');
+      const mail = await message(user.email, 'Verify your WEMOVE email');
       expect(mail.To.some((to) => to.Address === user.email)).toBe(true);
       const token = linkToken(mail, '/verify-email');
       const saved = await prisma.userToken.findUnique({
@@ -193,7 +193,7 @@ describe.skipIf(process.env.E2E_DB !== '1' || process.env.E2E_MAIL !== '1')(
       const user = await register();
       const first = await message(
         user.email,
-        'Verify your WEMOVE SPORTS email',
+        'Verify your WEMOVE email',
       );
       const oldToken = linkToken(first, '/verify-email');
       await post('resend-verification', { email: user.email }).expect(200);
@@ -208,7 +208,7 @@ describe.skipIf(process.env.E2E_DB !== '1' || process.env.E2E_MAIL !== '1')(
       const user = await register();
       const verification = await message(
         user.email,
-        'Verify your WEMOVE SPORTS email',
+        'Verify your WEMOVE email',
       );
       await post('verify-email', {
         token: linkToken(verification, '/verify-email'),
@@ -216,7 +216,7 @@ describe.skipIf(process.env.E2E_DB !== '1' || process.env.E2E_MAIL !== '1')(
       await post('forgot-password', { email: user.email }).expect(200);
       const mail = await message(
         user.email,
-        'Reset your WEMOVE SPORTS password',
+        'Reset your WEMOVE password',
       );
       const token = linkToken(mail, '/reset-password');
       const newPassword = 'RecoveredPassword123!';
@@ -243,7 +243,7 @@ describe.skipIf(process.env.E2E_DB !== '1' || process.env.E2E_MAIL !== '1')(
       await flushOwnMail();
       expect((await inbox(unknown)).messages).toHaveLength(0);
       const user = await register();
-      await message(user.email, 'Verify your WEMOVE SPORTS email');
+      await message(user.email, 'Verify your WEMOVE email');
       await prisma.user.update({
         where: { id: user.id },
         data: { status: 'SUSPENDED' },

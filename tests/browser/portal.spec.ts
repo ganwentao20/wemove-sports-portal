@@ -9,7 +9,7 @@ const widths = [360, 390, 768, 1024, 1440, 1920];
 const publicRoutes = [
   "/",
   "/products",
-  "/search?q=bowling",
+  "/search?q=standard",
   "/content/article-active-family-play",
   "/support/faq",
   "/dealers",
@@ -44,7 +44,7 @@ for (const width of widths)
 for (const route of [
   "/",
   "/products",
-  "/search?q=bowling",
+  "/search?q=standard",
   "/customer/register",
   "/login",
   "/support/faq",
@@ -74,14 +74,14 @@ test("language navigation, live search and consent controls work", async ({
   page,
 }) => {
   await page.goto("/zh");
-  await expect(page.locator("h1")).toContainText("从运动开始玩乐");
+  await expect(page.locator("h1")).toContainText("WEMOVE套装");
   await expect(page.locator("html")).toHaveAttribute("lang", "zh");
   await page.goto("/en/search");
   await page
     .getByRole("textbox", {
       name: "Search products, articles, FAQs and downloads",
     })
-    .fill("bowling");
+    .fill("standard");
   await expect(
     page.getByRole("list", { name: "Search suggestions" }),
   ).toBeVisible();
