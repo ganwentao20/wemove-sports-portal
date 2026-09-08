@@ -12,7 +12,7 @@ import { CurrentUser } from '../auth/current-user.decorator.js';
 import type { JwtPayload } from '../auth/auth.service.js';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard.js';
 import { RequireMfa, RequireMfaGuard } from '../mfa/require-mfa.guard.js';
-import { Roles, RolesGuard } from '../rbac/roles.guard.js';
+import { Roles, RolesGuard, Permissions } from '../rbac/roles.guard.js';
 import { OrderQueryDto, UpdateOrderStatusDto } from './dto/order.dto.js';
 import { OrderService } from './order.service.js';
 
@@ -21,6 +21,11 @@ import { OrderService } from './order.service.js';
 @Roles('SUPER_ADMIN')
 export class OrderAdminController {
   constructor(private readonly orders: OrderService) {}
+  @Get('export') @Permissions('order:export') export(
+    @Query() query: OrderQueryDto,
+  ) {
+    return this.orders.exportAdmin(query);
+  }
 
   @Get()
   list(@Query() query: OrderQueryDto) {
@@ -36,6 +41,6 @@ export class OrderAdminController {
     @CurrentUser() actor: JwtPayload,
     @Ip() ip?: string,
   ) {
-    return this.orders.transitionAdmin(id, dto.status, actor, ip);
+    return this.orders.transitionAdmin(id, dto.status, actor, ip, dto.reason);
   }
 }

@@ -59,7 +59,9 @@ function setup(found: ApplicationFixture | null = application) {
         ),
     },
     dealerCompany: {
-      findFirst: vi.fn().mockResolvedValue({ id: 'company-a', tierId: 'gold' }),
+      findFirst: vi
+        .fn()
+        .mockResolvedValue({ id: 'company-a', tierId: 'gold', priceBooks: [] }),
       create: vi.fn().mockResolvedValue({ id: 'company-new' }),
       update: vi.fn().mockResolvedValue({ id: 'company-a' }),
     },
@@ -67,6 +69,7 @@ function setup(found: ApplicationFixture | null = application) {
     product: { findMany: vi.fn().mockResolvedValue([]) },
     productVariant: { findMany: vi.fn().mockResolvedValue([]) },
     pricingRule: { findMany: vi.fn().mockResolvedValue([]) },
+    retailMarket: { findUnique: vi.fn().mockResolvedValue(null) },
     mediaAsset: {
       findMany: vi.fn().mockResolvedValue([
         {
@@ -114,6 +117,7 @@ describe('DealerService', () => {
     const { service, prisma } = setup();
     await service.createApplication(
       {
+        agreementsAccepted: true,
         companyName: ' WEMOVE Dealer Ltd. ',
         legalRegNo: ' CN-DEMO-001 ',
         contactName: ' Buyer ',
@@ -160,6 +164,7 @@ describe('DealerService', () => {
     await expect(
       service.createApplication(
         {
+          agreementsAccepted: true,
           companyName: 'WEMOVE Dealer Ltd.',
           legalRegNo: 'CN-DEMO-003',
           contactName: 'Buyer',
@@ -187,6 +192,7 @@ describe('DealerService', () => {
     const { service, prisma } = setup();
     await service.createApplication(
       {
+        agreementsAccepted: true,
         companyName: 'WEMOVE Dealer Ltd.',
         legalRegNo: 'CN-DEMO-002',
         contactName: 'Buyer',
@@ -255,6 +261,7 @@ describe('DealerService', () => {
     vi.mocked(redis.incrWithTtl).mockResolvedValue(6);
     await expect(
       service.createApplication({
+        agreementsAccepted: true,
         companyName: 'WEMOVE Dealer Ltd.',
         legalRegNo: 'CN-DEMO-001',
         contactName: 'Buyer',
@@ -494,5 +501,54 @@ describe('DealerService', () => {
       totalCents: 0,
       results: [{ ok: false, code: 'INSUFFICIENT_STOCK' }],
     });
+  });
+
+  it('Quick Order 仅在实时预览中采用完整已发布译文，草稿与默认单据语言不受影响', async () => {
+    const { service, prisma } = setup();
+    const translation = {
+      status: 'PUBLISHED',
+      name: '训练球',
+      summary: '中文介绍',
+      variants: { 'BALL-1': { name: '红色款' } },
+    };
+    vi.mocked(prisma.productVariant.findMany).mockResolvedValue([
+      {
+        id: 'variant-1',
+        sku: 'BALL-1',
+        name: 'Red',
+        attrs: {},
+        b2bDefaultPriceCents: 3000,
+        stock: { available: 20 },
+        product: {
+          name: 'Ball',
+          summary: 'Training ball',
+          specifications: { translations: { zh: translation } },
+        },
+      },
+    ] as never);
+    const lines = [{ sku: 'BALL-1', quantity: 2 }];
+    const actor = customer({ companyId: 'company-a' });
+    const translated = await service.validateQuickOrder(lines, actor, 'zh');
+    expect(translated.results[0]).toMatchObject({
+      sku: 'BALL-1',
+      productName: '训练球',
+      variantName: '红色款',
+      quantity: 2,
+      unitPriceCents: 3000,
+      lineTotalCents: 6000,
+    });
+    const original = await service.validateQuickOrder(lines, actor);
+    expect(original.results[0]).toMatchObject({
+      productName: 'Ball',
+      variantName: 'Red',
+    });
+    translation.status = 'IN_PROGRESS';
+    const draft = await service.validateQuickOrder(lines, actor, 'zh');
+    expect(draft.results[0]).toMatchObject({
+      productName: 'Ball',
+      variantName: 'Red',
+    });
+    expect(translated.totalCents).toBe(original.totalCents);
+    expect(draft.totalCents).toBe(original.totalCents);
   });
 });

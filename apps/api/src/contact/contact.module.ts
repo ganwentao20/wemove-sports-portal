@@ -8,9 +8,17 @@ import { RedisModule } from '../redis/redis.module.js';
 import { RolesGuard } from '../rbac/roles.guard.js';
 import { ContactController } from './contact.controller.js';
 import { ContactService } from './contact.service.js';
+import { MediaModule } from '../media/media.module.js';
 
 @Module({
-  imports: [PrismaModule, AuditModule, AuthModule, RedisModule, MfaModule],
+  imports: [
+    PrismaModule,
+    AuditModule,
+    AuthModule,
+    RedisModule,
+    MfaModule,
+    MediaModule,
+  ],
   controllers: [ContactController],
   providers: [ContactService, RolesGuard, RequireMfaGuard],
   exports: [ContactService],

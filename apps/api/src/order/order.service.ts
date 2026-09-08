@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Optional, Logger } from '@nestjs/common';
 import { randomUUID } from 'node:crypto';
 import type { OrderStatus, Prisma } from '@prisma/client';
 import { AuditService } from '../audit/audit.service.js';
@@ -8,14 +8,20 @@ import { toPaged } from '../common/pagination.dto.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import type { OrderQueryDto } from './dto/order.dto.js';
 import { assertOrderTransition } from './order-state.js';
+import { resolveRetailPrice } from '../pricing/pricing-engine.js';
+import { CommerceService } from './commerce.service.js';
+import { InventoryService } from './inventory.service.js';
 
 const MAX_INT = 2_147_483_647;
 
 @Injectable()
 export class OrderService {
+  private readonly logger = new Logger(OrderService.name);
   constructor(
     private readonly prisma: PrismaService,
     private readonly audit: AuditService,
+    @Optional() private readonly commerce?: CommerceService,
+    private readonly inventory: InventoryService = new InventoryService(),
   ) {}
 
   async checkout(actor: JwtPayload, ip?: string) {
@@ -62,7 +68,14 @@ export class OrderService {
             409,
           );
         }
-        const lineCents = item.unitPriceCents * item.quantity;
+        const freshPrice = resolveRetailPrice(variant);
+        if (!freshPrice)
+          throw new BizException(
+            ERROR_CODES.CONFLICT,
+            `SKU ${variant.sku} has no retail price`,
+            409,
+          );
+        const lineCents = freshPrice.priceCents * item.quantity;
         totalCents += lineCents;
         if (!Number.isSafeInteger(totalCents) || totalCents > MAX_INT) {
           throw new BizException(
@@ -77,7 +90,7 @@ export class OrderService {
           sku: variant.sku,
           variantName: variant.name,
           quantity: item.quantity,
-          unitPriceCents: item.unitPriceCents,
+          unitPriceCents: freshPrice.priceCents,
           lineCents,
         });
       }
@@ -138,9 +151,19 @@ export class OrderService {
     return order;
   }
 
-  async cancelMine(actor: JwtPayload, id: string, ip?: string) {
+  async cancelMine(
+    actor: JwtPayload,
+    id: string,
+    ip?: string,
+    reason = 'Customer requested cancellation',
+  ) {
     this.assertCustomer(actor);
     const order = await this.transition(id, 'CANCELLED', actor.sub);
+    void this.commerce
+      ?.notifyOrder(order.id, 'order.cancel')
+      .catch(() =>
+        this.logger.warn('Cancellation notification enqueue failed'),
+      );
     void this.audit.record({
       actorKind: 'CUSTOMER',
       actorCustomerId: actor.sub,
@@ -148,7 +171,7 @@ export class OrderService {
       entityType: 'order',
       entityId: order.id,
       before: { status: 'PENDING' },
-      after: { status: order.status },
+      after: { status: order.status, reason },
       ip,
     });
     return order;
@@ -172,20 +195,76 @@ export class OrderService {
     return toPaged(items, total, query);
   }
 
+  async exportAdmin(query: OrderQueryDto) {
+    const orders = await this.prisma.order.findMany({
+      where: query.status ? { status: query.status } : {},
+      include: { user: { select: { email: true } } },
+      orderBy: { createdAt: 'desc' },
+      take: 10000,
+    });
+    const escape = (value: unknown) => {
+      const s = String(value ?? '');
+      return `"${(/^[=+@-]/.test(s) ? "'" : '') + s.replace(/"/g, '""')}"`;
+    };
+    return {
+      fileName: 'orders.csv',
+      count: orders.length,
+      csv:
+        '\uFEFF' +
+        [
+          [
+            'Order number',
+            'Customer email',
+            'Status',
+            'Payment',
+            'Currency',
+            'Total minor units',
+            'Created at',
+          ].join(','),
+          ...orders.map((o) =>
+            [
+              o.orderNo,
+              o.user.email,
+              o.status,
+              o.paymentStatus,
+              o.currency,
+              o.totalCents,
+              o.createdAt.toISOString(),
+            ]
+              .map(escape)
+              .join(','),
+          ),
+        ].join('\r\n'),
+    };
+  }
+
   async transitionAdmin(
     id: string,
     next: OrderStatus,
     actor: JwtPayload,
     ip?: string,
+    reason?: string,
   ) {
+    if (!reason?.trim())
+      throw new BizException(
+        ERROR_CODES.VALIDATION,
+        'Order status changes require a reason',
+        422,
+      );
     const order = await this.transition(id, next);
+    void this.commerce
+      ?.notifyOrder(
+        order.id,
+        next === 'CANCELLED' ? 'order.cancel' : 'order.status.update',
+      )
+      .catch(() => this.logger.warn('Order notification enqueue failed'));
     void this.audit.record({
       actorKind: 'STAFF',
       actorStaffId: actor.sub,
       action: 'order.status.update',
       entityType: 'order',
       entityId: order.id,
-      after: { status: order.status },
+      after: { status: order.status, reason },
       ip,
     });
     return order;
@@ -193,6 +272,7 @@ export class OrderService {
 
   private async transition(id: string, next: OrderStatus, ownerId?: string) {
     return this.prisma.$transaction(async (tx) => {
+      await tx.$queryRaw`SELECT "id" FROM "Order" WHERE "id"=${id} FOR UPDATE`;
       const order = await tx.order.findFirst({
         where: { id, ...(ownerId ? { userId: ownerId } : {}) },
         include: { items: true },
@@ -200,6 +280,28 @@ export class OrderService {
       if (!order)
         throw new BizException(ERROR_CODES.NOT_FOUND, 'order not found', 404);
       assertOrderTransition(order.status, next);
+      if (next === 'CONFIRMED' && order.paymentStatus !== 'PAID')
+        throw new BizException(
+          ERROR_CODES.CONFLICT,
+          'capture payment before confirming the order',
+          409,
+        );
+      if (next === 'FULFILLED')
+        throw new BizException(
+          ERROR_CODES.CONFLICT,
+          'create tracked shipments with line quantities to fulfill this order',
+          409,
+        );
+      if (
+        next === 'CANCELLED' &&
+        (order.items.some((item) => item.shippedQuantity > 0) ||
+          ['PAID', 'PARTIALLY_REFUNDED'].includes(order.paymentStatus))
+      )
+        throw new BizException(
+          ERROR_CODES.CONFLICT,
+          'refund payment or request a return before cancelling',
+          409,
+        );
       if (ownerId && order.status !== 'PENDING') {
         throw new BizException(
           ERROR_CODES.CONFLICT,
@@ -208,12 +310,24 @@ export class OrderService {
         );
       }
 
-      if (next === 'CANCELLED' || next === 'FULFILLED') {
-        await this.releaseReservation(tx, order.items, next);
+      if (next === 'CANCELLED') {
+        await this.releaseReservation(tx, order.items, next, order.market);
+        await tx.retailPayment.updateMany({
+          where: { orderId: id, status: 'PENDING' },
+          data: { status: 'CANCELLED' },
+        });
+        if (order.couponCode)
+          await tx.retailCoupon.updateMany({
+            where: { code: order.couponCode, uses: { gt: 0 } },
+            data: { uses: { decrement: 1 } },
+          });
       }
       const updated = await tx.order.updateMany({
         where: { id: order.id, status: order.status },
-        data: { status: next },
+        data: {
+          status: next,
+          ...(next === 'CANCELLED' ? { reservationExpiresAt: null } : {}),
+        },
       });
       if (updated.count !== 1) {
         throw new BizException(
@@ -233,8 +347,11 @@ export class OrderService {
     tx: Prisma.TransactionClient,
     items: Array<{ variantId: string | null; quantity: number; sku: string }>,
     next: 'CANCELLED' | 'FULFILLED',
+    market: string,
   ) {
-    for (const item of items) {
+    for (const item of [...items].sort((a, b) =>
+      (a.variantId ?? '').localeCompare(b.variantId ?? ''),
+    )) {
       if (!item.variantId) {
         throw new BizException(
           ERROR_CODES.CONFLICT,
@@ -242,23 +359,9 @@ export class OrderService {
           409,
         );
       }
-      const updated = await tx.stock.updateMany({
-        where: { variantId: item.variantId, reserved: { gte: item.quantity } },
-        data:
-          next === 'CANCELLED'
-            ? {
-                reserved: { decrement: item.quantity },
-                available: { increment: item.quantity },
-              }
-            : { reserved: { decrement: item.quantity } },
-      });
-      if (updated.count !== 1) {
-        throw new BizException(
-          ERROR_CODES.CONFLICT,
-          `stock reservation mismatch for SKU ${item.sku}`,
-          409,
-        );
-      }
+      if (next === 'CANCELLED')
+        await this.inventory.release(tx, item.variantId, item.quantity, market);
+      else await this.inventory.ship(tx, item.variantId, item.quantity, market);
     }
   }
 

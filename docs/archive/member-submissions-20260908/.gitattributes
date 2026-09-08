@@ -1,0 +1,4 @@
+# Source snapshots retain original bytes, including historical line endings.
+*.docx -text
+# Historical source also retains its original empty lines at EOF.
+*_历史.md -text whitespace=-blank-at-eof

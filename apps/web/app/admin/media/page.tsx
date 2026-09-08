@@ -1,10 +1,13 @@
-import type { Metadata } from "next";
+import { getUiText } from "../../../lib/ui-i18n-server";
 import { MediaWorkbench } from "./media-workbench";
 
-export const metadata: Metadata = {
-  title: "Media | WEMOVE Admin",
-  robots: { index: false, follow: false },
-};
+export async function generateMetadata() {
+  const t = await getUiText();
+  return {
+    title: t("Media | WEMOVE Admin"),
+    robots: { index: false, follow: false },
+  };
+}
 
 export default function AdminMediaPage() {
   return <MediaWorkbench />;

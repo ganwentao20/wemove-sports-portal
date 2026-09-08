@@ -40,6 +40,14 @@ npm run dev               # 并行启动 web(3000) + api(8080)
 
 Mailpit 开发收件箱：http://localhost:8025。演示凭据仅可用于本地/测试，禁止沿用到生产。
 
+Windows 已安装依赖、配置环境并完成首次 seed 后，可从仓库根目录启动独立后台服务：
+
+```powershell
+powershell.exe -NoProfile -File scripts/start-local.ps1
+```
+
+脚本启动 Docker、本地容器、数据库迁移及前后端，不依赖当前终端保持打开；重复运行会识别已有 worker。启动日志位于 `.local/persistent-services.log`，进程信息位于 `.local/persistent-services.json`。看到启动提示后，需等待日志出现 API 和 Web 就绪，并访问上述地址确认。脚本不会设置开机自启；电脑重启后重新运行即可。
+
 > 只做静态样式时可使用页面内已有 fallback 数据；联调认证、价格、目录等真实流程时必须同时启动 API 与基础设施。
 
 ## 三、仓库地图：谁改哪里（避免冲突）
@@ -48,19 +56,19 @@ Mailpit 开发收件箱：http://localhost:8025。演示凭据仅可用于本地
 |---|---|---|
 | `apps/web/app/(storefront)/*` | 官网页面（首页/PLP/PDP/对比/Play&Learn/Support/Contact/Search） | A |
 | `apps/web/app/customer/*` | B2C 用户中心 | A |
-| `apps/web/app/dealer/*` | 经销商门户 | B |
+| `apps/web/app/dealer/*` | 经销商门户 | 甘文韬（M1/MB） |
 | `apps/web/app/admin/*` | 运营后台 | D |
 | `apps/api/src/auth|rbac|audit|common|prisma` | 基座（改前先与组长打招呼） | 组长 |
 | `apps/api/src/pricing` | 价格引擎 | C |
 | `apps/api/src/catalog` | 商品目录切片 | C |
-| `apps/api/src/dealer` | B2B 申请、审核与授权目录 | B |
+| `apps/api/src/dealer` | B2B 申请、审核与授权目录 | 甘文韬（M1/MB） |
 | `apps/api/src/cms|media|contact` | 内容/媒体/工单 API | D |
 | `apps/api/src/cart`；`apps/api/src/order` | 购物车 / 订单与库存事务 | C |
-| `apps/api/prisma/schema.prisma` | 数据表（**改必开会**，迁移随 PR 提交） | 组长统筹 |
+| `apps/api/prisma/schema.prisma` | 数据表（组长协调跨模块影响，迁移随代码提交） | 组长统筹 |
 | `infra/`、`.github/`、`docs/` | 工程与文档 | E / 组长 |
 | `prisma/seed.ts`、测试与压测 | 测试数据与质量 | E |
 
-**平行开发规则**：默认只在自己区域改；要动别人的目录先在该 Issue/PR 里 @ 对方；schema 改动走例会决议。
+**平行开发规则**：默认只在自己区域改；要动别人的目录先在该 Issue/PR 里 @ 对方；schema 改动记录技术决策；本次 M1/MB 承接已由组长明确授权，见 ADR-0002。
 
 ## 四、第一次提交
 

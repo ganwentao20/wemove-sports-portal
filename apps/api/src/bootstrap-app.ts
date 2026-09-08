@@ -1,4 +1,9 @@
-import { INestApplication, ValidationPipe } from '@nestjs/common';
+import {
+  BadRequestException,
+  INestApplication,
+  ValidationPipe,
+} from '@nestjs/common';
+import type { ValidationError } from 'class-validator';
 import type { NestExpressApplication } from '@nestjs/platform-express';
 import compression from 'compression';
 import helmet from 'helmet';
@@ -51,6 +56,22 @@ export async function setupApp(app: INestApplication): Promise<void> {
       whitelist: true, // 剥离 DTO 未声明字段（防参数污染）
       transform: true,
       transformOptions: { enableImplicitConversion: false },
+      exceptionFactory: (errors: ValidationError[]) => {
+        const fields: Record<string, string[]> = {};
+        const visit = (items: ValidationError[], parent = '') => {
+          for (const item of items) {
+            const path = parent ? `${parent}.${item.property}` : item.property;
+            if (item.constraints)
+              fields[path] = Object.values(item.constraints);
+            if (item.children?.length) visit(item.children, path);
+          }
+        };
+        visit(errors);
+        return new BadRequestException({
+          message: Object.values(fields).flat(),
+          field_errors: fields,
+        });
+      },
     }),
   );
   app.useGlobalInterceptors(new TransformInterceptor());

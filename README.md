@@ -37,12 +37,13 @@ wemove-sports-portal/
 
 | 成员 | 纵向开发模块 | 横向文档 |
 |---|---|---|
-| 组长（甘文韬） | 架构基座、统一 API 规范、认证双体系、RBAC、审计与安全 | 需求文档、进度计划表、工作量占比表、答辩 PPT |
+| 组长（甘文韬） | 架构基座、统一 API 规范、认证双体系、RBAC、审计与安全；B2B 申请审批、企业门户、Quick Order、RFQ/PO、价格表授权与私有资质 | 需求文档、进度计划表、工作量占比表、答辩 PPT、B2B 流程与状态机规范 |
 | 组员 A（陈婧琳） | 前台官网（响应式/首页/PLP/PDP/对比）、B2C 用户中心 | 交互说明、团队例会纪要 |
-| 组员 B（朱容杰） | B2B 经销商闭环（申请审批/门户/Quick Order/RFQ/PO） | B2B 流程与状态机规范、个人思政报告 |
 | 组员 C（周慧莹） | 商品与变体 SKU、库存扣减、价格引擎、购物车结算、订单状态机 | 数据字典与 API 规格书、答辩 PPT 技术章节 |
 | 组员 D（倪依玲） | Admin UI、CMS 与富文本、媒体中心、联系工单、SEO/审计查看 | 系统操作手册、个人思政报告 |
 | 组员 E（龙祖怡） | Docker 编排、Seed 数据、接口自动化与压测、越权/兼容测试 | 全套测试报告、个人思政报告 |
+
+> 2026-09-07 起由甘文韬同时承担 M1 与 MB；团队现为五人，编号 A/C/D/E 保留。计划工作量：甘文韬 25%，其余四人各 18.75%，详见 `docs/plans/workload-current.md`。
 
 ## 四、快速开始（本地开发）
 
@@ -85,7 +86,7 @@ npm run dev                         # 7) 前台 3000 / API 8080
 | `docs/README.md` | 交付物清单、**课程红线**（思政报告/会议纪要/邮件与压缩包命名规范） |
 | `docs/development-conventions.md` | 开发/安全/合规**注意事项**、Git 协作规范（详细约定不写在 README） |
 | `docs/onboarding.md` | 新成员上手指南（环境、跑通、首次 PR、FAQ） |
-| `docs/requirements.md` | 课程验收口径的需求文档 v0.3（完整愿景与本期范围分离） |
+| `docs/requirements.md` | 课程验收口径的需求文档 v0.4（完整愿景与本期范围分离） |
 | `docs/test-report.md` / `docs/operation-manual.md` | 持续更新的测试报告与系统操作手册 |
 | `docs/delivery-readiness.md` | 最终交付就绪清单与需成员/真实环境补充的证据 |
 | `docs/plans/project-status.md` | 代码/分支/风险审计与当前真实状态 |

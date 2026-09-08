@@ -5,11 +5,19 @@ const TRACE_HEADER = 'x-trace-id';
 const SAFE_TRACE_ID = /^[A-Za-z0-9._:-]{1,64}$/;
 
 /** 为每个请求生成/透传 traceId（响应头 + 错误响应体），便于审计串联 */
-export function traceMiddleware(req: Request, res: Response, next: NextFunction) {
+export function traceMiddleware(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) {
   const incoming = req.headers[TRACE_HEADER];
-  const candidate = Array.isArray(incoming) ? incoming[0] : (incoming as string | undefined);
-  req.traceId = candidate && SAFE_TRACE_ID.test(candidate) ? candidate : randomUUID();
+  const candidate = Array.isArray(incoming)
+    ? incoming[0]
+    : (incoming as string | undefined);
+  req.traceId =
+    candidate && SAFE_TRACE_ID.test(candidate) ? candidate : randomUUID();
   res.setHeader(TRACE_HEADER, req.traceId);
+  res.setHeader('x-request-id', req.traceId);
   next();
 }
 
@@ -20,6 +28,8 @@ declare module 'express-serve-static-core' {
 }
 
 /** 从执行上下文取 traceId（拦截器/过滤器通用） */
-export function requestTraceId(context: { switchToHttp(): { getRequest(): { traceId?: string } } }): string {
+export function requestTraceId(context: {
+  switchToHttp(): { getRequest(): { traceId?: string } };
+}): string {
   return context.switchToHttp().getRequest().traceId ?? '';
 }

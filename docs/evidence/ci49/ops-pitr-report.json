@@ -1,0 +1,31 @@
+{
+  "startedAt": "2026-09-07T17:38:25.554Z",
+  "image": "wemove-postgres:ci",
+  "source": "wemove_pitr_source_1788802705554",
+  "restored": "wemove_pitr_restored_1788802705554",
+  "sourceVolume": "wemove_pitr_data_1788802705554",
+  "backupVolume": "wemove_pitr_backup_1788802705554",
+  "restoredVolume": "wemove_restore_pitr_1788802705554",
+  "passed": true,
+  "target": "2026-09-07T17:38:37.655Z",
+  "sourceMarkers": [
+    "baseline",
+    "before-target",
+    "after-target"
+  ],
+  "prepared": {
+    "restoredVolume": "wemove_restore_pitr_1788802705554",
+    "recoveryTarget": "2026-09-07T17:38:37.655Z",
+    "started": false,
+    "next": "Start an isolated PostgreSQL instance with this volume and the same read-only backup repository and passphrase. It will replay archived WAL and promote at the requested target. Verify before switching application traffic."
+  },
+  "restoredMarkers": [
+    "baseline",
+    "before-target"
+  ],
+  "inRecovery": "f",
+  "finishedAt": "2026-09-07T17:38:41.828Z",
+  "containersStopped": true,
+  "volumesRetained": true,
+  "note": "Random drill passphrases are not retained. These isolated data volumes are evidence, not reusable production backups. No existing container or volume was modified."
+}

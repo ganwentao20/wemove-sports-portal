@@ -1,0 +1,51 @@
+[
+  {
+    "figure": 1,
+    "route": "/en",
+    "caption": "首页与产品入口",
+    "createdAt": "2026-09-07T19:54:06.271Z",
+    "environment": "Windows local demo; production Web build; seeded test data"
+  },
+  {
+    "figure": 2,
+    "route": "/customer/register",
+    "caption": "成年人注册与协议确认界面",
+    "createdAt": "2026-09-07T19:54:06.911Z",
+    "environment": "Windows local demo; production Web build; seeded test data"
+  },
+  {
+    "figure": 3,
+    "route": "/checkout",
+    "caption": "客户结算与收货资料界面",
+    "createdAt": "2026-09-07T19:54:08.865Z",
+    "environment": "Windows local demo; production Web build; seeded test data"
+  },
+  {
+    "figure": 4,
+    "route": "/admin/dealers",
+    "caption": "经销商申请审核界面，含明确标注的种子演示申请",
+    "createdAt": "2026-09-07T19:54:10.562Z",
+    "environment": "Windows local demo; production Web build; seeded test data"
+  },
+  {
+    "figure": 5,
+    "route": "/admin/products",
+    "caption": "商品、SKU 与库存管理入口",
+    "createdAt": "2026-09-07T19:54:11.195Z",
+    "environment": "Windows local demo; production Web build; seeded test data"
+  },
+  {
+    "figure": 6,
+    "route": "/admin/cms",
+    "caption": "已发布页面与文章内容管理",
+    "createdAt": "2026-09-07T19:54:12.073Z",
+    "environment": "Windows local demo; production Web build; seeded test data"
+  },
+  {
+    "figure": 7,
+    "route": "/admin/seo",
+    "caption": "SEO 与重定向管理界面",
+    "createdAt": "2026-09-07T19:54:12.685Z",
+    "environment": "Windows local demo; production Web build; seeded test data"
+  }
+]

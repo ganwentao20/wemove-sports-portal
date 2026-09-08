@@ -1,66 +1,198 @@
+import { acceptedDealerTerms } from '../account/dealer-terms.js';
 import { CanActivate, ExecutionContext, Injectable } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import type { Request } from 'express';
 import { BizException, ERROR_CODES } from '../common/errors.js';
 import { RedisService } from '../redis/redis.service.js';
+import { PrismaService } from '../prisma/prisma.service.js';
 import type { JwtPayload } from './auth.service.js';
-
 export interface AuthenticatedRequest extends Request {
   user?: JwtPayload;
 }
-
-/**
- * JWT 守卫：Bearer Token → 校验签名 → 校验登出黑名单 → req.user=payload
- * - 双体系共用（payload.kind: customer | staff），角色控制见 rbac/roles.guard.ts
- * - 黑名单查询失败（Redis 不可用）时放行并依赖服务端其余防护（安全降级说明见 README）
- */
 @Injectable()
 export class JwtAuthGuard implements CanActivate {
   constructor(
     private readonly jwt: JwtService,
     private readonly redis: RedisService,
+    private readonly prisma: PrismaService,
   ) {}
-
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const req = context.switchToHttp().getRequest<AuthenticatedRequest>();
-    const header = req.headers.authorization;
-    const token = header?.startsWith('Bearer ') ? header.slice(7) : undefined;
-    if (!token) {
-      throw new BizException(ERROR_CODES.UNAUTHORIZED, 'missing bearer token', 401);
-    }
+    req.user = undefined;
+    const token = req.headers.authorization?.startsWith('Bearer ')
+      ? req.headers.authorization.slice(7)
+      : undefined;
+    if (!token)
+      throw new BizException(
+        ERROR_CODES.UNAUTHORIZED,
+        'missing bearer token',
+        401,
+      );
+    let payload: JwtPayload;
     try {
-      const payload = await this.jwt.verifyAsync<JwtPayload>(token, {
-        secret: process.env.JWT_ACCESS_SECRET ?? 'dev_only_change_me_wemove_access',
+      payload = await this.jwt.verifyAsync<JwtPayload>(token, {
+        secret:
+          process.env.JWT_ACCESS_SECRET ?? 'dev_only_change_me_wemove_access',
       });
-
-      if (payload.jti) {
-        const revoked = await this.redis.exists(`wm:jti:${payload.jti}`);
-        if (revoked) {
-          throw new BizException(ERROR_CODES.TOKEN_EXPIRED, 'token revoked (logged out)', 401);
-        }
-      }
-
-      req.user = payload;
-      return true;
-    } catch (err) {
-      if (err instanceof BizException) throw err;
-      throw new BizException(ERROR_CODES.TOKEN_EXPIRED, 'token expired or invalid', 401);
+    } catch {
+      throw new BizException(
+        ERROR_CODES.TOKEN_EXPIRED,
+        'token expired or invalid',
+        401,
+      );
     }
+    if (!payload.jti || !['staff', 'customer'].includes(payload.kind))
+      this.revoked();
+    const session = await this.prisma.authenticationSession.findUnique({
+      where: { id: payload.jti },
+    });
+    if (
+      !session ||
+      session.ownerId !== payload.sub ||
+      session.ownerKind !== payload.kind ||
+      session.revokedAt ||
+      session.expiresAt.getTime() <= Date.now()
+    )
+      this.revoked();
+    if (
+      payload.kind === 'staff' &&
+      /^(?:\/api\/v1)?\/dealer(?:\/|$)/.test(
+        (req.originalUrl ?? req.url).split('?')[0],
+      )
+    )
+      throw new BizException(
+        ERROR_CODES.FORBIDDEN,
+        'Staff must use the permission-protected admin dealer endpoints',
+        403,
+      );
+    if (payload.kind === 'staff') {
+      const staff = await this.prisma.staff.findUnique({
+        where: { id: payload.sub },
+        include: {
+          roles: {
+            include: {
+              role: {
+                include: { permissions: { include: { permission: true } } },
+              },
+            },
+          },
+        },
+      });
+      if (
+        !staff ||
+        staff.status !== 'ACTIVE' ||
+        staff.authVersion !== session.authVersion ||
+        !staff.mfaEnabled ||
+        !session.mfaVerified
+      )
+        this.revoked();
+      const permissions = new Set(
+        staff.roles.flatMap((r) =>
+          r.role.permissions.map((p) => p.permission.code),
+        ),
+      );
+      const overrides = staff.permissionOverrides as {
+        grant?: string[];
+        deny?: string[];
+      };
+      for (const p of overrides.grant ?? []) permissions.add(p);
+      for (const p of overrides.deny ?? []) permissions.delete(p);
+      payload = {
+        ...payload,
+        name: staff.name,
+        email: staff.email,
+        roles: staff.roles.map((r) => r.role.code),
+        permissions: [...permissions],
+        authVersion: staff.authVersion,
+      };
+    } else {
+      const user = await this.prisma.user.findUnique({
+        where: { id: payload.sub },
+      });
+      if (
+        !user ||
+        user.status !== 'ACTIVE' ||
+        user.authVersion !== session.authVersion ||
+        (user.mfaEnabled && !session.mfaVerified)
+      )
+        this.revoked();
+      const member = await this.prisma.dealerMember.findFirst({
+        where: {
+          userId: user.id,
+          active: true,
+          company: { status: 'APPROVED' },
+        },
+        include: { company: { select: { purchaseSettings: true } } },
+        orderBy: { createdAt: 'asc' },
+      });
+      const path = (req.originalUrl ?? req.url).split('?')[0];
+      const onboarding =
+        /\/dealer\/(?:terms|applications|application-draft|invitations)(?:\/|$)/.test(
+          path,
+        );
+      const policy = member?.company.purchaseSettings as
+        { requireMfa?: boolean } | undefined;
+      if (
+        policy?.requireMfa &&
+        (!user.mfaEnabled || !session.mfaVerified) &&
+        !onboarding &&
+        /\/(?:dealer|media)(?:\/|$)/.test(path)
+      )
+        throw new BizException(
+          ERROR_CODES.MFA_REQUIRED,
+          'Your company requires MFA. Enroll through account security before accessing dealer services.',
+          403,
+        );
+      if (
+        member &&
+        !acceptedDealerTerms(member) &&
+        !onboarding &&
+        /\/dealer(?:\/|$)/.test(path)
+      )
+        throw new BizException(
+          ERROR_CODES.DEALER_TERMS_REQUIRED,
+          'Accept the current dealer terms at /dealer/terms before using dealer services.',
+          403,
+        );
+      // An approved member remains a registered customer until dealer terms are accepted.
+      // Withhold the company boundary from media authorization so dealer-only files stay private.
+      const mediaMember =
+        /\/media(?:\/|$)/.test(path) && member && !acceptedDealerTerms(member)
+          ? null
+          : member;
+      payload = {
+        ...payload,
+        name: user.name,
+        email: user.email,
+        companyId: mediaMember?.companyId ?? null,
+        companyRole: mediaMember?.role ?? null,
+        authVersion: user.authVersion,
+      };
+    }
+    if (Date.now() - session.lastSeenAt.getTime() > 60_000)
+      await this.prisma.authenticationSession.update({
+        where: { id: session.id },
+        data: { lastSeenAt: new Date() },
+      });
+    req.user = payload;
+    return true;
+  }
+  private revoked(): never {
+    throw new BizException(
+      ERROR_CODES.TOKEN_EXPIRED,
+      'session revoked or account no longer authorized',
+      401,
+    );
   }
 }
-
-/**
- * 可选登录守卫：携带有效 Bearer 时注入 req.user；未登录/无效令牌一律放行。
- * 用于"游客可提交、登录则绑定归属"的接口（如经销商资质申请）。
- * 注意：仅作归属绑定增强，绝不可用它替代需要强制登录的鉴权。
- */
 @Injectable()
 export class OptionalJwtAuthGuard extends JwtAuthGuard {
   override async canActivate(context: ExecutionContext): Promise<boolean> {
     try {
       await super.canActivate(context);
     } catch {
-      // 匿名/无效令牌：放行（user 保持 undefined）
+      context.switchToHttp().getRequest<AuthenticatedRequest>().user =
+        undefined;
     }
     return true;
   }

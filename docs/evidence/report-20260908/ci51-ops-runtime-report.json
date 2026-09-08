@@ -1,0 +1,112 @@
+{
+  "startedAt": "2026-09-07T19:54:59.845Z",
+  "project": "wemove-runtime-1788810899845",
+  "release": "ci",
+  "prefix": "wemove",
+  "passed": true,
+  "environmentIsolation": {
+    "generatedValuesOnly": true,
+    "externalResourcesDisabled": true
+  },
+  "readiness": {
+    "status": 200,
+    "data": {
+      "status": "ready",
+      "db": "up",
+      "redis": "up",
+      "at": "2026-09-07T19:55:30.543Z"
+    }
+  },
+  "storefront": {
+    "status": 200,
+    "html": true,
+    "main": true
+  },
+  "sameOriginProxy": {
+    "status": 200,
+    "code": 0
+  },
+  "siteConfigProxy": 200,
+  "unauthenticatedSecureProxy": 401,
+  "migrations": 29,
+  "fullBackupRestore": {
+    "database": "wemove_restore_runtime_1788810932304",
+    "tables": 62,
+    "rowCountsVerified": true,
+    "mediaRestored": true,
+    "scope": "database-and-media",
+    "mediaVolume": "wemove_restore_runtime_1788810932304",
+    "mediaBytesVerified": true,
+    "restoredFileSize": 4096,
+    "applicationResumed": true
+  },
+  "images": [
+    {
+      "ID": "sha256:561252f5619101dd9da502b14e1eb2f5e1bc0e647366961502890f0a2d911cea",
+      "ContainerName": "wemove-runtime-1788810899845-web-1",
+      "Repository": "wemove-web",
+      "Tag": "ci",
+      "Platform": "linux/amd64",
+      "Size": 299704890,
+      "LastTagTime": "2026-09-07T19:54:44.012255425Z"
+    },
+    {
+      "ID": "sha256:5509c0097c6064aa8a3b1df58f1d950e67090fffa6678ae8f3f1dc2385f12deb",
+      "ContainerName": "wemove-runtime-1788810899845-redis-1",
+      "Repository": "redis",
+      "Tag": "7-alpine",
+      "Platform": "linux/amd64",
+      "Size": 39088733,
+      "LastTagTime": "0001-01-01T00:00:00Z"
+    },
+    {
+      "ID": "sha256:636dde424d90eaab22c788304923f3b520fde8f78d615733b3f19cac7762194b",
+      "ContainerName": "wemove-runtime-1788810899845-scanner-1",
+      "Repository": "wemove-scanner",
+      "Tag": "ci",
+      "Platform": "linux/amd64",
+      "Size": 227335725,
+      "LastTagTime": "2026-09-07T19:54:54.005828192Z"
+    },
+    {
+      "ID": "sha256:361cd2d5077136bd05b7ebae682386aa2d44aff10e5c2b165bf19fd2e81ef62f",
+      "ContainerName": "wemove-runtime-1788810899845-clamav-1",
+      "Repository": "clamav/clamav",
+      "Tag": "stable",
+      "Platform": "linux/amd64",
+      "Size": 239902616,
+      "LastTagTime": "0001-01-01T00:00:00Z"
+    },
+    {
+      "ID": "sha256:e7feecdf461066e148a260947711491bc0be5ce1f7cb62686bb09003e34a3140",
+      "ContainerName": "wemove-runtime-1788810899845-api-1",
+      "Repository": "wemove-api",
+      "Tag": "ci",
+      "Platform": "linux/amd64",
+      "Size": 851507941,
+      "LastTagTime": "2026-09-07T19:54:12.878892993Z"
+    },
+    {
+      "ID": "sha256:aa7a8209eb73eb7944d78e0f35a386df6fca15acda6fc9964bcfbbae74809256",
+      "ContainerName": "wemove-runtime-1788810899845-postgres-1",
+      "Repository": "wemove-postgres",
+      "Tag": "ci",
+      "Platform": "linux/amd64",
+      "Size": 437212758,
+      "LastTagTime": "2026-09-07T19:54:53.011594662Z"
+    },
+    {
+      "ID": "sha256:935723c7f27bde7f654e82f5326d44fd83d3d1c9e93340f5a6a44ea0cfab093d",
+      "ContainerName": "wemove-runtime-1788810899845-migrate-1",
+      "Repository": "wemove-migrate",
+      "Tag": "ci",
+      "Platform": "linux/amd64",
+      "Size": 1376725238,
+      "LastTagTime": "2026-09-07T19:54:23.374349145Z"
+    }
+  ],
+  "containersStopped": true,
+  "finishedAt": "2026-09-07T19:55:35.530Z",
+  "volumesRetained": true,
+  "note": "Only a fresh generated Compose project was used. No ports were published, email workers were disabled, temporary credentials are excluded from this report and the temporary environment file was removed. No existing business data was used."
+}

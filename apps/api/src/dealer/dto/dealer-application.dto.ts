@@ -1,6 +1,7 @@
 import { Type } from 'class-transformer';
 import {
   ArrayMaxSize,
+  Equals,
   IsArray,
   IsEmail,
   IsIn,
@@ -46,6 +47,8 @@ export class DealerApplicationAttachmentDto {
 
 /** MB：经销商分步申请最终提交字段；各步骤由前端暂存，服务端按完整 DTO 校验。 */
 export class CreateDealerApplicationDto {
+  @Equals(true) agreementsAccepted!: boolean;
+  @IsOptional() @IsString() @MaxLength(80) agreementVersion?: string;
   @IsString()
   @MinLength(2)
   @MaxLength(160)

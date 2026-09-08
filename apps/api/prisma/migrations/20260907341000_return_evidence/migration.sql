@@ -1,0 +1,1 @@
+ALTER TABLE "RetailReturn" ADD COLUMN "description" TEXT NOT NULL DEFAULT '', ADD COLUMN "attachments" JSONB NOT NULL DEFAULT '[]';

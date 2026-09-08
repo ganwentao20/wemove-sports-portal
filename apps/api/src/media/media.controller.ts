@@ -6,6 +6,7 @@ import {
   Get,
   Ip,
   Param,
+  Patch,
   Post,
   Query,
   Res,
@@ -24,12 +25,15 @@ import { RequireMfa, RequireMfaGuard } from '../mfa/require-mfa.guard.js';
 import { Roles, RolesGuard } from '../rbac/roles.guard.js';
 import { MediaService } from './media.service.js';
 import type { UploadedMediaFile } from './media.service.js';
+import { MediaMetadataDto, MediaResourceQueryDto } from './media.dto.js';
 
 const ALLOWED_UPLOADS: Record<string, string[]> = {
   'image/jpeg': ['.jpg', '.jpeg'],
   'image/png': ['.png'],
   'image/webp': ['.webp'],
   'application/pdf': ['.pdf'],
+  'video/mp4': ['.mp4'],
+  'video/webm': ['.webm'],
 };
 
 @Controller('media')
@@ -44,8 +48,59 @@ export class MediaController {
   }
 
   @Get('public')
-  publicList() {
-    return this.media.listPublic();
+  publicList(@Query() query: MediaResourceQueryDto) {
+    return this.media.listPublic(query.productId);
+  }
+  @Get('cleanup-jobs')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('SUPER_ADMIN')
+  cleanupJobs() {
+    return this.media.cleanupJobs();
+  }
+  @Get('downloads') @UseGuards(JwtAuthGuard) downloads(
+    @CurrentUser() actor: JwtPayload,
+    @Query() query: MediaResourceQueryDto,
+  ) {
+    return this.media.downloads(actor, query.productId);
+  }
+  @Get(':id/access') @UseGuards(JwtAuthGuard) access(
+    @CurrentUser() actor: JwtPayload,
+    @Param('id') id: string,
+  ) {
+    return this.media.signFor(id, actor);
+  }
+  @Patch(':id/metadata')
+  @UseGuards(JwtAuthGuard, RolesGuard, RequireMfaGuard)
+  @Roles('SUPER_ADMIN')
+  @RequireMfa()
+  metadata(
+    @CurrentUser() actor: JwtPayload,
+    @Param('id') id: string,
+    @Body() dto: MediaMetadataDto,
+  ) {
+    return this.media.metadata(id, dto, actor);
+  }
+  @Post('company-upload')
+  @UseGuards(JwtAuthGuard)
+  @UseInterceptors(
+    FileInterceptor('file', {
+      limits: { files: 1, fileSize: 5 * 1024 * 1024 },
+    }),
+  )
+  companyUpload(
+    @UploadedFile() file: UploadedMediaFile,
+    @CurrentUser() actor: JwtPayload,
+  ) {
+    if (!file) throw new BadRequestException('file required');
+    return this.media.companyAttachment(file, actor);
+  }
+
+  @Post(':id/rescan')
+  @UseGuards(JwtAuthGuard, RolesGuard, RequireMfaGuard)
+  @Roles('SUPER_ADMIN')
+  @RequireMfa()
+  rescan(@Param('id') id: string, @CurrentUser() actor: JwtPayload) {
+    return this.media.rescan(id, actor);
   }
 
   @Post('upload')
@@ -54,7 +109,7 @@ export class MediaController {
   @RequireMfa()
   @UseInterceptors(
     FileInterceptor('file', {
-      limits: { files: 1, fileSize: 5 * 1024 * 1024 },
+      limits: { files: 1, fileSize: 50 * 1024 * 1024 },
       fileFilter: (_request, file, callback) => {
         const allowedExtensions = ALLOWED_UPLOADS[file.mimetype];
         const extension = extname(file.originalname).toLowerCase();
@@ -62,7 +117,7 @@ export class MediaController {
           allowedExtensions?.includes(extension)
             ? null
             : new BadRequestException(
-                'only JPG, PNG, WebP, and PDF files are allowed',
+                'only JPG, PNG, WebP, PDF, MP4, and WebM files are allowed',
               ),
           Boolean(allowedExtensions?.includes(extension)),
         );

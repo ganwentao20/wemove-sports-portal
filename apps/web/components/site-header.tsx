@@ -1,81 +1,151 @@
 import Link from "next/link";
+import Image from "next/image";
+import { cookies } from "next/headers";
+import { serverApiGet } from "../lib/server-api";
+import { getLocale, getMarket } from "../lib/locale";
+import { publicUrl } from "../lib/public-url";
+import type { NavigationItem } from "../lib/navigation";
+import { SitePreferences } from "./site-preferences";
+import { AnnouncementBanner } from "./announcement-banner";
+import {
+  HeaderBar,
+  DesktopNavigation,
+  MobileNavigation,
+} from "./site-navigation";
 
-const NAV = [
-  { href: "/products", label: "Products" },
-  { href: "/play-learn", label: "Play & Learn" },
-  { href: "/support", label: "Support" },
-  { href: "/contact", label: "Contact" },
-];
+const ORIGINAL_NAV = [
+  ["/", "首页", "Home"],
+  ["/workshop", "玩具品类", "Toys"],
+  ["/furniture", "家具定制", "Furniture"],
+  ["/woodlab", "中试打样", "Prototyping"],
+  ["/stem", "STEM教育", "STEM"],
+  ["/library", "科研研发", "Research"],
+  ["/public-benefit", "公益项目", "Public Benefit"],
+  ["/craft-dream", "匠心筑梦", "Craft Stories"],
+  ["/support/downloads", "电子说明书", "Manuals"],
+] as const;
 
-const PORTAL_LINKS = [
-  { href: "/customer/account", label: "Account & Cart" },
-  { href: "/dealer/login", label: "Dealer" },
-  { href: "/admin/login", label: "Admin" },
-];
-
-/** 全站响应式 Header；移动端使用原生 details 菜单，无脚本也可访问。 */
-export function SiteHeader() {
+export async function SiteHeader() {
+  const locale = await getLocale();
+  const market = await getMarket();
+  const jar = await cookies();
+  const [config, markets] = await Promise.all([
+    serverApiGet<{
+      locale: { languages: string[] };
+      brand: { name: string; logo?: string };
+      navigation: { items: NavigationItem[] };
+    }>("/site/config"),
+    serverApiGet<Array<{ code: string; label: string; currency: string }>>(
+      "/commerce/markets",
+    ),
+  ]);
+  const isZh = locale.startsWith("zh");
+  const local = (path: string) => publicUrl(path, locale, market);
+  const configured = config.ok ? config.data.navigation.items : [];
+  const sourceNav: NavigationItem[] = configured.length
+    ? configured
+    : ORIGINAL_NAV.map(([href, zh, en]) => ({ href, label: en, zh }));
+  const localizeNavigation = (items: NavigationItem[]): NavigationItem[] =>
+    items
+      .filter((item) => !item.markets?.length || item.markets.includes(market))
+      .map((item) => ({
+        ...item,
+        href: item.href.startsWith("/") ? local(item.href) : item.href,
+        label:
+          item.labels?.[locale] ??
+          (isZh ? (item.labels?.zh ?? item.zh ?? item.label) : item.label),
+        children: item.children ? localizeNavigation(item.children) : undefined,
+      }));
+  const nav = localizeNavigation(sourceNav);
+  const dealer = jar.has("wm_dealer_session");
+  const staff = jar.has("wm_staff_session");
+  const customer = jar.has("wm_customer_session");
+  const portals: NavigationItem[] = [
+    { href: local("/products"), label: isZh ? "产品中心" : "Product Center" },
+    { href: local("/search"), label: isZh ? "搜索" : "Search" },
+    { href: local("/compare"), label: isZh ? "产品对比" : "Compare" },
+    { href: local("/cart"), label: isZh ? "购物车" : "Cart" },
+    {
+      href: staff
+        ? "/admin/dashboard"
+        : dealer
+          ? "/dealer/dashboard"
+          : customer
+            ? "/customer/account"
+            : `/${locale}/login`,
+      label: staff
+        ? isZh
+          ? "管理后台"
+          : "Admin"
+        : dealer
+          ? isZh
+            ? "经销商门户"
+            : "Dealer Portal"
+          : isZh
+            ? "账户"
+            : "Account",
+    },
+  ];
+  nav.push({
+    href: local("/products"),
+    label: isZh ? "购买与服务" : "Shop & Service",
+    children: portals.slice(0, 5),
+  });
+  const announcements = await serverApiGet<
+    Array<{
+      id: string;
+      title: string;
+      sections: Array<{ props?: { href?: string; dismissible?: boolean } }>;
+    }>
+  >(`/cms/pages?kind=BANNER&locale=${locale}&market=${market}`);
+  const banner = announcements.ok ? announcements.data[0] : undefined;
+  const preferences = (
+    <SitePreferences
+      languages={config.ok ? config.data.locale.languages : undefined}
+      locale={locale}
+      market={market}
+      markets={
+        markets.ok
+          ? markets.data.filter(
+              (item) => !/^browser verification/i.test(item.label),
+            )
+          : [{ code: "US", label: "United States", currency: "USD" }]
+      }
+    />
+  );
   return (
-    <header className="sticky top-0 z-40 border-b border-[var(--wm-border)] bg-[color:color-mix(in_srgb,var(--wm-surface)_92%,transparent)] backdrop-blur-xl">
-      <div className="mx-auto flex h-[72px] max-w-7xl items-center justify-between gap-6 px-4 sm:px-6">
+    <header className="sticky top-0 z-40 border-b border-[#e9e9e9] bg-white/95 backdrop-blur-md">
+      {banner && (
+        <AnnouncementBanner
+          id={banner.id}
+          title={banner.title}
+          href={banner.sections?.[0]?.props?.href}
+          dismissible={banner.sections?.[0]?.props?.dismissible !== false}
+          locale={locale}
+        />
+      )}
+      <HeaderBar>
         <Link
-          href="/"
-          className="flex shrink-0 items-baseline gap-1.5 text-[17px] font-extrabold tracking-[-0.04em]"
-          aria-label="WEMOVE SPORTS home"
+          href={local("/")}
+          aria-label={isZh ? "WEMOVE 首页" : "WEMOVE home"}
+          className="flex shrink-0 items-center gap-2 text-[20px] font-semibold tracking-[-0.03em] text-[#222]"
         >
-          <span className="text-[var(--wm-primary)]">WEMOVE</span>
-          <span className="text-[var(--wm-dark)]">SPORTS</span>
+          <Image
+            src="/original-site/logo.png"
+            width={32}
+            height={32}
+            priority
+            alt="WEMOVE"
+            className="h-8 w-8 object-contain"
+          />
+          <span>WeMove</span>
         </Link>
-
-        <nav className="hidden items-center gap-6 text-sm font-medium text-[var(--wm-muted)] lg:flex" aria-label="Primary navigation">
-          {NAV.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              className="whitespace-nowrap transition-colors hover:text-[var(--wm-primary)]"
-            >
-              {item.label}
-            </Link>
-          ))}
-        </nav>
-
-        <div className="hidden items-center gap-3 text-sm lg:flex">
-          {PORTAL_LINKS.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={
-                item.label === "Account & Cart"
-                  ? "whitespace-nowrap text-[var(--wm-muted)] hover:text-[var(--wm-primary)]"
-                  : item.label === "Dealer"
-                    ? "whitespace-nowrap rounded-xl bg-[var(--wm-dark)] px-4 py-2.5 font-semibold text-[var(--wm-surface)] transition-transform hover:-translate-y-0.5 active:translate-y-0"
-                    : "whitespace-nowrap text-[var(--wm-muted)] hover:text-[var(--wm-primary)]"
-              }
-            >
-              {item.label}
-            </Link>
-          ))}
-        </div>
-
-        <details className="relative lg:hidden">
-          <summary className="cursor-pointer list-none rounded-xl border border-[var(--wm-border)] bg-[var(--wm-surface)] px-4 py-2 text-sm font-semibold text-[var(--wm-text)] [&::-webkit-details-marker]:hidden">
-            Menu
-          </summary>
-          <div className="absolute right-0 top-12 w-64 rounded-2xl border border-[var(--wm-border)] bg-[var(--wm-surface)] p-3 shadow-[0_24px_60px_rgba(var(--wm-shadow)/0.18)]">
-            <nav className="grid gap-1" aria-label="Mobile navigation">
-              {[...NAV, ...PORTAL_LINKS].map((item) => (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className="rounded-xl px-3 py-2.5 text-sm font-medium text-[var(--wm-muted)] hover:bg-[var(--wm-surface-soft)] hover:text-[var(--wm-primary)]"
-                >
-                  {item.label}
-                </Link>
-              ))}
-            </nav>
-          </div>
-        </details>
-      </div>
+        <DesktopNavigation items={nav} locale={locale} />
+        <div className="hidden xl:block">{preferences}</div>
+        <MobileNavigation items={nav} portals={portals} locale={locale}>
+          {preferences}
+        </MobileNavigation>
+      </HeaderBar>
     </header>
   );
 }

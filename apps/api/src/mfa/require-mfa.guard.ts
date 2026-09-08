@@ -1,4 +1,9 @@
-import { CanActivate, ExecutionContext, Injectable, SetMetadata } from '@nestjs/common';
+import {
+  CanActivate,
+  ExecutionContext,
+  Injectable,
+  SetMetadata,
+} from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import type { Request } from 'express';
 import { BizException, ERROR_CODES } from '../common/errors.js';
@@ -45,7 +50,11 @@ export class RequireMfaGuard implements CanActivate {
       select: { id: true, mfaEnabled: true, mfaSecret: true },
     });
     if (!staff) {
-      throw new BizException(ERROR_CODES.UNAUTHORIZED, 'staff account not found', 401);
+      throw new BizException(
+        ERROR_CODES.UNAUTHORIZED,
+        'staff account not found',
+        401,
+      );
     }
     if (!staff.mfaEnabled || !staff.mfaSecret) {
       throw new BizException(

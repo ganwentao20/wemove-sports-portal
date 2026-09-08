@@ -7,7 +7,8 @@
  * 阶梯：同一 scope 内多条 minQty 档，取“满足数量且档位最大”的一条。
  */
 
-export type PricingScopeCode = 'COMPANY_SPECIFIC' | 'PRICE_TABLE' | 'TIER_LEVEL' | 'B2B_DEFAULT';
+export type PricingScopeCode =
+  'COMPANY_SPECIFIC' | 'PRICE_TABLE' | 'TIER_LEVEL' | 'B2B_DEFAULT';
 
 export interface PricingRuleCandidate {
   id: string;
@@ -18,6 +19,10 @@ export interface PricingRuleCandidate {
   tierId?: string | null;
   priceCents: number;
   minQty: number;
+  market?: string | null;
+  currency?: string;
+  startsAt?: Date | string | null;
+  endsAt?: Date | string | null;
 }
 
 export interface PriceContext {
@@ -25,6 +30,9 @@ export interface PriceContext {
   tierId?: string | null;
   authorizedBookIds?: string[]; // 企业被授权的价格表
   quantity?: number;
+  market?: string;
+  currency?: string;
+  now?: Date;
 }
 
 export type DealerPriceSource = PricingScopeCode;
@@ -49,7 +57,10 @@ function matchesScope(rule: PricingRuleCandidate, ctx: PriceContext): boolean {
     case 'COMPANY_SPECIFIC':
       return rule.companyId === ctx.companyId;
     case 'PRICE_TABLE':
-      return rule.bookId != null && (ctx.authorizedBookIds ?? []).includes(rule.bookId);
+      return (
+        rule.bookId != null &&
+        (ctx.authorizedBookIds ?? []).includes(rule.bookId)
+      );
     case 'TIER_LEVEL':
       return ctx.tierId != null && rule.tierId === ctx.tierId;
     case 'B2B_DEFAULT':
@@ -89,6 +100,11 @@ export function resolveDealerPrice(
   const quantity = Math.max(1, ctx.quantity ?? 1);
   const groups = new Map<PricingScopeCode, PricingRuleCandidate[]>();
   for (const rule of rules) {
+    const now = ctx.now ?? new Date();
+    if (rule.market && rule.market !== ctx.market) continue;
+    if (rule.currency && rule.currency !== (ctx.currency ?? 'USD')) continue;
+    if (rule.startsAt && new Date(rule.startsAt) > now) continue;
+    if (rule.endsAt && new Date(rule.endsAt) <= now) continue;
     if (!matchesScope(rule, ctx)) continue;
     const list = groups.get(rule.scope) ?? [];
     list.push(rule);
@@ -106,7 +122,11 @@ export function resolveDealerPrice(
   }
 
   return best
-    ? { priceCents: best.rule.priceCents, source: best.rule.scope, ruleId: best.rule.id }
+    ? {
+        priceCents: best.rule.priceCents,
+        source: best.rule.scope,
+        ruleId: best.rule.id,
+      }
     : null;
 }
 

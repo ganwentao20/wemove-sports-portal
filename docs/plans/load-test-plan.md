@@ -41,7 +41,7 @@ npx autocannon -c 100 -d 30 "http://localhost:8080/api/v1/products/strike-kids-b
 
 ### 阶段二：只读 + 登录混合（k6，后续补脚本）
 
-- 场景比例：90% 浏览商品（列表/详情）+ 10% 登录（customer@wemove.local / Demo@123456）
+- 场景比例：90% 浏览商品（列表/详情）+ 10% 登录（customer@wemove.local / Demo1234）
 - 并发：100（VU 阶梯：0 → 100）
 - 预期输出：各场景 P95、错误率、429 次数
 - 脚本建议路径：`infra/load-test/login-mix.js`（下轮补齐并随 ⑤ 报告附执行结果）

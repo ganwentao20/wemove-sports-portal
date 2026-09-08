@@ -16,10 +16,14 @@ import { extname } from 'node:path';
 import { CurrentUser } from '../auth/current-user.decorator.js';
 import { JwtAuthGuard, OptionalJwtAuthGuard } from '../auth/jwt-auth.guard.js';
 import type { JwtPayload } from '../auth/auth.service.js';
+import { DealerDirectoryQueryDto } from './dto/dealer-directory-query.dto.js';
 import { DealerService } from './dealer.service.js';
 import { CreateDealerApplicationDto } from './dto/dealer-application.dto.js';
 import { DealerCatalogQueryDto } from './dto/dealer-catalog-query.dto.js';
-import { QuickOrderDto } from './dto/quick-order.dto.js';
+import {
+  QuickOrderDto,
+  QuickOrderLocaleQueryDto,
+} from './dto/quick-order.dto.js';
 import {
   MediaService,
   type UploadedMediaFile,
@@ -42,6 +46,16 @@ export class DealerController {
     private readonly dealer: DealerService,
     private readonly media: MediaService,
   ) {}
+
+  @Get('directory') directory(@Query() query: DealerDirectoryQueryDto) {
+    return this.dealer.directory(undefined, query.locale);
+  }
+  @Get('directory/:id') directoryDetail(
+    @Param('id') id: string,
+    @Query() query: DealerDirectoryQueryDto,
+  ) {
+    return this.dealer.directory(id, query.locale);
+  }
 
   @Post('application-attachments')
   @UseInterceptors(
@@ -94,7 +108,12 @@ export class DealerController {
     @Query() query: DealerCatalogQueryDto,
     @CurrentUser() user: JwtPayload,
   ) {
-    return this.dealer.listDealerCatalog(query.quantity, user);
+    return this.dealer.listDealerCatalog(
+      query.quantity,
+      user,
+      query.productId,
+      query.locale,
+    );
   }
 
   /** DLR-04：批量 SKU/数量逐行校验和企业价格预览，不创建业务单据。 */
@@ -103,7 +122,8 @@ export class DealerController {
   validateQuickOrder(
     @Body() dto: QuickOrderDto,
     @CurrentUser() user: JwtPayload,
+    @Query() query: QuickOrderLocaleQueryDto,
   ) {
-    return this.dealer.validateQuickOrder(dto.lines, user);
+    return this.dealer.validateQuickOrder(dto.lines, user, query.locale);
   }
 }

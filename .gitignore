@@ -45,6 +45,7 @@ pnpm-debug.log*
 uploads/
 apps/api/uploads/
 apps/web/public/uploads/
+apps/api/media_private/
 
 # ---------- 本地沙箱/工具缓存（Windows 重定向目录） ----------
 .local/

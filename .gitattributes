@@ -1,0 +1,6 @@
+# Preserve the exact bytes referenced by the acceptance evidence manifest.
+docs/evidence/report-20260908/** -text
+scripts/load-acceptance.mjs text eol=lf
+
+# Course deliverables are packaged beside the source archive; omit generated Office files from git archive output.
+docs/deliverables/** export-ignore

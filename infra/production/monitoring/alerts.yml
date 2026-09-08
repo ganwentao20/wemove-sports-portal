@@ -1,0 +1,76 @@
+groups:
+  - name: availability
+    rules:
+      - alert: ServiceUnavailable
+        expr: probe_success == 0
+        for: 2m
+        labels: { severity: critical }
+        annotations:
+          { summary: "Service health probe failed for {{ $labels.instance }}" }
+      - alert: MonitoringTargetMissing
+        expr: up == 0
+        for: 3m
+        labels: { severity: critical }
+        annotations:
+          { summary: "Monitoring cannot scrape {{ $labels.instance }}" }
+      - alert: HighServerErrorRate
+        expr: sum(rate(caddy_http_requests_total{code=~"5.."}[5m])) / clamp_min(sum(rate(caddy_http_requests_total[5m])), 0.01) > 0.05
+        for: 5m
+        labels: { severity: critical }
+        annotations:
+          { summary: "HTTP server error rate exceeds 5% for five minutes" }
+      - alert: HighHttpLatency
+        expr: histogram_quantile(0.95, sum by (le) (rate(caddy_http_request_duration_seconds_bucket[5m]))) > 2
+        for: 10m
+        labels: { severity: warning }
+        annotations: { summary: "HTTP p95 latency exceeds two seconds" }
+  - name: business
+    rules:
+      - alert: DatabaseBackupStale
+        expr: time() - wemove_last_backup_timestamp_seconds > 8 * 3600 or time() - wemove_last_full_backup_timestamp_seconds > 26 * 3600
+        for: 5m
+        labels: { severity: critical }
+        annotations:
+          {
+            summary: "Database backup is missing or overdue for repository {{ $labels.repository }}",
+          }
+      - alert: DatabaseWalArchivingFailed
+        expr: increase(wemove_wal_archive_failures_total[10m]) > 0
+        for: 5m
+        labels: { severity: critical }
+        annotations:
+          {
+            summary: "Continuous WAL archiving failed; investigate before WAL fills the disk",
+          }
+      - alert: EmailDeliveryFailed
+        expr: wemove_queue_dead > 0 or wemove_queue_oldest_seconds > 600
+        for: 5m
+        labels: { severity: critical }
+        annotations: { summary: "Email outbox needs operator intervention" }
+      - alert: OrderReservationReleaseStalled
+        expr: wemove_expired_order_reservations > 0
+        for: 5m
+        labels: { severity: warning }
+        annotations:
+          { summary: "Expired stock reservations have not been released" }
+      - alert: InventorySyncFailed
+        expr: wemove_inventory_sync_errors > 0
+        for: 5m
+        labels: { severity: warning }
+        annotations: { summary: "Inventory source synchronization failed" }
+      - alert: PaymentFailureRateHigh
+        expr: wemove_payment_failures_hour / clamp_min(wemove_payments_hour, 1) > 0.1 and wemove_payments_hour >= 10
+        for: 5m
+        labels: { severity: critical }
+        annotations: { summary: "At least 10% of recent payments failed" }
+      - alert: SearchNoResultsHigh
+        expr: wemove_search_no_results_hour > 20
+        for: 10m
+        labels: { severity: warning }
+        annotations: { summary: "Searches without results exceed 20 per hour" }
+      - alert: FrontendErrorsHigh
+        expr: wemove_frontend_errors_hour >= 5
+        for: 5m
+        labels: { severity: warning }
+        annotations:
+          { summary: "Consented frontend error events exceed threshold" }

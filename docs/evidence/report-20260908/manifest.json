@@ -1,0 +1,31 @@
+{
+  "sourceCommit": "4fe216999760763d953c33d6ff519f355c90c20d",
+  "ciRun": 34156780782,
+  "artifactId": 10031444671,
+  "artifactZipSha256": "bf6363750e1eeb7b1f0ab19cfebcb3c60585658c2a86625d3048abce09f6b11d",
+  "loadScriptSha256": "d0846105a652550a2a0bdc737f009dc505c434506d2552453d719d5c6aebfab3",
+  "files": {
+    "ci51-acceptance-revision.json": "6bd40f44549d7bf495c77df6be3dfd1dcb9b63112a5157aefb9b537852b7da63",
+    "ci51-lighthouse/article-1.json": "13aa4aea8e563971dc035a1204b1a68015717285ba496e4141ba3cf4a477eb7f",
+    "ci51-lighthouse/article-2.json": "b4b9d3f5f5d9a2a1161ac24d832f3feeb5db9abe99252a1411cc215c04251536",
+    "ci51-lighthouse/article-3.json": "e18dee4df03c553c1a885af3d784509d7a797a1e85ac55c39d896365d4c11d01",
+    "ci51-lighthouse/home-1.json": "fac28d75ad95b85037a3a6c58318017d1594478c8847cea492e9bac3c2434535",
+    "ci51-lighthouse/home-2.json": "c53a2ad381f2f19fa31a163d029cd049b5cdf1a7c4823a0122d1df58c71354f8",
+    "ci51-lighthouse/home-3.json": "12815431c3db81a4ec031f0b9bc155de90f8a79794ea306e1d761af9ef24f4f6",
+    "ci51-lighthouse/product-1.json": "230f5bf388f0b8244e10bac0667dc3fb865a9503fd967a8f4fae806cfdc6ad1f",
+    "ci51-lighthouse/product-2.json": "b17797035e180180d67a0a3fe5e1d34103b001d3d1a1926d9372330c5e741da3",
+    "ci51-lighthouse/product-3.json": "46dcacea7cbfa9a8536b7f31472d066d1f95c48f33180673c3346b11de745000",
+    "ci51-lighthouse/products-1.json": "ca99b9bbf831a9608d407e7dd5547203d48180d8c35ce018812db2b0dd9f6395",
+    "ci51-lighthouse/products-2.json": "67b33ad1e4f154ec75b350ca5ed82d5cc53b1cb3bf703f8836f0b07a9565bbe2",
+    "ci51-lighthouse/products-3.json": "a2c676972083280e45dcf6ecfe593392f2271880f34b00232f6e42d6814e26f0",
+    "ci51-lighthouse-summary.json": "0ba7e44e5f1541f08c0dfa5adfad937def373c2300b76121fd02aedcc60eb499",
+    "ci51-ops-pitr-report.json": "4784d832a2962dc3b10ed1af085c4ca49217f4d11b1ddfec40d1554024b670c9",
+    "ci51-ops-restore-report.json": "347c3a9d9b20150f01f2d73b8b588e15b7275480ef2dfdd6a48ba0c3eb0bcb3f",
+    "ci51-ops-runtime-report.json": "0f9a355b58c6f5e0cf384214b5bbb3cc02bea59619e66b32860fdf89f9881358",
+    "ci51-ops-scanner-report.json": "fa610bcbfbc1aa759e5dec9b524dc859d5ae9dc4f629ba9bcf98ca232419f988",
+    "load-mixed.json": "a406b7e1e17872e89fe3b65a8597c3b1c25b566c4e47848693c5c05e55a603da",
+    "load-public.json": "22f285bd6a47f59bf9bedcdc471e85e785c3d824269f05a43ff6e72e73e0b281",
+    "local-lighthouse-summary.json": "4a12e111b8bffa3d512c55fa272feaa81060b628f684f189752c8dc182f3cce0",
+    "manual-captures.json": "d9418718645c4f120c84f466235ba108d68280c147d4b3e68ed44ece3bceb9a3"
+  }
+}

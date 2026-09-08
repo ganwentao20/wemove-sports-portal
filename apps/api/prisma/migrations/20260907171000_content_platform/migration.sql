@@ -1,0 +1,16 @@
+ALTER TABLE "CmsPage" ADD COLUMN "kind" TEXT NOT NULL DEFAULT 'PAGE', ADD COLUMN "locale" TEXT NOT NULL DEFAULT 'en', ADD COLUMN "market" TEXT NOT NULL DEFAULT 'ALL', ADD COLUMN "publishAt" TIMESTAMP(3), ADD COLUMN "unpublishAt" TIMESTAMP(3), ADD COLUMN "revision" INTEGER NOT NULL DEFAULT 1, ADD COLUMN "author" TEXT, ADD COLUMN "category" TEXT, ADD COLUMN "productIds" TEXT[] DEFAULT ARRAY[]::TEXT[], ADD COLUMN "translations" JSONB NOT NULL DEFAULT '{}';
+ALTER TABLE "ContactMessage" ADD COLUMN "source" TEXT NOT NULL DEFAULT 'CONTACT', ADD COLUMN "priority" TEXT NOT NULL DEFAULT 'NORMAL', ADD COLUMN "assignedTo" TEXT, ADD COLUMN "tags" TEXT[] DEFAULT ARRAY[]::TEXT[], ADD COLUMN "history" JSONB NOT NULL DEFAULT '[]', ADD COLUMN "attachments" TEXT[] DEFAULT ARRAY[]::TEXT[];
+CREATE TABLE "CmsRevision" ("id" TEXT PRIMARY KEY, "pageId" TEXT NOT NULL, "revision" INTEGER NOT NULL, "snapshot" JSONB NOT NULL, "actorId" TEXT NOT NULL, "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP);
+CREATE UNIQUE INDEX "CmsRevision_pageId_revision_key" ON "CmsRevision"("pageId", "revision");
+CREATE TABLE "SiteSetting" ("key" TEXT PRIMARY KEY, "value" JSONB NOT NULL, "updatedAt" TIMESTAMP(3) NOT NULL);
+CREATE TABLE "SiteRedirect" ("id" TEXT PRIMARY KEY, "source" TEXT NOT NULL, "destination" TEXT NOT NULL, "status" INTEGER NOT NULL DEFAULT 301, "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP, "updatedAt" TIMESTAMP(3) NOT NULL);
+CREATE UNIQUE INDEX "SiteRedirect_source_key" ON "SiteRedirect"("source");
+CREATE TABLE "AnalyticsEvent" ("id" TEXT PRIMARY KEY, "name" TEXT NOT NULL, "path" TEXT NOT NULL, "properties" JSONB NOT NULL DEFAULT '{}', "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP);
+CREATE INDEX "AnalyticsEvent_name_createdAt_idx" ON "AnalyticsEvent"("name", "createdAt");
+CREATE TABLE "NewsletterSubscription" ("email" TEXT PRIMARY KEY, "locale" TEXT NOT NULL DEFAULT 'en', "status" TEXT NOT NULL DEFAULT 'PENDING', "tokenHash" TEXT NOT NULL, "consentVersion" TEXT NOT NULL, "expiresAt" TIMESTAMP(3) NOT NULL, "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP, "updatedAt" TIMESTAMP(3) NOT NULL);
+CREATE UNIQUE INDEX "NewsletterSubscription_tokenHash_key" ON "NewsletterSubscription"("tokenHash");
+CREATE TABLE "NotificationOutbox" ("id" TEXT PRIMARY KEY, "kind" TEXT NOT NULL, "dedupeKey" TEXT NOT NULL, "payload" TEXT NOT NULL, "status" TEXT NOT NULL DEFAULT 'PENDING', "attempts" INTEGER NOT NULL DEFAULT 0, "availableAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP, "lockedUntil" TIMESTAMP(3), "lastError" TEXT, "sentAt" TIMESTAMP(3), "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP, "updatedAt" TIMESTAMP(3) NOT NULL);
+CREATE UNIQUE INDEX "NotificationOutbox_dedupeKey_key" ON "NotificationOutbox"("dedupeKey");
+CREATE INDEX "NotificationOutbox_status_availableAt_idx" ON "NotificationOutbox"("status", "availableAt");
+ALTER TYPE "CmsPageStatus" ADD VALUE IF NOT EXISTS 'SCHEDULED';
+ALTER TYPE "CmsPageStatus" ADD VALUE IF NOT EXISTS 'ARCHIVED';

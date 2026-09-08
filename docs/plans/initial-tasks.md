@@ -1,5 +1,7 @@
 # 全员首个任务拆解卡（docs/plans/initial-tasks.md）
 
+> 2026-09-07 更新：B2B 卡片由甘文韬承接；下文首个任务为起步卡片，当前完成状态以 schedule-current.md 与 workload-current.md 为准。
+
 > 用法：组长在 GitHub 建 Issues 时，按下文逐条粘贴（标题+描述+标签+指派人），
 > 成员各自领卡开工。验收标准已写入卡片 —— 例会#1 逐条过一遍即可认领。
 > Issue 模板见 `.github/ISSUE_TEMPLATE/feature.md`。
@@ -14,7 +16,7 @@
 
 **任务 A2**：PLP 接真实 API（替换 mock → `/products`，含筛选分类/搜索状态管理）
 
-## 组员 B（朱容杰）— B2B
+## 组长（甘文韬，兼任 B2B）— B2B
 
 **任务 B1（首个 PR）**：`dealer` 后端模块骨架 + 资质申请接口
 - 范围：`apps/api/src/dealer/**`（新建）、schema 复用 `DealerApplication`

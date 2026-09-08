@@ -4,7 +4,9 @@ import {
   ArrayMinSize,
   IsArray,
   IsInt,
+  IsOptional,
   IsString,
+  Matches,
   Max,
   MaxLength,
   Min,
@@ -30,4 +32,11 @@ export class QuickOrderDto {
   @ValidateNested({ each: true })
   @Type(() => QuickOrderLineDto)
   lines!: QuickOrderLineDto[];
+}
+
+/** Affects preview labels only; business documents keep their original snapshots. */
+export class QuickOrderLocaleQueryDto {
+  @IsOptional()
+  @Matches(/^[a-z]{2,3}(?:-[A-Z]{2})?$/)
+  locale = 'en';
 }

@@ -1,0 +1,86 @@
+{
+  "environment": "Production build; three cold-browser Lighthouse mobile runs per template; median LCP/TBT, worst CLS; not field Core Web Vitals",
+  "browser": "Chromium headless shell",
+  "createdAt": "2026-09-07T19:44:56.306Z",
+  "pages": [
+    {
+      "template": "home",
+      "lcpMs": 2173.871,
+      "lcpSamples": [
+        2173.871,
+        2192.6517,
+        1804.7349
+      ],
+      "cls": 0,
+      "tbtMs": 36,
+      "performance": 0.99,
+      "accessibility": 1
+    },
+    {
+      "template": "products",
+      "lcpMs": 1729.3289,
+      "lcpSamples": [
+        1728.7777,
+        2292.498,
+        1729.3289
+      ],
+      "cls": 0,
+      "tbtMs": 31.5,
+      "performance": 1,
+      "accessibility": 1
+    },
+    {
+      "template": "product",
+      "lcpMs": 2349.5373,
+      "lcpSamples": [
+        2349.0584,
+        2359.7286999999997,
+        2349.5373
+      ],
+      "cls": 0,
+      "tbtMs": 22.5,
+      "performance": 0.98,
+      "accessibility": 1
+    },
+    {
+      "template": "article",
+      "lcpMs": 2186.1599,
+      "lcpSamples": [
+        2186.1599,
+        2192.4390000000003,
+        1803.8071999999997
+      ],
+      "cls": 0,
+      "tbtMs": 37.99999999999977,
+      "performance": 0.99,
+      "accessibility": 1
+    }
+  ],
+  "apis": [
+    {
+      "path": "/products?pageSize=20&market=US",
+      "samples": 30,
+      "p95Ms": 27.263200000001234
+    },
+    {
+      "path": "/products/ring-toss-outdoor-game-set?market=US",
+      "samples": 30,
+      "p95Ms": 48.25019999999495
+    },
+    {
+      "path": "/search?q=bowling&market=US",
+      "samples": 30,
+      "p95Ms": 29.55109999999695
+    },
+    {
+      "path": "/cms/pages?kind=ARTICLE&market=US",
+      "samples": 30,
+      "p95Ms": 13.782500000001164
+    },
+    {
+      "path": "/site/config",
+      "samples": 30,
+      "p95Ms": 16.68180000000575
+    }
+  ]
+}

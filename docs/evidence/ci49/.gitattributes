@@ -1,0 +1,4 @@
+# Preserve downloaded evidence bytes across Windows and Linux checkouts.
+*.json -text linguist-generated=true
+manifest.json text eol=lf linguist-generated=true
+*.png -text

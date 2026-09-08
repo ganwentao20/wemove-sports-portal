@@ -2,7 +2,7 @@
   "name": "web",
   "version": "0.1.0",
   "private": true,
-  "description": "WEMOVE SPORTS 前台 —— (storefront) 官网 + /customer 用户中心 + /dealer 经销商门户 + /admin 运营后台",
+  "description": "WEMOVE 原站前端与业务门户 —— (storefront) 官网 + /customer 用户中心 + /dealer 经销商门户 + /admin 运营后台",
   "scripts": {
     "dev": "next dev --turbopack",
     "build": "next build",

@@ -1,3 +1,4 @@
+import type { MfaService } from '../mfa/mfa.service.js';
 import { describe, expect, it, vi } from 'vitest';
 import { AuthService } from './auth.service.js';
 import type { PrismaService } from '../prisma/prisma.service.js';
@@ -20,10 +21,14 @@ describe('AuthService login lockout', () => {
       {} as AuditService,
       redis,
       {} as EmailService,
+      {} as MfaService,
     );
 
     await expect(
-      service.login({ email: 'locked@example.com', password: 'CorrectPass123!' }, '127.0.0.1'),
+      service.login(
+        { email: 'locked@example.com', password: 'CorrectPass123!' },
+        '127.0.0.1',
+      ),
     ).rejects.toMatchObject({ status: 429, response: { code: 42900 } });
     expect(findUnique).not.toHaveBeenCalled();
   });

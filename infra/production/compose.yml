@@ -1,0 +1,305 @@
+name: ${COMPOSE_PROJECT_NAME:-wemove-production}
+x-logging: &logging
+  driver: local
+  options:
+    max-size: "20m"
+    max-file: "5"
+x-api-env: &api-env
+  NODE_ENV: production
+  DEPLOYMENT_ENV: ${DEPLOYMENT_ENV:-production}
+  PORT: "8080"
+  DATABASE_URL: ${DATABASE_URL:?Set a URL for the postgres service}
+  REDIS_URL: redis://:${REDIS_PASSWORD:?Set REDIS_PASSWORD}@redis:6379/0
+  JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:?Set a random JWT secret}
+  JWT_ACCESS_EXPIRES_IN: ${JWT_ACCESS_EXPIRES_IN:-2h}
+  MEDIA_SIGNING_SECRET: ${MEDIA_SIGNING_SECRET:?Set a random media secret}
+  NOTIFICATION_ENCRYPTION_KEY: ${NOTIFICATION_ENCRYPTION_KEY:?Set a random outbox encryption key}
+  EMAIL_VERIFY_REQUIRED: "true"
+  SMTP_HOST: ${SMTP_HOST:?Set production SMTP host}
+  SMTP_PORT: ${SMTP_PORT:-587}
+  SMTP_SECURE: ${SMTP_SECURE:-false}
+  SMTP_USER: ${SMTP_USER:-}
+  SMTP_PASS: ${SMTP_PASS:-}
+  EMAIL_FROM: ${EMAIL_FROM:?Set a verified sender}
+  APP_BASE_URL: https://${DOMAIN:?Set DOMAIN}
+  WEB_ORIGIN: https://${DOMAIN}
+  CORS_ORIGINS: https://${DOMAIN}
+  GLOBAL_RATE_LIMIT_PER_MIN: ${GLOBAL_RATE_LIMIT_PER_MIN:-1200}
+  MEDIA_SCAN_REQUIRED: "true"
+  MEDIA_SCAN_URL: http://scanner:8081/scan
+  MEDIA_SCAN_TOKEN: ${MEDIA_SCAN_TOKEN:?Set scanner authentication token}
+  PAYMENT_PROVIDER_URL: ${PAYMENT_PROVIDER_URL:-}
+  PAYMENT_PROVIDER_KEY: ${PAYMENT_PROVIDER_KEY:-}
+  PAYMENT_WEBHOOK_SECRET: ${PAYMENT_WEBHOOK_SECRET:-}
+  PAYMENT_WEBHOOK_URL: https://${DOMAIN}/api/v1/commerce/payment-webhook
+  B2B_PAYMENT_MODE: ${B2B_PAYMENT_MODE:-WEBHOOK}
+  B2B_PAYMENT_CREATE_URL: ${B2B_PAYMENT_CREATE_URL:-}
+  B2B_PAYMENT_WEBHOOK_SECRET: ${B2B_PAYMENT_WEBHOOK_SECRET:-}
+  B2B_SALES_EMAIL: ${B2B_SALES_EMAIL:-}
+  ALLOW_DEMO_PAYMENTS: "false"
+services:
+  postgres:
+    image: ${IMAGE_PREFIX:-wemove}-postgres:${RELEASE}
+    build:
+      context: ../..
+      dockerfile: infra/production/Dockerfile
+      target: postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-wemove}
+      POSTGRES_USER: ${POSTGRES_USER:-wemove}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD}
+      POSTGRES_INITDB_ARGS: --data-checksums
+      PGBACKREST_CIPHER_PASS: ${PGBACKREST_CIPHER_PASS:?Set backup encryption passphrase}
+      PGBACKREST_S3_BUCKET: ${PGBACKREST_S3_BUCKET:-}
+      PGBACKREST_S3_ENDPOINT: ${PGBACKREST_S3_ENDPOINT:-}
+      PGBACKREST_S3_REGION: ${PGBACKREST_S3_REGION:-}
+      PGBACKREST_S3_KEY: ${PGBACKREST_S3_KEY:-}
+      PGBACKREST_S3_KEY_SECRET: ${PGBACKREST_S3_KEY_SECRET:-}
+    command:
+      [
+        "postgres",
+        "-c",
+        "wal_level=replica",
+        "-c",
+        "archive_mode=on",
+        "-c",
+        "archive_timeout=300",
+        "-c",
+        "archive_command=pgbackrest --stanza=wemove archive-push %p",
+      ]
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - backupdata:/var/lib/pgbackrest
+      - backupstatus:/var/lib/pgbackrest-status
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    networks: [data, application]
+    logging: *logging
+  redis:
+    image: ${REDIS_IMAGE:-redis:7-alpine}
+    restart: unless-stopped
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+    command:
+      [
+        "sh",
+        "-c",
+        'exec redis-server --appendonly yes --requirepass "$$REDIS_PASSWORD"',
+      ]
+    volumes: [redisdata:/data]
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "REDISCLI_AUTH=$$REDIS_PASSWORD redis-cli ping | grep -q PONG",
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    networks: [data]
+    logging: *logging
+  migrate:
+    image: ${IMAGE_PREFIX:-wemove}-migrate:${RELEASE:?Set RELEASE to the tested git revision}
+    build:
+      context: ../..
+      dockerfile: infra/production/Dockerfile
+      target: migrate
+    environment:
+      DATABASE_URL: ${DATABASE_URL}
+    depends_on:
+      postgres: { condition: service_healthy }
+    networks: [data]
+    logging: *logging
+  clamav:
+    image: ${CLAMAV_IMAGE:-clamav/clamav:stable}
+    restart: unless-stopped
+    volumes: [clamavdata:/var/lib/clamav]
+    networks: [application]
+    logging: *logging
+  scanner:
+    image: ${IMAGE_PREFIX:-wemove}-scanner:${RELEASE}
+    build:
+      context: ../..
+      dockerfile: infra/production/Dockerfile
+      target: scanner
+    restart: unless-stopped
+    environment:
+      SCANNER_TOKEN: ${MEDIA_SCAN_TOKEN}
+      CLAMD_HOST: clamav
+      CLAMD_PORT: "3310"
+    depends_on:
+      clamav: { condition: service_healthy }
+    networks: [application]
+    read_only: true
+    security_opt: [no-new-privileges:true]
+    cap_drop: [ALL]
+    logging: *logging
+  api:
+    image: ${IMAGE_PREFIX:-wemove}-api:${RELEASE}
+    build:
+      context: ../..
+      dockerfile: infra/production/Dockerfile
+      target: api
+    restart: unless-stopped
+    init: true
+    environment: *api-env
+    volumes: [media:/app/apps/api/media_private]
+    tmpfs: [/tmp]
+    read_only: true
+    security_opt: [no-new-privileges:true]
+    cap_drop: [ALL]
+    depends_on:
+      migrate: { condition: service_completed_successfully }
+      redis: { condition: service_healthy }
+      scanner: { condition: service_healthy }
+    networks: [application, data]
+    logging: *logging
+  web:
+    image: ${IMAGE_PREFIX:-wemove}-web:${RELEASE}
+    build:
+      context: ../..
+      dockerfile: infra/production/Dockerfile
+      target: web
+      args:
+        API_PROXY_TARGET: http://api:8080
+        NEXT_PUBLIC_SITE_URL: https://${DOMAIN}
+        DEPLOYMENT_ENV: ${DEPLOYMENT_ENV:-production}
+    restart: unless-stopped
+    init: true
+    environment:
+      NODE_ENV: production
+      DEPLOYMENT_ENV: ${DEPLOYMENT_ENV:-production}
+      API_PROXY_TARGET: http://api:8080
+      NEXT_PUBLIC_SITE_URL: https://${DOMAIN}
+    tmpfs: ["/tmp", "/app/apps/web/.next/cache:uid=1000,gid=1000"]
+    read_only: true
+    security_opt: [no-new-privileges:true]
+    cap_drop: [ALL]
+    depends_on:
+      api: { condition: service_healthy }
+    networks: [application]
+    logging: *logging
+  caddy:
+    image: ${CADDY_IMAGE:-caddy:2-alpine}
+    restart: unless-stopped
+    environment:
+      DOMAIN: ${DOMAIN}
+      TLS_EMAIL: ${TLS_EMAIL:?Set TLS certificate contact}
+    ports: ["80:80", "443:443", "443:443/udp"]
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddydata:/data
+      - caddyconfig:/config
+      - caddylogs:/var/log/caddy
+    depends_on:
+      web: { condition: service_healthy }
+    networks: [application]
+    logging: *logging
+  metrics:
+    profiles: [monitoring]
+    image: ${IMAGE_PREFIX:-wemove}-api:${RELEASE}
+    command: ["node", "/app/scripts/ops-metrics.mjs"]
+    environment:
+      DATABASE_URL: ${DATABASE_URL}
+      METRICS_PORT: "9108"
+      BACKUP_REPOSITORIES: ${BACKUP_REPOSITORIES:-1}
+    volumes: [backupstatus:/var/lib/pgbackrest-status:ro]
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://127.0.0.1:9108/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+        ]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    depends_on:
+      migrate: { condition: service_completed_successfully }
+    networks: [application, data]
+    read_only: true
+    cap_drop: [ALL]
+    logging: *logging
+  blackbox:
+    profiles: [monitoring]
+    image: ${BLACKBOX_IMAGE:-prom/blackbox-exporter:v0.27.0}
+    command: ["--config.file=/config/blackbox.yml"]
+    volumes: [./monitoring/blackbox.yml:/config/blackbox.yml:ro]
+    networks: [application]
+    logging: *logging
+  prometheus:
+    profiles: [monitoring]
+    image: ${PROMETHEUS_IMAGE:-prom/prometheus:v3.5.0}
+    command:
+      [
+        "--config.file=/etc/prometheus/prometheus.yml",
+        "--storage.tsdb.path=/prometheus",
+        "--storage.tsdb.retention.time=30d",
+      ]
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./monitoring/alerts.yml:/etc/prometheus/alerts.yml:ro
+      - prometheusdata:/prometheus
+    ports: ["127.0.0.1:9090:9090"]
+    networks: [application]
+    logging: *logging
+  alertmanager:
+    profiles: [monitoring]
+    image: ${ALERTMANAGER_IMAGE:-prom/alertmanager:v0.28.1}
+    command:
+      [
+        "--config.file=/etc/alertmanager/alertmanager.yml",
+        "--storage.path=/alertmanager",
+      ]
+    volumes:
+      - ./monitoring/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
+      - ./secrets/alert-webhook-url:/run/secrets/alert-webhook-url:ro
+      - alertdata:/alertmanager
+    ports: ["127.0.0.1:9093:9093"]
+    networks: [application]
+    logging: *logging
+  loki:
+    profiles: [monitoring]
+    image: ${LOKI_IMAGE:-grafana/loki:3.5.5}
+    command: ["-config.file=/etc/loki/config.yml"]
+    volumes:
+      - ./monitoring/loki.yml:/etc/loki/config.yml:ro
+      - lokidata:/loki
+    ports: ["127.0.0.1:3100:3100"]
+    networks: [application]
+    logging: *logging
+  alloy:
+    profiles: [monitoring]
+    image: ${ALLOY_IMAGE:-grafana/alloy:v1.10.2}
+    command: ["run", "--storage.path=/var/lib/alloy", "/etc/alloy/config.alloy"]
+    environment:
+      COMPOSE_PROJECT_NAME: ${COMPOSE_PROJECT_NAME:-wemove-production}
+    volumes:
+      - ./monitoring/config.alloy:/etc/alloy/config.alloy:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - alloydata:/var/lib/alloy
+    networks: [application]
+    logging: *logging
+networks:
+  application:
+  data:
+    internal: true
+volumes:
+  pgdata:
+  backupdata:
+  backupstatus:
+  redisdata:
+  media:
+  caddydata:
+  caddyconfig:
+  caddylogs:
+  clamavdata:
+  prometheusdata:
+  alertdata:
+  lokidata:
+  alloydata:

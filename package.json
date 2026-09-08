@@ -2,7 +2,7 @@
   "name": "wemove-sports-portal",
   "version": "0.1.0",
   "private": true,
-  "description": "WEMOVE SPORTS 官网与业务门户重构项目 —— Portal / Customer / Dealer / Admin 一体化 monorepo",
+  "description": "WEMOVE 原网站与业务门户重构项目 —— Portal / Customer / Dealer / Admin 一体化 monorepo",
   "license": "UNLICENSED",
   "engines": {
     "node": ">=22",
@@ -30,14 +30,21 @@
     "db:deploy": "npm run prisma:deploy -w api",
     "db:seed": "npm run prisma:seed -w api",
     "db:studio": "npm run prisma:studio -w api",
-    "prisma:generate": "npm run prisma:generate -w api"
+    "prisma:generate": "npm run prisma:generate -w api",
+    "test:browser": "playwright test"
   },
   "devDependencies": {
-    "concurrently": "^9.1.2"
+    "@axe-core/playwright": "^4.13.0",
+    "@playwright/test": "^1.63.0",
+    "concurrently": "^9.1.2",
+    "lighthouse": "^13.4.1"
   },
   "allowScripts": {
     "@prisma/client@6.19.3": true,
     "@prisma/engines@6.19.3": true,
     "prisma@6.19.3": true
+  },
+  "overrides": {
+    "deepmerge-ts": "8.0.0"
   }
 }

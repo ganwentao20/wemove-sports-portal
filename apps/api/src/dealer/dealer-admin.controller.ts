@@ -14,6 +14,7 @@ import type { JwtPayload } from '../auth/auth.service.js';
 import { Roles, RolesGuard } from '../rbac/roles.guard.js';
 import { RequireMfa, RequireMfaGuard } from '../mfa/require-mfa.guard.js';
 import { DealerService } from './dealer.service.js';
+import { MediaService } from '../media/media.service.js';
 import {
   DealerApplicationQueryDto,
   ReviewDealerApplicationDto,
@@ -24,7 +25,17 @@ import {
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Roles('SUPER_ADMIN')
 export class DealerAdminController {
-  constructor(private readonly dealer: DealerService) {}
+  constructor(
+    private readonly dealer: DealerService,
+    private readonly media: MediaService,
+  ) {}
+  @Get(':id/attachments/:mediaId/access') async qualification(
+    @Param('id') id: string,
+    @Param('mediaId') mediaId: string,
+  ) {
+    await this.dealer.assertQualificationBelongs(id, mediaId);
+    return this.media.sign(mediaId, 300);
+  }
 
   @Get()
   list(@Query() query: DealerApplicationQueryDto) {

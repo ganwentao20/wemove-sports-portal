@@ -20,6 +20,17 @@ import type { JwtPayload } from '../auth/auth.service.js';
 
 @Injectable()
 export class PricingAdminService {
+  private validateDates(
+    startsAt: string | Date | null | undefined,
+    endsAt: string | Date | null | undefined,
+  ) {
+    if (startsAt && endsAt && new Date(startsAt) >= new Date(endsAt))
+      throw new BizException(
+        ERROR_CODES.VALIDATION,
+        'pricing end must follow its start',
+        422,
+      );
+  }
   constructor(
     private readonly prisma: PrismaService,
     private readonly audit: AuditService,
@@ -60,6 +71,7 @@ export class PricingAdminService {
   }
 
   async create(dto: CreatePricingRuleDto, actor: JwtPayload) {
+    this.validateDates(dto.startsAt, dto.endsAt);
     await this.ensureVariantExists(dto.variantId);
     const refs = await this.normalizeScopeRefs(dto.scope, dto);
 
@@ -73,6 +85,10 @@ export class PricingAdminService {
         minQty: dto.minQty ?? 1,
         active: dto.active ?? true,
         note: dto.note ?? null,
+        market: dto.market,
+        currency: dto.currency,
+        startsAt: dto.startsAt ? new Date(dto.startsAt) : null,
+        endsAt: dto.endsAt ? new Date(dto.endsAt) : null,
       },
     });
 
@@ -97,6 +113,10 @@ export class PricingAdminService {
         404,
       );
 
+    this.validateDates(
+      dto.startsAt === undefined ? before.startsAt : dto.startsAt,
+      dto.endsAt === undefined ? before.endsAt : dto.endsAt,
+    );
     const effectiveScope =
       dto.scope ?? (before.scope as CreatePricingRuleDto['scope']);
     const scopeChanged = effectiveScope !== before.scope;
@@ -116,6 +136,14 @@ export class PricingAdminService {
         ...(dto.minQty !== undefined ? { minQty: dto.minQty } : {}),
         ...(dto.active !== undefined ? { active: dto.active } : {}),
         ...(dto.note !== undefined ? { note: dto.note } : {}),
+        ...(dto.market !== undefined ? { market: dto.market } : {}),
+        ...(dto.currency ? { currency: dto.currency } : {}),
+        ...(dto.startsAt !== undefined
+          ? { startsAt: dto.startsAt ? new Date(dto.startsAt) : null }
+          : {}),
+        ...(dto.endsAt !== undefined
+          ? { endsAt: dto.endsAt ? new Date(dto.endsAt) : null }
+          : {}),
       },
     });
 
@@ -181,6 +209,10 @@ export class PricingAdminService {
         tierId: true,
         priceCents: true,
         minQty: true,
+        market: true,
+        currency: true,
+        startsAt: true,
+        endsAt: true,
       },
     });
 
@@ -193,6 +225,10 @@ export class PricingAdminService {
       tierId: r.tierId,
       priceCents: r.priceCents,
       minQty: r.minQty,
+      market: r.market,
+      currency: r.currency,
+      startsAt: r.startsAt,
+      endsAt: r.endsAt,
     }));
 
     const hasB2bDefault = candidates.some((r) => r.scope === 'B2B_DEFAULT');
@@ -214,6 +250,8 @@ export class PricingAdminService {
       tierId: ctx.tierId ?? null,
       authorizedBookIds: ctx.bookId ? [ctx.bookId] : [],
       quantity: ctx.quantity,
+      market: ctx.market,
+      currency: ctx.currency,
     };
 
     return {
