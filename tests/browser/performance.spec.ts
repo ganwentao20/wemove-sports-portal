@@ -14,10 +14,10 @@ test("mobile Lighthouse templates and public API latency meet the local acceptan
   const slug = (await products.json()).data.items[0]?.slug;
   expect(slug).toBeTruthy();
   const routes = [
-    ["home", "/"],
-    ["products", "/products"],
-    ["product", "/products/" + slug],
-    ["article", "/content/article-active-family-play"],
+    ["home", "/en?market=US"],
+    ["products", "/en/products?market=US"],
+    ["product", "/en/products/" + slug + "?market=US"],
+    ["article", "/en/content/article-active-family-play?market=US"],
   ];
   const port = await new Promise<number>((resolve) => {
     const server = createServer();
