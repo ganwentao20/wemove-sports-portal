@@ -2,7 +2,7 @@
 
 > 本目录存放**过程性/规范类**材料。课程最终提交件（④需求文档、⑤测试报告、⑥项目汇报 PPT 等）见下方「课程交付清单」。
 
-2026-09-08 更新：[当前 Word 交付件索引](deliverables/README.md)、[材料审核与项目完成度](plans/document-review-20260908.md)、[交付就绪清单](delivery-readiness.md)。五人 AI 汇总和五份个人 AI 说明已齐；独立技术现状/思政报告已归档 4/5，首次实际会议纪要已归档，测试报告 v0.7 已核对 CI #54 的完整整合结论，保留 CI #51 性能原始样本、100 用户负载与实际截图；九页图文汇报 PPT v1.2 已完成。
+2026-09-08 更新：[当前 Word 交付件索引](deliverables/README.md)、[材料审核与项目完成度](plans/document-review-20260908.md)、[交付就绪清单](delivery-readiness.md)。五人 AI 汇总和五份个人 AI 说明已齐；独立技术现状/思政报告已归档 5/5，本次补入[周慧莹报告](individual-reports/周慧莹.md)。首次实际会议纪要已归档，测试报告 v0.7 已核对 CI #54 的完整整合结论，保留 CI #51 性能原始样本、100 用户负载与实际截图；当前[图文汇报 PPT v1.3](deliverables/下午班-08组-WEMOVE-SPORTS-项目汇报-v1.3.pptx)共十五页。
 
 ## 成员花名册（命名与分工引用，2026-09 确认）
 
@@ -30,7 +30,7 @@
 | `requirements.md` | 项目需求文档 v0.5（课程基线、验收标准、需求追踪） | 组长牵头 |
 | [`test-report.md`](test-report.md) | v0.7 最终整合测试与历史勘误；[CI #54 整合验证](https://github.com/ganwentao20/wemove-sports-portal/actions/runs/34159152642) | E 原稿/团队整合复核 |
 | [`ai-assistance-summary.md`](ai-assistance-summary.md)、[`ai-usage/`](ai-usage/README.md) | 五人大模型辅助说明和五份个人说明 | 各成员陈述/团队整理 |
-| [`individual-reports/`](individual-reports/README.md) | 各自独立技术现状/思政报告，已收 4/5 | 各成员本人 |
+| [`individual-reports/`](individual-reports/README.md) | 各自独立技术现状/思政报告，已收 5/5 | 各成员本人 |
 | [`meetings/2026-09-04-meeting-01.md`](meetings/2026-09-04-meeting-01.md) | 首次真实会议，保留历史六名参会者及后续分工注记 | 陈婧琳记录 |
 | `operation-manual.md` | 当前四门户操作步骤与安全注意事项 | D 牵头 |
 | `delivery-readiness.md` | 最终交付物状态、责任人与剩余事项 | 组长统筹 |

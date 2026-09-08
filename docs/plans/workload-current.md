@@ -27,7 +27,7 @@
 | MB PriceBook 授权 | 完成企业授权关系、后台授权/撤权、目录与 Quick Order 授权价读取 | DealerPriceBook 迁移；/admin/b2b；授权隔离 e2e |
 | MB RFQ 询报价 | 完成草稿、提交、版本报价、接受/拒绝/过期判定及前后端 | /dealer/procurement；/admin/b2b；版本与过期 e2e |
 | MB PO 采购订单 | 完成幂等转单、企业/收货/商品/金额快照、库存预留/返库/发货与履约 | PurchaseOrder/Item 迁移；b2b-flow 与 b2b-after-sales；CI #54 |
-| M1 课程材料 | 项目汇报 PPT、测试报告及个人报告已整理；测试账号和 MFA 说明写入手册 | deliverables 项目汇报 v1.2；operation-manual.md §1 |
+| M1 课程材料 | 项目汇报 PPT、测试报告及五份独立个人报告已整理；测试账号和 MFA 说明写入手册 | deliverables 项目汇报 v1.3；[五份独立报告](../individual-reports/README.md)；operation-manual.md §1 |
 
 验证基线为提交 `f3c074f` 与 [CI #54](https://github.com/ganwentao20/wemove-sports-portal/actions/runs/34159152642)。历史提交、作者与已发生的 PR 评审保留原记录；本表仅列后续五人分工，不追改早期参会和开发事实。个人报告与会议纪要分别按实际来源归档。
 

@@ -39,5 +39,12 @@
     "submittedFilename": "测试报告-v0.2-性能数据更新.docx",
     "sha256": "d54d5368aebb2b697113d86803b7bfe4f96693d942f97af0c2b0e504be737bec",
     "status": "原文件留在用户本机；仓库只收删除认证截图及示例密码的历史审校副本"
+  },
+  {
+    "sourceId": 7,
+    "submittedFilename": "Web开发技术现状报告-周慧莹.docx",
+    "archive": "docs/archive/member-submissions-20260908/Web开发技术现状报告_周慧莹_原稿.docx",
+    "sha256": "f0496a4be5954afc26f02b043c06c07aac7083a1ec449947ce598f9da2a28cce",
+    "status": "本次补收个人原稿，按字节保留；正式校订稿见 deliverables/Web开发技术现状报告_周慧莹.docx"
   }
 ]

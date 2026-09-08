@@ -1,6 +1,6 @@
 {
   "date": "2026-09-08",
-  "scope": "九份当前 Word 已重新校订和逐页检查；另保留两份未修改历史文档的前次验证记录。本记录不代表成员确认或新增软件测试。",
+  "scope": "十份当前 Word 均有逐页检查记录。本次补入周慧莹报告并同步测试与工作量报告，三份共九页重新检查；其余七份保持已检查字节。另保留两份历史文档前次记录。此记录不代表成员签字或新增软件测试。",
   "outputs": [
     {
       "path": "docs/deliverables/下午班-08组-WEMOVE-SPORTS-大模型辅助实践说明-v1.0.docx",
@@ -53,15 +53,15 @@
     },
     {
       "path": "docs/deliverables/下午班-08组-WEMOVE-SPORTS-分工与工作量报告-v1.2.docx",
-      "sha256": "90b5e4fefba39c87f588cd34e2e3093259b41ad61488305fe53fc44241d9aca5",
-      "bytes": 40723,
+      "sha256": "e86ee5d05ba1fcf4b8ff8da4279237372274871c3c69eec19f3a7b0889bb5f70",
+      "bytes": 40801,
       "pages": 2,
       "allPagesVisuallyReviewed": true
     },
     {
       "path": "docs/deliverables/下午班-08组-WEMOVE-SPORTS-测试报告-v0.7.docx",
-      "sha256": "b2951aea950083454848393c72311ed20615fb21f0df60df63736dc0e64dd3f4",
-      "bytes": 45052,
+      "sha256": "744c5ff18610e368a6cfa2d1ad1e2619d924674d7cbccecb8ae6d6303f684fc6",
+      "bytes": 45204,
       "pages": 4,
       "allPagesVisuallyReviewed": true
     },
@@ -77,6 +77,13 @@
       "sha256": "65757fa1f1cf0b85b5aadee3cfd693070ecb655451687d54aed9911a4f472be6",
       "bytes": 403402,
       "pages": 8,
+      "allPagesVisuallyReviewed": true
+    },
+    {
+      "path": "docs/deliverables/Web开发技术现状报告_周慧莹.docx",
+      "sha256": "0a5f50f197dca56b258fbc09c1c3456c3d634233e18cfed994368f0f30ef35e9",
+      "bytes": 42936,
+      "pages": 3,
       "allPagesVisuallyReviewed": true
     }
   ]
